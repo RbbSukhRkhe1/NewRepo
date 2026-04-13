@@ -1,4 +1,4 @@
-import { useRef, useMemo, Suspense } from 'react';
+import { useRef, Suspense } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
@@ -105,55 +105,6 @@ function HandSculpt() {
   );
 }
 
-const FLOW_COUNT = 140;
-
-function EthFlowParticles() {
-  const ref = useRef<THREE.InstancedMesh>(null);
-  const dummy = useMemo(() => new THREE.Object3D(), []);
-  const phases = useMemo(
-    () => Float32Array.from({ length: FLOW_COUNT }, () => Math.random()),
-    []
-  );
-  const lanes = useMemo(
-    () => Float32Array.from({ length: FLOW_COUNT }, (_, i) => (i % 7) - 3),
-    []
-  );
-  const geo = useMemo(() => new THREE.SphereGeometry(1, 10, 10), []);
-  const mat = useMemo(
-    () =>
-      new THREE.MeshBasicMaterial({
-        color: ACCENT,
-        transparent: true,
-        opacity: 0.88,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending,
-      }),
-    []
-  );
-
-  useFrame((state) => {
-    const mesh = ref.current;
-    if (!mesh) return;
-    const t = state.clock.elapsedTime;
-    for (let i = 0; i < FLOW_COUNT; i++) {
-      const p = ((t * 0.11 + phases[i]) % 1 + 1) % 1;
-      const x = THREE.MathUtils.lerp(-0.42, 0.42, p);
-      const arc = Math.sin(p * Math.PI) * 0.14;
-      const y = arc + lanes[i] * 0.028 + Math.sin(t * 2 + i) * 0.012;
-      const z = lanes[i] * 0.045;
-      dummy.position.set(x, y, z);
-      const pulse = Math.sin(p * Math.PI);
-      const sc = 0.018 + pulse * 0.022;
-      dummy.scale.setScalar(sc);
-      dummy.updateMatrix();
-      mesh.setMatrixAt(i, dummy.matrix);
-    }
-    mesh.instanceMatrix.needsUpdate = true;
-  });
-
-  return <instancedMesh ref={ref} args={[geo, mat, FLOW_COUNT]} frustumCulled={false} />;
-}
-
 function GapEnergy() {
   const ref = useRef<THREE.Mesh>(null);
   useFrame((state) => {
@@ -181,7 +132,6 @@ function Scene() {
   return (
     <>
       <color attach="background" args={['#030508']} />
-      <fog attach="fog" args={['#030508', 4.5, 11]} />
 
       <ambientLight intensity={0.18} />
       <directionalLight position={[-4, 6, 4]} intensity={0.55} color="#b8c8e8" />
@@ -199,7 +149,6 @@ function Scene() {
         </group>
       </group>
 
-      <EthFlowParticles />
       <GapEnergy />
     </>
   );
@@ -207,7 +156,7 @@ function Scene() {
 
 export function CreationHandsThree() {
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-0 z-[1] h-[min(74vh,680px)] w-full">
+    <div className="pointer-events-none absolute inset-x-0 top-0 z-[1] h-[min(42vh,320px)] w-full sm:h-[min(58vh,520px)] lg:h-[min(72vh,680px)]">
       <Canvas
         className="h-full w-full"
         dpr={[1, 2]}

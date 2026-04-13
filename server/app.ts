@@ -27,6 +27,48 @@ type UserRow = {
   anvil_index: number | null;
 };
 
+type LedgerDbRow = {
+  id: number;
+  tx_hash: string;
+  from_addr: string;
+  to_addr: string;
+  value_eth: string;
+  kind: string;
+  cause_name: string | null;
+  from_display_name: string | null;
+  to_display_name: string | null;
+  recorded_at: string;
+};
+
+function mapLedgerRowToApi(r: LedgerDbRow, vaultLowerStr: string) {
+  let kind: 'donation_in' | 'disbursement_out' = 'donation_in';
+  if (r.kind === 'disbursement_out') kind = 'disbursement_out';
+  else if (r.kind === 'donation_in') kind = 'donation_in';
+  else if (r.kind === 'chain_sync') {
+    const to = r.to_addr.toLowerCase();
+    const from = r.from_addr.toLowerCase();
+    if (to === vaultLowerStr) kind = 'donation_in';
+    else if (from === vaultLowerStr) kind = 'disbursement_out';
+    else kind = 'donation_in';
+  }
+
+  const fromName = r.from_display_name ?? maskAddr(r.from_addr);
+  const toName = r.to_display_name ?? maskAddr(r.to_addr);
+
+  return {
+    id: String(r.id),
+    kind,
+    fromDisplayName: fromName,
+    fromMasked: maskAddr(r.from_addr),
+    toDisplayName: toName,
+    toMasked: maskAddr(r.to_addr),
+    amountEth: r.value_eth,
+    causeName: r.cause_name ?? '',
+    txHash: r.tx_hash,
+    recordedAt: new Date(r.recorded_at + 'Z').toISOString(),
+  };
+}
+
 function getUser(req: express.Request): UserRow | undefined {
   const id = req.session?.userId;
   if (id == null) return undefined;
@@ -71,6 +113,63 @@ export function createApp() {
       superRichMasked: maskAddr(anvilAddress(SUPER_RICH_INDEX)),
       newUserPoolSize: NEW_USER_POOL_INDICES.length,
     });
+  });
+
+  api.get('/overview', async (_req, res) => {
+    const causesAgg = db
+      .prepare(
+        `SELECT
+          COUNT(*) AS active_causes,
+          COALESCE(SUM(raised_eth), 0) AS total_raised_eth
+         FROM causes
+         WHERE active = 1`
+      )
+      .get() as { active_causes: number; total_raised_eth: number };
+
+    const ledgerAgg = db
+      .prepare(
+        `SELECT
+          COUNT(*) AS ledger_entries,
+          COALESCE(SUM(CASE WHEN kind = 'donation_in' THEN CAST(value_eth AS REAL) ELSE 0 END), 0) AS total_donated_eth,
+          COALESCE(SUM(CASE WHEN kind = 'disbursement_out' THEN CAST(value_eth AS REAL) ELSE 0 END), 0) AS total_disbursed_eth
+         FROM ledger_entries`
+      )
+      .get() as { ledger_entries: number; total_donated_eth: number; total_disbursed_eth: number };
+
+    try {
+      const provider = rpcProvider();
+      const vaultAddr = anvilAddress(SUPER_RICH_INDEX);
+      const bal = await provider.getBalance(vaultAddr);
+
+      res.json({
+        vault: {
+          addressMasked: maskAddr(vaultAddr),
+          balanceEth: ethers.formatEther(bal),
+        },
+        stats: {
+          activeCauses: Number(causesAgg.active_causes) || 0,
+          ledgerEntries: Number(ledgerAgg.ledger_entries) || 0,
+          totalRaisedEth: Number(causesAgg.total_raised_eth) || 0,
+          totalDonatedEth: Number(ledgerAgg.total_donated_eth) || 0,
+          totalDisbursedEth: Number(ledgerAgg.total_disbursed_eth) || 0,
+        },
+      });
+    } catch (e: unknown) {
+      console.error(e);
+      res.json({
+        vault: {
+          addressMasked: maskAddr(anvilAddress(SUPER_RICH_INDEX)),
+          balanceEth: null,
+        },
+        stats: {
+          activeCauses: Number(causesAgg.active_causes) || 0,
+          ledgerEntries: Number(ledgerAgg.ledger_entries) || 0,
+          totalRaisedEth: Number(causesAgg.total_raised_eth) || 0,
+          totalDonatedEth: Number(ledgerAgg.total_donated_eth) || 0,
+          totalDisbursedEth: Number(ledgerAgg.total_disbursed_eth) || 0,
+        },
+      });
+    }
   });
 
   api.post('/auth/login', (req, res) => {
@@ -367,49 +466,79 @@ export function createApp() {
   api.get('/ledger', (_req, res) => {
     const rows = db
       .prepare(`SELECT * FROM ledger_entries ORDER BY recorded_at ASC, id ASC LIMIT 500`)
-      .all() as {
-      id: number;
-      tx_hash: string;
-      from_addr: string;
-      to_addr: string;
-      value_eth: string;
-      kind: string;
-      cause_name: string | null;
-      from_display_name: string | null;
-      to_display_name: string | null;
-      recorded_at: string;
-    }[];
+      .all() as LedgerDbRow[];
 
     const vl = vaultLower();
-    const mapped = rows.map((r) => {
-      let kind: 'donation_in' | 'disbursement_out' = 'donation_in';
-      if (r.kind === 'disbursement_out') kind = 'disbursement_out';
-      else if (r.kind === 'donation_in') kind = 'donation_in';
-      else if (r.kind === 'chain_sync') {
-        const to = r.to_addr.toLowerCase();
-        const from = r.from_addr.toLowerCase();
-        if (to === vl) kind = 'donation_in';
-        else if (from === vl) kind = 'disbursement_out';
-        else kind = 'donation_in';
-      }
-
-      const fromName = r.from_display_name ?? maskAddr(r.from_addr);
-      const toName = r.to_display_name ?? maskAddr(r.to_addr);
-
-      return {
-        id: String(r.id),
-        kind,
-        fromDisplayName: fromName,
-        fromMasked: maskAddr(r.from_addr),
-        toDisplayName: toName,
-        toMasked: maskAddr(r.to_addr),
-        amountEth: r.value_eth,
-        causeName: r.cause_name ?? '',
-        txHash: r.tx_hash,
-        recordedAt: new Date(r.recorded_at + 'Z').toISOString(),
-      };
-    });
+    const mapped = rows.map((r) => mapLedgerRowToApi(r, vl));
     res.json(mapped);
+  });
+
+  api.get('/me/history', requireAuth, async (req, res) => {
+    const u = getUser(req)!;
+    if (u.anvil_index == null) {
+      return res.json({ entries: [], summary: null });
+    }
+
+    const addr = anvilAddress(u.anvil_index);
+    const addrLower = addr.toLowerCase();
+    const vl = vaultLower();
+
+    const rows = db
+      .prepare(
+        `SELECT * FROM ledger_entries
+         WHERE lower(from_addr) = ? OR lower(to_addr) = ?
+         ORDER BY recorded_at DESC, id DESC
+         LIMIT 200`
+      )
+      .all(addrLower, addrLower) as LedgerDbRow[];
+
+    const entries = rows.map((r) => ({
+      ...mapLedgerRowToApi(r, vl),
+      flow: (r.from_addr.toLowerCase() === addrLower ? 'sent' : 'received') as 'sent' | 'received',
+    }));
+
+    const agg = db
+      .prepare(
+        `SELECT
+          COALESCE(SUM(CASE WHEN lower(from_addr) = ? AND kind = 'donation_in' THEN CAST(value_eth AS REAL) ELSE 0 END), 0) AS total_sent,
+          COALESCE(SUM(CASE WHEN lower(to_addr) = ? AND kind = 'disbursement_out' THEN CAST(value_eth AS REAL) ELSE 0 END), 0) AS total_received
+         FROM ledger_entries`
+      )
+      .get(addrLower, addrLower) as { total_sent: number; total_received: number };
+
+    const totalSent = Number(agg.total_sent) || 0;
+    const totalReceived = Number(agg.total_received) || 0;
+
+    try {
+      const provider = rpcProvider();
+      const bal = await provider.getBalance(addr);
+      const currentEth = ethers.formatEther(bal);
+      const cur = parseFloat(currentEth);
+
+      const isHospital = u.role === 'hospital';
+      let refMax: number;
+      if (isHospital) {
+        refMax =
+          totalReceived > 0 ? Math.max(totalReceived, cur, 1e-12) : Math.max(100, cur, 1e-12);
+      } else {
+        refMax = Math.max(100, cur + totalSent, 1e-12);
+      }
+      const fillRatio = Math.min(1, Math.max(0, cur / refMax));
+
+      res.json({
+        entries,
+        summary: {
+          currentEth,
+          referenceMaxEth: refMax.toFixed(6),
+          fillRatio,
+          totalSentEth: totalSent.toFixed(6),
+          totalReceivedEth: totalReceived.toFixed(6),
+        },
+      });
+    } catch (e: unknown) {
+      console.error(e);
+      res.status(500).json({ error: e instanceof Error ? e.message : 'history error' });
+    }
   });
 
   api.get('/balance/:anvilIndex', async (req, res) => {
