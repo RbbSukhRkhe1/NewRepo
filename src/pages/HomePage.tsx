@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { loadDonationLedger, type DonationLedgerEntry } from '../lib/donationLedger';
 
-const ACCENT = '#00f0ff';
+const ACCENT = '#22c55e';
 
 type Overview = {
   vault: { addressMasked: string; balanceEth: string | null };
