@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { AnvilParticleBackdrop } from './AnvilParticleBackdrop';
+import { GlobalAmbientBackdrop, GLOBAL_AMBIENT_ACCENT } from './GlobalAmbientBackdrop';
 import { apiJson } from '../lib/api';
 
-const ACCENT = '#22c55e';
+const ACCENT = GLOBAL_AMBIENT_ACCENT;
 
 export function Layout() {
   const { user, logout } = useAuth();
@@ -107,16 +107,7 @@ export function Layout() {
 
   return (
     <div className="relative min-h-screen text-zinc-100">
-      <div className="pointer-events-none fixed inset-0 z-0 bg-[#070a12]" aria-hidden />
-      <AnvilParticleBackdrop accent={ACCENT} />
-      <div
-        className="pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(ellipse_120%_90%_at_50%_-40%,rgba(34,197,94,0.16),transparent_52%),radial-gradient(ellipse_70%_50%_at_110%_15%,rgba(34,197,94,0.12),transparent),radial-gradient(ellipse_55%_45%_at_-10%_100%,rgba(251,191,36,0.07),transparent)]"
-        aria-hidden
-      />
-      <div
-        className="pointer-events-none fixed inset-0 z-0 opacity-[0.4] mix-blend-soft-light bg-[linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:72px_72px]"
-        aria-hidden
-      />
+      <GlobalAmbientBackdrop accent={ACCENT} />
 
       <header className="sticky top-0 z-50 border-b border-white/[0.06] bg-[#070a12]/70 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">

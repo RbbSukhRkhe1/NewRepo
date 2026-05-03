@@ -204,6 +204,80 @@ code {
   }
 }
 
+/* —— Global ambient backdrop (see `GlobalAmbientBackdrop`) —— */
+@keyframes vaultex-glow-drift-a {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(4%, 3%, 0) scale(1.06);
+  }
+}
+
+@keyframes vaultex-glow-drift-b {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1.02);
+  }
+  33% {
+    transform: translate3d(-5%, 2%, 0) scale(1.08);
+  }
+  66% {
+    transform: translate3d(3%, -4%, 0) scale(0.98);
+  }
+}
+
+@keyframes vaultex-glow-drift-c {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  40% {
+    transform: translate3d(-3%, -5%, 0) scale(1.05);
+  }
+  80% {
+    transform: translate3d(4%, 2%, 0) scale(1);
+  }
+}
+
+@keyframes vaultex-glow-shimmer {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .vaultex-glow-drift-a {
+    animation: vaultex-glow-drift-a 26s ease-in-out infinite;
+  }
+
+  .vaultex-glow-drift-b {
+    animation: vaultex-glow-drift-b 34s ease-in-out infinite;
+  }
+
+  .vaultex-glow-drift-c {
+    animation: vaultex-glow-drift-c 30s ease-in-out infinite;
+  }
+
+  .vaultex-glow-shimmer {
+    animation: vaultex-glow-shimmer 14s ease-in-out infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vaultex-glow-drift-a,
+  .vaultex-glow-drift-b,
+  .vaultex-glow-drift-c,
+  .vaultex-glow-shimmer {
+    animation: none;
+  }
+}
+
 .reveal {
   opacity: 0;
   transform: translateY(12px) scale(0.99);

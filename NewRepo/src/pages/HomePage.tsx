@@ -1,23 +1,25 @@
 import { Link } from 'react-router-dom';
 import { CreationHandsThree } from '../components/CreationHandsThree';
+import { CarouselHighlights } from '../components/CarouselHighlights';
 
-const ACCENT = '#22c55e';
 const WARM = '#fbbf24';
 
 export function HomePage() {
   return (
     <>
       <section className="relative min-h-[92svh]">
+        {/* Light top opacity so fixed `GlobalAmbientBackdrop` glow/particles read through */}
         <div
-          className="absolute inset-0 z-0 bg-gradient-to-b from-[#0a1628] via-[#070a12] to-[#070a12]"
+          className="absolute inset-0 z-0 bg-gradient-to-b from-[#0a1628]/78 via-[#070a12]/96 to-[#070a12]"
           aria-hidden
         />
 
         <CreationHandsThree />
 
-        <div className="relative z-10 mx-auto flex min-h-[92svh] max-w-4xl flex-col justify-start px-4 pb-10 pt-20 sm:pb-12 sm:pt-24">
+        {/* Tight top spacing only: keeps hands/gradient effects unchanged; bottom padding unchanged for carousel rhythm */}
+        <div className="relative z-10 mx-auto flex min-h-[92svh] max-w-4xl flex-col justify-start px-4 pb-10 pt-4 sm:pb-12 sm:pt-5">
           <div
-            className="glass-panel mx-auto w-full max-w-2xl reveal rounded-3xl px-6 py-10 sm:px-10 sm:py-12"
+            className="glass-panel mx-auto w-full max-w-2xl reveal rounded-3xl px-6 pt-5 pb-10 sm:px-10 sm:pt-6 sm:pb-12"
             data-reveal
           >
             <p
@@ -39,21 +41,7 @@ export function HomePage() {
               Choose a cause you care about. Donate ETH and follow your gift in a live ledger — clear
               from your wallet to the vault and beyond.
             </p>
-            <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
-              <Link
-                to="/causes"
-                className="font-display rounded-full px-8 py-3.5 text-sm font-semibold text-[#041214] shadow-[0_0_28px_-6px_rgba(34,197,94,0.65)] transition hover:brightness-110"
-                style={{ background: `linear-gradient(135deg, ${ACCENT}, #5eead4)` }}
-              >
-                Explore causes
-              </Link>
-              <Link
-                to="/ledger"
-                className="rounded-full border border-white/15 px-8 py-3.5 text-sm font-medium text-zinc-200 transition hover:border-emerald-400/40 hover:bg-emerald-500/10 hover:text-white"
-              >
-                View the ledger
-              </Link>
-            </div>
+            <CarouselHighlights />
           </div>
         </div>
       </section>
@@ -89,7 +77,7 @@ export function HomePage() {
                   arrowClass: 'text-emerald-300 group-hover:text-emerald-200',
                 },
                 {
-                  to: '/causes',
+                  to: '/donation-interface',
                   title: 'Donate Securely',
                   description:
                     'Connect your wallet and send ETH directly. Receive instant on-chain proof of your donation.',
