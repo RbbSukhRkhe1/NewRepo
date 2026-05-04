@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs';
 import { db } from './db.js';
 import {
   ADMIN_INDICES,
-  HOSPITAL_INDICES,
+  BENEFICIARY_INDICES,
   SUPER_RICH_INDEX,
   anvilAddress,
 } from './anvil.js';
@@ -28,13 +28,13 @@ export function seedIfEmpty(): void {
     ins.run(a.name, a.email, hash, 'admin', a.idx);
   }
 
-  const hospitals = [
-    { name: 'City General Hospital', email: 'citygeneral@hospital.local', idx: HOSPITAL_INDICES[0] },
-    { name: 'Childrens Care Hospital', email: 'childrens@hospital.local', idx: HOSPITAL_INDICES[1] },
-    { name: 'Regional Medical Center', email: 'regional@hospital.local', idx: HOSPITAL_INDICES[2] },
+  const beneficiaries = [
+    { name: 'City General Hospital', email: 'citygeneral@hospital.local', idx: BENEFICIARY_INDICES[0] },
+    { name: 'Childrens Care Hospital', email: 'childrens@hospital.local', idx: BENEFICIARY_INDICES[1] },
+    { name: 'Regional Medical Center', email: 'regional@hospital.local', idx: BENEFICIARY_INDICES[2] },
   ];
-  for (const h of hospitals) {
-    ins.run(h.name, h.email, hash, 'hospital', h.idx);
+  for (const b of beneficiaries) {
+    ins.run(b.name, b.email, hash, 'beneficiary', b.idx);
   }
 
   const causeIns = db.prepare(
@@ -53,7 +53,7 @@ export function seedIfEmpty(): void {
     0
   );
 
-  console.log('[seed] Seeded admins + hospitals + sample causes.');
+  console.log('[seed] Seeded admins + beneficiaries + sample causes.');
   console.log('[seed] Donation vault (Anvil #0):', anvilAddress(SUPER_RICH_INDEX));
   console.log('[seed] Login with any seeded email; password:', DEMO_PASSWORD);
 }

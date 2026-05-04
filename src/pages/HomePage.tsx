@@ -111,7 +111,7 @@ export function HomePage() {
         <p className="mx-auto mt-6 max-w-xl text-pretty text-sm leading-relaxed text-zinc-400 sm:text-base">
           Pick a cause, send ETH from your assigned test wallet on Anvil, and watch every transfer
           hit the public ledger. Built for a capstone: real txs, SQLite records, and a clear trail
-          from donors to the vault and out to hospitals.
+          from donors to the vault and out to beneficiary organisations.
         </p>
         <div className="mt-10 flex w-full flex-col items-center justify-center gap-3 sm:mx-auto sm:w-auto sm:flex-row sm:flex-wrap sm:gap-4">
           <Link
@@ -147,7 +147,7 @@ export function HomePage() {
                 <p className="mt-2 text-sm leading-relaxed text-zinc-400">
                   This is the story users care about: <span className="text-white">who sent</span>,{' '}
                   <span className="text-white">where it landed</span>, and{' '}
-                  <span className="text-white">when it reached a hospital</span>.
+                  <span className="text-white">when it reached a beneficiary</span>.
                 </p>
               </div>
 
@@ -156,7 +156,7 @@ export function HomePage() {
                   [
                     { id: 0, label: 'Donor → Vault' },
                     { id: 1, label: 'In the Vault' },
-                    { id: 2, label: 'Vault → Hospital' },
+                    { id: 2, label: 'Vault → Beneficiary' },
                   ] as const
                 ).map((t) => (
                   <button
@@ -189,7 +189,7 @@ export function HomePage() {
                   <div className="absolute left-0 right-0 top-1/2 h-[2px] -translate-y-1/2 bg-gradient-to-r from-cyan-400/0 via-cyan-400/40 to-cyan-400/0 blur-[6px]" />
 
                   <div className="relative grid grid-cols-3 items-center">
-                    {(['Donor', 'Vault', 'Hospital'] as const).map((label, idx) => {
+                    {(['Donor', 'Vault', 'Beneficiary'] as const).map((label, idx) => {
                       const active =
                         (journeyStep === 0 && idx <= 1) ||
                         (journeyStep === 1 && idx === 1) ||
@@ -244,7 +244,7 @@ export function HomePage() {
                     <p className="mt-1 text-zinc-200">Receives + holds</p>
                   </div>
                   <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">Hospital</p>
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">Beneficiary</p>
                     <p className="mt-1 text-zinc-200">Gets disbursed</p>
                   </div>
                 </div>

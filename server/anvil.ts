@@ -9,7 +9,7 @@ export const SUPER_RICH_INDEX = 0;
 export const ADMIN_INDICES = [1, 2, 3] as const;
 /** Assigned when admins create donors via API */
 export const NEW_USER_POOL_INDICES = [4, 5, 6] as const;
-export const HOSPITAL_INDICES = [7, 8, 9] as const;
+export const BENEFICIARY_INDICES = [7, 8, 9] as const;
 
 export function anvilWallet(index: number): HDNodeWallet {
   return HDNodeWallet.fromPhrase(
@@ -30,5 +30,5 @@ export function connectWallet(index: number, provider: ethers.Provider): ethers.
 export const ROLE = {
   ADMIN: 'admin',
   DONOR: 'donor',
-  HOSPITAL: 'hospital',
+  BENEFICIARY: 'beneficiary',
 } as const;

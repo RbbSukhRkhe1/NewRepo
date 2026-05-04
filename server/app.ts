@@ -403,18 +403,18 @@ export function createApp() {
   });
 
   api.post('/disburse', requireAuth, requireAdmin, async (req, res) => {
-    const { hospitalUserId, amountEth, causeName } = req.body as {
-      hospitalUserId?: number;
+    const { beneficiaryUserId, amountEth, causeName } = req.body as {
+      beneficiaryUserId?: number;
       amountEth?: string;
       causeName?: string;
     };
-    if (hospitalUserId == null || !amountEth) {
-      return res.status(400).json({ error: 'hospitalUserId and amountEth required' });
+    if (beneficiaryUserId == null || !amountEth) {
+      return res.status(400).json({ error: 'beneficiaryUserId and amountEth required' });
     }
-    const hosp = db.prepare(`SELECT * FROM users WHERE id = ? AND role = 'hospital'`).get(hospitalUserId) as
-      | UserRow
-      | undefined;
-    if (!hosp?.anvil_index) return res.status(404).json({ error: 'Hospital user not found' });
+    const beneficiary = db
+      .prepare(`SELECT * FROM users WHERE id = ? AND role = 'beneficiary'`)
+      .get(beneficiaryUserId) as UserRow | undefined;
+    if (!beneficiary?.anvil_index) return res.status(404).json({ error: 'Beneficiary user not found' });
     let value: bigint;
     try {
       value = ethers.parseEther(String(amountEth));
@@ -424,7 +424,7 @@ export function createApp() {
     try {
       const provider = rpcProvider();
       const signer = connectWallet(SUPER_RICH_INDEX, provider);
-      const to = anvilAddress(hosp.anvil_index);
+      const to = anvilAddress(beneficiary.anvil_index);
       const tx = await signer.sendTransaction({ to, value });
       const receipt = await tx.wait();
       const valueEthStr = ethers.formatEther(value);
@@ -453,7 +453,7 @@ export function createApp() {
         'disbursement_out',
         null,
         'Super Rich vault',
-        hosp.name,
+        beneficiary.name,
         cn
       );
       res.json({ txHash: tx.hash, amountEth: valueEthStr });
@@ -515,9 +515,9 @@ export function createApp() {
       const currentEth = ethers.formatEther(bal);
       const cur = parseFloat(currentEth);
 
-      const isHospital = u.role === 'hospital';
+      const isBeneficiary = u.role === 'beneficiary';
       let refMax: number;
-      if (isHospital) {
+      if (isBeneficiary) {
         refMax =
           totalReceived > 0 ? Math.max(totalReceived, cur, 1e-12) : Math.max(100, cur, 1e-12);
       } else {

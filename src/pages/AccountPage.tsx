@@ -67,7 +67,7 @@ function WalletMeter({
           />
         </div>
         <p className="mt-2 text-center text-[11px] tabular-nums text-zinc-500">
-          {role === 'hospital' ? (
+          {role === 'beneficiary' ? (
             <>
               Received (ledger): <span className="text-zinc-400">{parseFloat(summary.totalReceivedEth).toFixed(4)}</span> ETH
             </>
@@ -118,8 +118,8 @@ function HistoryRow({ e }: { e: UserHistoryEntry }) {
 export function AccountPage() {
   const { user, loading } = useAuth();
   const [eth, setEth] = useState<string | null>(null);
-  const [hospitals, setHospitals] = useState<UserRow[]>([]);
-  const [hospitalId, setHospitalId] = useState('');
+  const [beneficiaries, setBeneficiaries] = useState<UserRow[]>([]);
+  const [beneficiaryId, setBeneficiaryId] = useState('');
   const [disburseAmount, setDisburseAmount] = useState('1');
   const [causeNote, setCauseNote] = useState('Baby Cancer');
   const [msg, setMsg] = useState<string | null>(null);
@@ -163,8 +163,8 @@ export function AccountPage() {
   useEffect(() => {
     if (user?.role !== 'admin') return;
     apiJson<UserRow[]>('/users')
-      .then((rows) => setHospitals(rows.filter((r) => r.role === 'hospital')))
-      .catch(() => setHospitals([]));
+      .then((rows) => setBeneficiaries(rows.filter((r) => r.role === 'beneficiary')))
+      .catch(() => setBeneficiaries([]));
   }, [user?.role]);
 
   async function disburse(e: React.FormEvent) {
@@ -175,7 +175,7 @@ export function AccountPage() {
       const r = await apiJson<{ txHash: string }>('/disburse', {
         method: 'POST',
         body: JSON.stringify({
-          hospitalUserId: parseInt(hospitalId, 10),
+          beneficiaryUserId: parseInt(beneficiaryId, 10),
           amountEth: disburseAmount,
           causeName: causeNote,
         }),
@@ -274,19 +274,19 @@ export function AccountPage() {
         >
           <h2 className="text-lg font-semibold text-amber-200">Disburse from vault</h2>
           <p className="mt-1 text-xs text-zinc-500">
-            Sends ETH from Super Rich (#0) to a hospital wallet. Logged as disbursement.
+            Sends ETH from Super Rich (#0) to a beneficiary wallet. Logged as disbursement.
           </p>
           <div className="mt-4 space-y-3">
             <select
-              value={hospitalId}
-              onChange={(e) => setHospitalId(e.target.value)}
+              value={beneficiaryId}
+              onChange={(e) => setBeneficiaryId(e.target.value)}
               required
               className="w-full rounded-lg border border-white/10 bg-black/40 px-4 py-3 text-white"
             >
-              <option value="">Select hospital</option>
-              {hospitals.map((h) => (
-                <option key={h.id} value={h.id}>
-                  {h.name}
+              <option value="">Select beneficiary</option>
+              {beneficiaries.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name}
                 </option>
               ))}
             </select>
@@ -308,10 +308,10 @@ export function AccountPage() {
           {msg && <p className="mt-3 text-sm text-amber-200">{msg}</p>}
           <button
             type="submit"
-            disabled={busy || !hospitalId}
+            disabled={busy || !beneficiaryId}
             className="mt-4 rounded-xl bg-amber-500 px-6 py-2 text-sm font-semibold text-black disabled:opacity-50"
           >
-            {busy ? 'Sending…' : 'Send to hospital'}
+            {busy ? 'Sending…' : 'Send to beneficiary'}
           </button>
         </form>
       )}

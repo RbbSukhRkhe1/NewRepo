@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS users (
   name TEXT NOT NULL,
   email TEXT NOT NULL UNIQUE,
   password_hash TEXT NOT NULL,
-  role TEXT NOT NULL CHECK(role IN ('admin','donor','hospital')),
+  role TEXT NOT NULL CHECK(role IN ('admin','donor','beneficiary')),
   anvil_index INTEGER UNIQUE,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -52,3 +52,37 @@ CREATE TABLE IF NOT EXISTS ledger_entries (
 CREATE INDEX IF NOT EXISTS idx_ledger_recorded ON ledger_entries(recorded_at DESC);
 CREATE INDEX IF NOT EXISTS idx_users_anvil ON users(anvil_index);
 `);
+
+// One-time migration for dev DBs created with role 'hospital'.
+// We cannot UPDATE role to 'beneficiary' while the CHECK only allows 'hospital',
+// so we rebuild the table in one transaction.
+const usersSchema =
+  (db
+    .prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='users'")
+    .get() as { sql: string } | undefined)?.sql ?? '';
+if (usersSchema.includes("'hospital'")) {
+  const migrate = db.transaction(() => {
+    db.exec(`
+      CREATE TABLE users__mig (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        email TEXT NOT NULL UNIQUE,
+        password_hash TEXT NOT NULL,
+        role TEXT NOT NULL CHECK(role IN ('admin','donor','beneficiary')),
+        anvil_index INTEGER UNIQUE,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+      INSERT INTO users__mig (id, name, email, password_hash, role, anvil_index, created_at)
+      SELECT
+        id, name, email, password_hash,
+        CASE WHEN role = 'hospital' THEN 'beneficiary' ELSE role END,
+        anvil_index, created_at
+      FROM users;
+      DROP TABLE users;
+      ALTER TABLE users__mig RENAME TO users;
+    `);
+    db.exec('CREATE INDEX IF NOT EXISTS idx_users_anvil ON users(anvil_index);');
+  });
+  migrate();
+  console.log("[db] migrated users.role 'hospital' -> 'beneficiary' (table rebuild)");
+}
