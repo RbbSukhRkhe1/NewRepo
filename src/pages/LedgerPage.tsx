@@ -46,7 +46,7 @@ export function LedgerPage() {
   } | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
-  const stickToBottomRef = useRef(true);
+  const stickToBottomRef = useRef(false);
 
   const refresh = useCallback(() => {
     loadDonationLedger()

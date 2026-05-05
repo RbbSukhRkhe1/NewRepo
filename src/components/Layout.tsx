@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import type { ComponentType } from 'react';
+import { useEffect, type ComponentType } from 'react';
 import {
   Activity,
   BookOpenCheck,
@@ -53,6 +53,10 @@ export function Layout() {
     </Link>
   );
   };
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [loc.pathname]);
 
   return (
     <div className="relative min-h-screen bg-[#0A0A0F] text-[#F8F9FF]">
