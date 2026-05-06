@@ -1,95 +1,115 @@
 @import 'tailwindcss';
 
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
-
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
-
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
+  color-scheme: dark;
+  --vtx-primary: #14f5b3;
+  --vtx-accent: #7b4cff;
+  --vtx-bg: #0a0a0f;
+  --vtx-surface: #12121f;
+  --vtx-surface-2: #1c1c2e;
+  --vtx-text: #f8f9ff;
+  --vtx-text-muted: #a0a0cc;
+  --vtx-border: rgba(255, 255, 255, 0.08);
+  --vtx-error: #ff4d6b;
+  --vtx-success: #14f5b3;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
 #root {
   width: 100%;
-  max-width: 100%;
-  margin: 0;
-  text-align: initial;
-  border: none;
   min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  min-height: 100svh;
-  background: #030508;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  background:
+    radial-gradient(1200px 800px at 5% -10%, rgba(20, 245, 179, 0.12), transparent 65%),
+    radial-gradient(900px 700px at 95% -10%, rgba(123, 76, 255, 0.16), transparent 60%),
+    var(--vtx-bg);
+  color: var(--vtx-text);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Drop legacy template heading margins; size/weight come from Tailwind classes */
-#root h1,
-#root h2 {
-  margin: 0;
-}
-p {
-  margin: 0;
+a {
+  color: inherit;
+  text-decoration: none;
 }
 
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
+.font-space-grotesk {
+  font-family: 'Space Grotesk', Inter, ui-sans-serif, system-ui, sans-serif;
 }
 
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+.font-inter {
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+.font-space-mono {
+  font-family: 'Space Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.vtx-surface {
+  background: color-mix(in srgb, var(--vtx-surface) 80%, transparent);
+  backdrop-filter: blur(24px);
+  border: 1px solid var(--vtx-border);
+  border-radius: 1.5rem;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+}
+
+.vtx-card {
+  border-radius: 1.5rem;
+  border: 1px solid var(--vtx-border);
+  background: color-mix(in srgb, var(--vtx-surface-2) 84%, transparent);
+  backdrop-filter: blur(24px);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+}
+
+.vtx-btn-primary {
+  border-radius: 1rem;
+  font-weight: 500;
+  color: #04060f;
+  background-image: linear-gradient(to right, var(--vtx-primary), var(--vtx-accent));
+  transition: transform 180ms ease, box-shadow 220ms ease, opacity 180ms ease;
+}
+
+.vtx-btn-primary:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 25px -4px rgba(20, 245, 179, 0.7);
+}
+
+.vtx-btn-primary:active {
+  transform: scale(0.95);
+}
+
+.vtx-btn-ghost {
+  border-radius: 1rem;
+  font-weight: 500;
+  border: 1px solid var(--vtx-border);
+  background: rgba(255, 255, 255, 0.02);
+  transition: transform 180ms ease, border-color 180ms ease, background-color 180ms ease;
+}
+
+.vtx-btn-ghost:hover {
+  transform: scale(1.03);
+  border-color: rgba(20, 245, 179, 0.45);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.vtx-grid-bg {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 36px 36px;
+  background-position: center;
+}
+
+:focus-visible {
+  outline: 2px solid rgba(20, 245, 179, 0.85);
+  outline-offset: 2px;
 }

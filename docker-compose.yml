@@ -1,0 +1,40 @@
+version: '3.9'
+
+services:
+  api:
+    build: .
+    container_name: valutex-api
+    ports:
+      - "3000:3000"      # Backend API
+      - "5173:5173"      # Vite dev server (if serving frontend separately)
+    env_file:
+      - .env.local
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - ./contracts:/app/contracts
+    depends_on:
+      - anvil
+    environment:
+      - NODE_ENV=development
+      - ANVIL_RPC_URL=http://anvil:8545
+    command: npm run dev
+
+  anvil:
+    image: ghcr.io/foundry-rs/foundry:latest
+    container_name: valutex-anvil
+    ports:
+      - "8545:8545"
+    command: >
+      anvil --host 0.0.0.0 
+            --block-time 1 
+            --silent
+            --mnemonic "test test test test test test test test test test test junk"
+
+  # Optional: Production frontend only (Nginx)
+  # frontend:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.frontend
+  #   ports:
+  #     - "8080:80"

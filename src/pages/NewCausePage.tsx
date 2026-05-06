@@ -32,17 +32,17 @@ export function NewCausePage() {
   }
 
   return (
-    <div className="mx-auto max-w-lg px-4 py-10">
-      <h1 className="text-2xl font-bold text-white">New cause</h1>
+    <div className="mx-auto max-w-lg space-y-4 pb-10">
+      <h1 className="font-space-grotesk text-4xl font-bold tracking-[-0.02em]">New cause</h1>
       <p className="mt-2 text-sm text-zinc-500">Like GoFundMe — goal and raised update from donations.</p>
-      <form onSubmit={(e) => void submit(e)} className="mt-8 space-y-4">
+      <form onSubmit={(e) => void submit(e)} className="vtx-card mt-8 space-y-4 p-6">
         <div>
           <label className="text-xs uppercase tracking-wider text-zinc-500">Title</label>
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
-            className="mt-1 w-full rounded-lg border border-white/10 bg-black/40 px-4 py-3 text-white"
+            className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white"
           />
         </div>
         <div>
@@ -52,7 +52,7 @@ export function NewCausePage() {
             onChange={(e) => setDescription(e.target.value)}
             required
             rows={4}
-            className="mt-1 w-full rounded-lg border border-white/10 bg-black/40 px-4 py-3 text-white"
+            className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white"
           />
         </div>
         <div>
@@ -64,14 +64,14 @@ export function NewCausePage() {
             value={goalEth}
             onChange={(e) => setGoalEth(e.target.value)}
             required
-            className="mt-1 w-full rounded-lg border border-white/10 bg-black/40 px-4 py-3 font-mono text-white"
+            className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 font-space-mono text-white"
           />
         </div>
         {err && <p className="text-sm text-rose-400">{err}</p>}
         <button
           type="submit"
           disabled={busy}
-          className="w-full rounded-xl bg-cyan-400 py-3 font-semibold text-black disabled:opacity-50"
+          className="vtx-btn-primary w-full py-3 disabled:opacity-50"
         >
           {busy ? 'Creating…' : 'Create cause'}
         </button>

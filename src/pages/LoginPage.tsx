@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { PrivyLoginPanel } from '../components/PrivyLoginPanel';
 import { useAuth } from '../context/AuthContext';
+
+const HAS_PRIVY = Boolean(import.meta.env.VITE_PRIVY_APP_ID?.trim());
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -25,8 +28,14 @@ export function LoginPage() {
   }
 
   return (
-    <div className="mx-auto max-w-md px-4 py-16">
-      <h1 className="text-2xl font-bold text-white">Sign in</h1>
+    <div className="mx-auto max-w-md space-y-4 pb-10">
+      <h1 className="font-space-grotesk text-4xl font-bold tracking-[-0.02em]">Wallet Access</h1>
+      {HAS_PRIVY ? <PrivyLoginPanel /> : null}
+
+      {!HAS_PRIVY ? null : (
+        <p className="mt-8 text-xs font-semibold uppercase tracking-wider text-zinc-500">Or legacy</p>
+      )}
+
       <p className="mt-2 text-sm text-zinc-500">
         Admin: <span className="text-zinc-400">admin@vaultex.local</span> — Donors:{' '}
         <span className="text-zinc-400">haha@</span>,{' '}
@@ -34,7 +43,7 @@ export function LoginPage() {
         <span className="text-zinc-400">tasin@</span>
         vaultex.local — password <code className="text-cyan-400">demo123</code>
       </p>
-      <form onSubmit={(e) => void onSubmit(e)} className="mt-8 space-y-4">
+      <form onSubmit={(e) => void onSubmit(e)} className="vtx-card space-y-4 p-6">
         <div>
           <label className="block text-xs font-medium uppercase tracking-wider text-zinc-500">
             Email
@@ -43,7 +52,7 @@ export function LoginPage() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-white/10 bg-black/40 px-4 py-3 text-white outline-none focus:border-cyan-500/50"
+            className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none focus:border-[#14F5B3]/50"
             autoComplete="username"
           />
         </div>
@@ -55,7 +64,7 @@ export function LoginPage() {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-white/10 bg-black/40 px-4 py-3 text-white outline-none focus:border-cyan-500/50"
+            className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none focus:border-[#14F5B3]/50"
             autoComplete="current-password"
           />
         </div>
@@ -63,7 +72,7 @@ export function LoginPage() {
         <button
           type="submit"
           disabled={busy}
-          className="w-full rounded-xl bg-cyan-400 py-3 text-sm font-semibold text-black disabled:opacity-50"
+          className="vtx-btn-primary w-full py-3 text-sm disabled:opacity-50"
         >
           {busy ? 'Signing in…' : 'Sign in'}
         </button>

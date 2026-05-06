@@ -1,8 +1,10 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { PrivySessionEffects } from './components/PrivySessionEffects';
 import { AuthProvider } from './context/AuthContext';
 import { Layout } from './components/Layout';
 import { RequireAdmin } from './components/RequireAdmin';
 import { HomePage } from './pages/HomePage';
+import { DashboardPage } from './pages/DashboardPage';
 import { LoginPage } from './pages/LoginPage';
 import { CausesPage } from './pages/CausesPage';
 import { CauseDetailPage } from './pages/CauseDetailPage';
@@ -16,9 +18,11 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        {import.meta.env.VITE_PRIVY_APP_ID ? <PrivySessionEffects /> : null}
         <Routes>
           <Route element={<Layout />}>
             <Route path="/" element={<HomePage />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/causes" element={<CausesPage />} />

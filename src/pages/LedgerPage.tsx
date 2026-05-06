@@ -1,12 +1,15 @@
 import { useState, useEffect, useRef, useLayoutEffect, useMemo, useCallback } from 'react';
+import { motion } from 'framer-motion';
+import { Download } from 'lucide-react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import {
   loadDonationLedger,
   type DonationLedgerEntry,
   type DonationLedgerKind,
 } from '../lib/donationLedger';
+import { apiJson } from '../lib/api';
 
-const ACCENT = '#00f0ff';
+const ACCENT = '#14F5B3';
 const ROW_HEIGHT = 108;
 const STICK_BOTTOM_THRESHOLD = 80;
 const POLL_MS = 4000;
@@ -37,6 +40,10 @@ export function LedgerPage() {
   const [entries, setEntries] = useState<DonationLedgerEntry[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>('all');
+  const [vaultInfo, setVaultInfo] = useState<{
+    contractAddress: string | null;
+    balanceEth: string | null;
+  } | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const stickToBottomRef = useRef(true);
@@ -58,11 +65,18 @@ export function LedgerPage() {
     return () => clearInterval(t);
   }, [refresh]);
 
+  useEffect(() => {
+    apiJson<{ contractAddress: string | null; balanceEth: string | null }>('/vault')
+      .then(setVaultInfo)
+      .catch(() => setVaultInfo(null));
+  }, []);
+
   const filtered = useMemo(() => {
     if (tab === 'all') return entries;
     return entries.filter((e) => e.kind === tab);
   }, [entries, tab]);
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const rowVirtualizer = useVirtualizer({
     count: filtered.length,
     getScrollElement: () => scrollRef.current,
@@ -97,20 +111,45 @@ export function LedgerPage() {
     return { inEth, outEth };
   }, [entries]);
 
+  const appNet = totals.inEth - totals.outEth;
+  const onChainVault = vaultInfo?.balanceEth != null ? parseFloat(vaultInfo.balanceEth) : null;
+  const diff = onChainVault == null ? null : onChainVault - appNet;
+
+  const exportCsv = useCallback(() => {
+    const lines = ['kind,from,to,amountEth,cause,txHash,recordedAt'];
+    for (const e of filtered) {
+      lines.push(
+        [
+          e.kind,
+          `"${e.fromDisplayName}"`,
+          `"${e.toDisplayName}"`,
+          e.amountEth,
+          `"${e.causeName ?? ''}"`,
+          e.txHash,
+          e.recordedAt,
+        ].join(',')
+      );
+    }
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'valutex-ledger.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [filtered]);
+
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10 text-left">
+    <div className="space-y-6 pb-10 text-left">
       <p className="text-xs font-semibold uppercase tracking-[0.2em]" style={{ color: ACCENT }}>
         On-chain + database
       </p>
-      <h1 className="mt-2 text-3xl font-bold text-white">Transparency ledger</h1>
-      <p className="mt-2 text-sm text-zinc-400">
+      <h1 className="font-space-grotesk text-4xl font-bold tracking-[-0.02em]">Transparency ledger</h1>
+      <p className="text-sm text-zinc-400">
         Pulled from SQLite (app writes + Anvil watcher). Refreshes every few seconds.
       </p>
 
-      <div
-        className="mt-6 rounded-2xl border border-white/10 bg-white/[0.04] p-5 backdrop-blur-xl"
-        style={{ boxShadow: `0 0 0 1px ${ACCENT}14 inset` }}
-      >
+      <div className="vtx-card p-5">
         <p className="text-xs font-medium uppercase tracking-widest text-zinc-500">Totals (loaded window)</p>
         <div className="mt-3 flex flex-wrap gap-6">
           <p className="text-2xl font-semibold tabular-nums text-white">
@@ -122,14 +161,30 @@ export function LedgerPage() {
             <span className="text-base font-normal text-zinc-500">ETH out</span>
           </p>
         </div>
+        <div className="mt-4 border-t border-white/10 pt-4 text-xs text-zinc-400">
+          <p>App net flow: {appNet.toFixed(4)} ETH</p>
+          <p>On-chain vault: {onChainVault == null ? 'Unavailable' : `${onChainVault.toFixed(4)} ETH`}</p>
+          <p>
+            Difference:{' '}
+            {diff == null ? 'Unavailable' : `${diff >= 0 ? '+' : ''}${diff.toFixed(4)} ETH`}
+          </p>
+          {vaultInfo?.contractAddress && (
+            <p className="font-mono text-zinc-500">Vault contract: {vaultInfo.contractAddress}</p>
+          )}
+        </div>
       </div>
 
-      <div
-        className="mt-6 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] shadow-2xl backdrop-blur-2xl"
-        style={{ boxShadow: `0 25px 80px -20px #000, 0 0 0 1px ${ACCENT}12 inset` }}
-      >
+      <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] shadow-2xl backdrop-blur-2xl">
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 px-4 py-4 sm:px-6">
           <h2 className="text-lg font-semibold text-white">Activity</h2>
+          <button
+            type="button"
+            onClick={exportCsv}
+            className="vtx-btn-ghost inline-flex items-center gap-2 px-3 py-2 text-xs text-white"
+          >
+            <Download className="h-4 w-4" />
+            Export CSV
+          </button>
           <nav className="flex rounded-full border border-white/10 bg-black/30 p-1 text-xs font-medium">
             {(
               [
@@ -174,7 +229,7 @@ export function LedgerPage() {
                 const entry = filtered[vi.index];
                 const incoming = entry.kind === 'donation_in';
                 return (
-                  <div
+                  <motion.div
                     key={entry.id + entry.txHash}
                     style={{
                       position: 'absolute',
@@ -185,6 +240,9 @@ export function LedgerPage() {
                       transform: `translateY(${vi.start}px)`,
                     }}
                     className="border-b border-white/[0.06] px-4 py-4 transition-colors hover:bg-white/[0.03] sm:px-6"
+                    initial={{ opacity: 0, x: 24 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.25, delay: Math.min(vi.index * 0.02, 0.4) }}
                   >
                     <div className="flex gap-4">
                       <div
@@ -238,7 +296,7 @@ export function LedgerPage() {
                         </p>
                       </div>
                     </div>
-                  </div>
+                  </motion.div>
                 );
               })}
             </div>

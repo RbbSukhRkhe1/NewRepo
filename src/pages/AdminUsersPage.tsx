@@ -22,18 +22,18 @@ export function AdminUsersPage() {
   }, []);
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10">
+    <div className="space-y-6 pb-10">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold text-white">Users &amp; wallets</h1>
+        <h1 className="font-space-grotesk text-4xl font-bold tracking-[-0.02em]">Users &amp; wallets</h1>
         <Link
           to="/admin/users/new"
-          className="rounded-xl bg-cyan-400 px-4 py-2 text-sm font-semibold text-black"
+          className="vtx-btn-primary px-4 py-2 text-sm"
         >
           Add donor (pool slot + 100 ETH)
         </Link>
       </div>
       {err && <p className="mt-4 text-rose-400">{err}</p>}
-      <div className="mt-8 overflow-x-auto rounded-xl border border-white/10">
+      <div className="vtx-card mt-2 overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead className="border-b border-white/10 bg-white/[0.04] text-xs uppercase tracking-wider text-zinc-500">
             <tr>

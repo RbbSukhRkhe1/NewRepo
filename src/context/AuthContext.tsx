@@ -9,6 +9,8 @@ export type AuthUser = {
   anvilIndex: number | null;
   address: string | null;
   addressMasked: string | null;
+  embeddedWallet?: string | null;
+  embeddedWalletMasked?: string | null;
 };
 
 type AuthState = {
@@ -60,6 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth(): AuthState {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error('useAuth outside AuthProvider');
