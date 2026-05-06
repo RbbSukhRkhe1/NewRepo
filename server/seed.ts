@@ -1,7 +1,8 @@
 import bcrypt from 'bcryptjs';
 import { db } from './db.js';
 import {
-  ADMIN_INDICES,
+  VAULTEX_ADMIN_INDEX,
+  SEEDED_DONOR_INDICES,
   BENEFICIARY_INDICES,
   SUPER_RICH_INDEX,
   anvilAddress,
@@ -19,13 +20,15 @@ export function seedIfEmpty(): void {
     `INSERT INTO users (name, email, password_hash, role, anvil_index) VALUES (?,?,?,?,?)`
   );
 
-  const admins = [
-    { name: 'Haha', email: 'haha@letsdonate.local', idx: ADMIN_INDICES[0] },
-    { name: 'Sukhan', email: 'sukhan@letsdonate.local', idx: ADMIN_INDICES[1] },
-    { name: 'Tasin', email: 'tasin@letsdonate.local', idx: ADMIN_INDICES[2] },
+  ins.run('Vaultex', 'admin@vaultex.local', hash, 'admin', VAULTEX_ADMIN_INDEX);
+
+  const donors = [
+    { name: 'Haha', email: 'haha@vaultex.local', idx: SEEDED_DONOR_INDICES[0] },
+    { name: 'Sukhan', email: 'sukhan@vaultex.local', idx: SEEDED_DONOR_INDICES[1] },
+    { name: 'Tasin', email: 'tasin@vaultex.local', idx: SEEDED_DONOR_INDICES[2] },
   ];
-  for (const a of admins) {
-    ins.run(a.name, a.email, hash, 'admin', a.idx);
+  for (const d of donors) {
+    ins.run(d.name, d.email, hash, 'donor', d.idx);
   }
 
   const beneficiaries = [
@@ -53,7 +56,7 @@ export function seedIfEmpty(): void {
     0
   );
 
-  console.log('[seed] Seeded admins + beneficiaries + sample causes.');
-  console.log('[seed] Donation vault (Anvil #0):', anvilAddress(SUPER_RICH_INDEX));
+  console.log('[seed] Seeded Vaultex admin + donors + beneficiaries + sample causes.');
+  console.log('[seed] Vaultex vault (Anvil #0):', anvilAddress(SUPER_RICH_INDEX));
   console.log('[seed] Login with any seeded email; password:', DEMO_PASSWORD);
 }

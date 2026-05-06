@@ -19,10 +19,10 @@ type JourneyStep = 0 | 1 | 2;
 
 const startSteps = [
   {
-    title: '1) Sign in',
-    body: 'Use a seeded account to unlock donor/admin flows.',
-    to: '/login',
-    cta: 'Open sign in',
+    title: '1) Register or sign in',
+    body: 'Create a donor or beneficiary account, or sign in with an existing one.',
+    to: '/register',
+    cta: 'Register',
   },
   {
     title: '2) Donate',
@@ -106,7 +106,7 @@ export function HomePage() {
           Transparent giving
         </p>
         <h1 className="mt-4 text-balance text-3xl font-bold tracking-tight text-white sm:text-4xl md:text-5xl">
-          Let&apos;s donate in Web3
+          Donate transparently with Vaultex
         </h1>
         <p className="mx-auto mt-6 max-w-xl text-pretty text-sm leading-relaxed text-zinc-400 sm:text-base">
           Pick a cause, send ETH from your assigned test wallet on Anvil, and watch every transfer

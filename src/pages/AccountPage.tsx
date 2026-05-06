@@ -274,7 +274,7 @@ export function AccountPage() {
         >
           <h2 className="text-lg font-semibold text-amber-200">Disburse from vault</h2>
           <p className="mt-1 text-xs text-zinc-500">
-            Sends ETH from Super Rich (#0) to a beneficiary wallet. Logged as disbursement.
+            Sends ETH from Vaultex vault (#0) to a beneficiary wallet. Logged as disbursement.
           </p>
           <div className="mt-4 space-y-3">
             <select

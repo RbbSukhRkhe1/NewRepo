@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 export function LoginPage() {
   const { login } = useAuth();
   const nav = useNavigate();
-  const [email, setEmail] = useState('haha@letsdonate.local');
+  const [email, setEmail] = useState('admin@vaultex.local');
   const [password, setPassword] = useState('demo123');
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -28,10 +28,11 @@ export function LoginPage() {
     <div className="mx-auto max-w-md px-4 py-16">
       <h1 className="text-2xl font-bold text-white">Sign in</h1>
       <p className="mt-2 text-sm text-zinc-500">
-        Seeded admins: <span className="text-zinc-400">haha@</span>,{' '}
+        Admin: <span className="text-zinc-400">admin@vaultex.local</span> — Donors:{' '}
+        <span className="text-zinc-400">haha@</span>,{' '}
         <span className="text-zinc-400">sukhan@</span>,{' '}
         <span className="text-zinc-400">tasin@</span>
-        letsdonate.local — password <code className="text-cyan-400">demo123</code>
+        vaultex.local — password <code className="text-cyan-400">demo123</code>
       </p>
       <form onSubmit={(e) => void onSubmit(e)} className="mt-8 space-y-4">
         <div>
@@ -68,6 +69,12 @@ export function LoginPage() {
         </button>
       </form>
       <p className="mt-6 text-center text-sm text-zinc-500">
+        Don&apos;t have an account?{' '}
+        <Link to="/register" className="text-cyan-400 hover:underline">
+          Register
+        </Link>
+      </p>
+      <p className="mt-3 text-center text-sm text-zinc-500">
         <Link to="/" className="text-cyan-400 hover:underline">
           Back home
         </Link>

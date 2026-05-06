@@ -24,7 +24,7 @@ export function Layout() {
       <header className="sticky top-0 z-50 border-b border-white/10 bg-[#06080f]/90 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-4">
           <Link to="/" className="text-lg font-bold tracking-tight text-white">
-            Let&apos;s Donate <span style={{ color: ACCENT }}>Web3</span>
+            <span style={{ color: ACCENT }}>Vaultex</span>
           </Link>
           <nav className="flex flex-wrap items-center gap-1">
             {link('/', 'Home')}
@@ -32,8 +32,8 @@ export function Layout() {
             {link('/ledger', 'Ledger')}
             {link('/account', 'Account')}
             {user?.role === 'admin' && link('/admin/users', 'Users')}
-            {user?.role === 'admin' && link('/admin/users/new', 'New user')}
             {user?.role === 'admin' && link('/admin/causes/new', 'New cause')}
+            {!user && link('/register', 'Register')}
             {!user && link('/login', 'Sign in')}
             {user && (
               <button

@@ -10,7 +10,7 @@ export function maskAddr(addr: string): string {
 /** Address (lowercase) -> short display name */
 export function buildAddressBook(): Map<string, string> {
   const m = new Map<string, string>();
-  m.set(anvilAddress(SUPER_RICH_INDEX).toLowerCase(), 'Super Rich vault');
+  m.set(anvilAddress(SUPER_RICH_INDEX).toLowerCase(), 'Vaultex');
   const rows = db
     .prepare(
       `SELECT anvil_index, name FROM users WHERE anvil_index IS NOT NULL`

@@ -5,10 +5,10 @@ const ANVIL_MNEMONIC =
   'test test test test test test test test test test test junk';
 
 export const SUPER_RICH_INDEX = 0;
-/** Haha, Sukhan, Tasin */
-export const ADMIN_INDICES = [1, 2, 3] as const;
-/** Assigned when admins create donors via API */
-export const NEW_USER_POOL_INDICES = [4, 5, 6] as const;
+/** Single Vaultex admin wallet */
+export const VAULTEX_ADMIN_INDEX = 1;
+/** Seeded donor wallets: Haha, Sukhan, Tasin */
+export const SEEDED_DONOR_INDICES = [2, 3, 4] as const;
 export const BENEFICIARY_INDICES = [7, 8, 9] as const;
 
 export function anvilWallet(index: number): HDNodeWallet {

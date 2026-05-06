@@ -8,7 +8,7 @@ import { CausesPage } from './pages/CausesPage';
 import { CauseDetailPage } from './pages/CauseDetailPage';
 import { NewCausePage } from './pages/NewCausePage';
 import { AdminUsersPage } from './pages/AdminUsersPage';
-import { NewUserPage } from './pages/NewUserPage';
+import { RegisterPage } from './pages/RegisterPage';
 import { AccountPage } from './pages/AccountPage';
 import { LedgerPage } from './pages/LedgerPage';
 
@@ -20,6 +20,7 @@ function App() {
           <Route element={<Layout />}>
             <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
             <Route path="/causes" element={<CausesPage />} />
             <Route path="/causes/:id" element={<CauseDetailPage />} />
             <Route path="/ledger" element={<LedgerPage />} />
@@ -29,14 +30,6 @@ function App() {
               element={
                 <RequireAdmin>
                   <AdminUsersPage />
-                </RequireAdmin>
-              }
-            />
-            <Route
-              path="/admin/users/new"
-              element={
-                <RequireAdmin>
-                  <NewUserPage />
                 </RequireAdmin>
               }
             />

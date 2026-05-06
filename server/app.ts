@@ -6,7 +6,6 @@ import { ethers } from 'ethers';
 import { db } from './db.js';
 import {
   SUPER_RICH_INDEX,
-  NEW_USER_POOL_INDICES,
   connectWallet,
   anvilAddress,
 } from './anvil.js';
@@ -98,7 +97,7 @@ export function createApp() {
   app.use(
     cookieSession({
       name: 'session',
-      keys: [process.env.SESSION_SECRET || 'lets-donate-dev-secret-key'],
+      keys: [process.env.SESSION_SECRET || 'vaultex-dev-secret-key'],
       maxAge: 7 * 24 * 3600 * 1000,
       sameSite: 'lax',
       httpOnly: true,
@@ -111,7 +110,6 @@ export function createApp() {
     res.json({
       superRichAddress: anvilAddress(SUPER_RICH_INDEX),
       superRichMasked: maskAddr(anvilAddress(SUPER_RICH_INDEX)),
-      newUserPoolSize: NEW_USER_POOL_INDICES.length,
     });
   });
 
@@ -200,6 +198,63 @@ export function createApp() {
     res.json({ ok: true });
   });
 
+  api.post('/auth/register', async (req, res) => {
+    const { name, email, password, role } = req.body as {
+      name?: string;
+      email?: string;
+      password?: string;
+      role?: string;
+    };
+    if (!name?.trim() || !email?.trim() || !password?.trim()) {
+      return res.status(400).json({ error: 'name, email, and password required' });
+    }
+    if (role !== 'donor' && role !== 'beneficiary') {
+      return res.status(400).json({ error: 'role must be donor or beneficiary' });
+    }
+    const em = email.trim().toLowerCase();
+    const hash = bcrypt.hashSync(password.trim(), 10);
+
+    const usedRows = db
+      .prepare('SELECT anvil_index FROM users WHERE anvil_index IS NOT NULL')
+      .all() as { anvil_index: number }[];
+    const usedSet = new Set(usedRows.map((r) => r.anvil_index));
+    let nextIdx = 10;
+    while (usedSet.has(nextIdx)) nextIdx++;
+
+    try {
+      const r = db
+        .prepare(
+          `INSERT INTO users (name, email, password_hash, role, anvil_index) VALUES (?,?,?,?,?)`
+        )
+        .run(name.trim(), em, hash, role, nextIdx);
+      const id = Number(r.lastInsertRowid);
+
+      const provider = rpcProvider();
+      const signer = connectWallet(SUPER_RICH_INDEX, provider);
+      const to = anvilAddress(nextIdx);
+      const tx = await signer.sendTransaction({
+        to,
+        value: ethers.parseEther('100'),
+      });
+      await tx.wait();
+
+      res.status(201).json({
+        id,
+        name: name.trim(),
+        email: em,
+        role,
+        anvilIndex: nextIdx,
+        address: to,
+        fundTxHash: tx.hash,
+      });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Registration failed';
+      if (String(msg).includes('UNIQUE')) return res.status(409).json({ error: 'Email already in use' });
+      console.error(e);
+      res.status(500).json({ error: msg });
+    }
+  });
+
   api.get('/auth/me', (req, res) => {
     const u = getUser(req);
     if (!u) return res.json({ user: null });
@@ -232,59 +287,6 @@ export function createApp() {
     );
   });
 
-  api.post('/users', requireAuth, requireAdmin, async (req, res) => {
-    const { name, email, password } = req.body as {
-      name?: string;
-      email?: string;
-      password?: string;
-    };
-    if (!name?.trim() || !email?.trim()) {
-      return res.status(400).json({ error: 'name and email required' });
-    }
-    const used = db
-      .prepare(`SELECT anvil_index FROM users WHERE anvil_index IN (?,?,?)`)
-      .all(NEW_USER_POOL_INDICES[0], NEW_USER_POOL_INDICES[1], NEW_USER_POOL_INDICES[2]) as {
-      anvil_index: number;
-    }[];
-    const taken = new Set(used.map((r) => r.anvil_index));
-    const freeIdx = NEW_USER_POOL_INDICES.find((i) => !taken.has(i));
-    if (freeIdx == null) {
-      return res.status(409).json({ error: 'No free donor slots (pool 4–6 full). Increase pool in code.' });
-    }
-    const pwd = password?.trim() || 'demo123';
-    const hash = bcrypt.hashSync(pwd, 10);
-    const em = email.trim().toLowerCase();
-    try {
-      const r = db
-        .prepare(
-          `INSERT INTO users (name, email, password_hash, role, anvil_index) VALUES (?,?,?,?,?)`
-        )
-        .run(name.trim(), em, hash, 'donor', freeIdx);
-      const id = Number(r.lastInsertRowid);
-      const provider = rpcProvider();
-      const signer = connectWallet(SUPER_RICH_INDEX, provider);
-      const to = anvilAddress(freeIdx);
-      const tx = await signer.sendTransaction({
-        to,
-        value: ethers.parseEther('100'),
-      });
-      await tx.wait();
-      res.status(201).json({
-        id,
-        name: name.trim(),
-        email: em,
-        role: 'donor',
-        anvilIndex: freeIdx,
-        address: to,
-        fundTxHash: tx.hash,
-      });
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'create failed';
-      if (String(msg).includes('UNIQUE')) return res.status(409).json({ error: 'Email already used' });
-      console.error(e);
-      res.status(500).json({ error: msg });
-    }
-  });
 
   api.get('/causes/:id', (req, res) => {
     const row = db
@@ -388,7 +390,7 @@ export function createApp() {
         'donation_in',
         cause.id,
         u.name,
-        'Super Rich vault',
+        'Vaultex',
         cause.title
       );
       db.prepare(`UPDATE causes SET raised_eth = raised_eth + ? WHERE id = ?`).run(
@@ -452,7 +454,7 @@ export function createApp() {
         valueEthStr,
         'disbursement_out',
         null,
-        'Super Rich vault',
+        'Vaultex',
         beneficiary.name,
         cn
       );
