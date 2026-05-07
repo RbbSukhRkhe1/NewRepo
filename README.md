@@ -1,74 +1,97 @@
-# React + TypeScript + Vite
+# Vaultex (live-tx-ledger)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Monorepo with separate folders for the **web app**, **API**, and **smart contracts** so each part can be developed independently.
 
-Currently, two official plugins are available:
+| Folder | Contents |
+|--------|----------|
+| `frontend/` | React + TypeScript + Vite |
+| `backend/` | Express API (`server/`), SQLite data under `server/data/` |
+| `blockchain/` | Foundry project (Solidity, `lib/`, build artifacts) |
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+---
 
-## React Compiler
+## Prerequisites
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Node.js** 20+ (LTS recommended) and **npm**
+- **Optional:** [Foundry](https://book.getfoundry.sh/getting-started/installation) to compile or deploy contracts under `blockchain/`
+- **Optional:** a local chain such as [Anvil](https://book.getfoundry.sh/reference/anvil/) on `http://127.0.0.1:8545` if you use on-chain features (the API defaults to that RPC/WebSocket)
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Install
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+From the **repository root** (`NewRepo/`):
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+This uses npm workspaces and installs dependencies for **frontend** and **backend** in one go.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+---
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Run the app (recommended)
+
+Start **API + Vite** together (API on port **3847**, Vite proxies `/api` to it):
+
+```bash
+npm run dev
 ```
-HAhHAHAHAHAHHAH
+
+Then open the URL printed by Vite (usually **http://localhost:5173**).
+
+---
+
+## Run services separately
+
+| Goal | Command (from repo root) |
+|------|---------------------------|
+| Frontend only | `npm run dev:web` |
+| Backend only | `npm run dev:api` |
+
+The Vite dev server proxies `/api/*` to `http://127.0.0.1:3847`, so for full UI behavior you normally run the backend too (or use `npm run dev`).
+
+---
+
+## Environment variables (backend)
+
+Set these only if you need non-defaults (e.g. production):
+
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `PORT` | HTTP port for the API | `3847` |
+| `SQLITE_PATH` | SQLite database file path | `backend/server/data/donate.db` (relative to server code) |
+| `ANVIL_RPC_URL` | JSON-RPC for the chain | `http://127.0.0.1:8545` |
+| `ANVIL_WS_URL` | WebSocket URL for logs (optional) | Derived from `ANVIL_RPC_URL` |
+| `SESSION_SECRET` | Cookie session signing | dev placeholder if unset |
+
+You can use a `.env` file in **`backend/`** (loaded by `dotenv` when the API starts).
+
+---
+
+## Other scripts (from repo root)
+
+| Script | What it does |
+|--------|----------------|
+| `npm run build` | Production build of the frontend → `frontend/dist` |
+| `npm run preview` | Serve the production build locally |
+| `npm run lint` | ESLint on `frontend/` |
+
+---
+
+## Blockchain (contracts)
+
+Work inside **`blockchain/`**. Typical Foundry commands (when your `foundry.toml` and sources are set up):
+
+```bash
+cd blockchain
+forge build
+forge test
+```
+
+---
+
+## Troubleshooting
+
+- **`better-sqlite3` install errors:** Use a supported Node version; on Windows you may need build tools for native addons.
+- **API connection errors in the browser:** Ensure the backend is running on port `3847`, or set `PORT` and update `frontend/vite.config.ts` proxy `target` to match.
