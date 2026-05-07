@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiJson } from '../lib/api';
+import { PrimaryButton, SectionHeader, SurfaceCard } from '../components/ui';
 
 export function NewCausePage() {
   const nav = useNavigate();
@@ -32,30 +33,29 @@ export function NewCausePage() {
   }
 
   return (
-    <div className="mx-auto max-w-lg px-4 py-10">
-      <h1 className="text-2xl font-bold text-white">New cause</h1>
-      <p className="mt-2 text-sm text-zinc-500">Like GoFundMe — goal and raised update from donations.</p>
+    <div className="vtx-page max-w-lg">
+      <SectionHeader title="New cause" body="Like GoFundMe - goal and raised update from donations." />
       <form onSubmit={(e) => void submit(e)} className="mt-8 space-y-4">
-        <div>
+        <SurfaceCard>
           <label className="text-xs uppercase tracking-wider text-zinc-500">Title</label>
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
-            className="mt-1 w-full rounded-lg border border-white/10 bg-black/40 px-4 py-3 text-white"
+            className="vtx-input mt-1 w-full px-4 py-3"
           />
-        </div>
-        <div>
+        </SurfaceCard>
+        <SurfaceCard>
           <label className="text-xs uppercase tracking-wider text-zinc-500">Description</label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             required
             rows={4}
-            className="mt-1 w-full rounded-lg border border-white/10 bg-black/40 px-4 py-3 text-white"
+            className="vtx-input mt-1 w-full px-4 py-3"
           />
-        </div>
-        <div>
+        </SurfaceCard>
+        <SurfaceCard>
           <label className="text-xs uppercase tracking-wider text-zinc-500">Goal (ETH)</label>
           <input
             type="number"
@@ -64,17 +64,13 @@ export function NewCausePage() {
             value={goalEth}
             onChange={(e) => setGoalEth(e.target.value)}
             required
-            className="mt-1 w-full rounded-lg border border-white/10 bg-black/40 px-4 py-3 font-mono text-white"
+            className="vtx-input mt-1 w-full px-4 py-3 font-mono"
           />
-        </div>
+        </SurfaceCard>
         {err && <p className="text-sm text-rose-400">{err}</p>}
-        <button
-          type="submit"
-          disabled={busy}
-          className="w-full rounded-xl bg-cyan-400 py-3 font-semibold text-black disabled:opacity-50"
-        >
+        <PrimaryButton type="submit" disabled={busy} className="w-full">
           {busy ? 'Creating…' : 'Create cause'}
-        </button>
+        </PrimaryButton>
       </form>
     </div>
   );

@@ -1,8 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { loadDonationLedger, type DonationLedgerEntry } from '../lib/donationLedger';
-
-const ACCENT = '#22c55e';
+import {
+  EyebrowLabel,
+  PrimaryLinkButton,
+  SecondaryLinkButton,
+  SectionHeader,
+  SurfaceCard,
+} from '../components/ui';
 
 type Overview = {
   vault: { addressMasked: string; balanceEth: string | null };
@@ -47,6 +52,17 @@ function formatEth(v: string): string {
   const n = Number.parseFloat(v);
   if (!Number.isFinite(n)) return v;
   return n.toFixed(4);
+}
+
+function timeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const s = Math.max(0, Math.floor(diff / 1000));
+  if (s < 60) return `${s}s ago`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
 }
 
 export function HomePage() {
@@ -102,52 +118,43 @@ export function HomePage() {
       <div className="absolute inset-0 z-0 min-h-full bg-black" />
 
       <div className="relative z-10 mx-auto w-full max-w-3xl px-4 pb-16 pt-12 text-center sm:pb-20 sm:pt-16 md:pt-20">
-        <p className="text-xs font-semibold uppercase tracking-[0.25em]" style={{ color: ACCENT }}>
-          Transparent giving
-        </p>
-        <h1 className="mt-4 text-balance text-3xl font-bold tracking-tight text-white sm:text-4xl md:text-5xl">
-          Donate transparently with Vaultex
-        </h1>
-        <p className="mx-auto mt-6 max-w-xl text-pretty text-sm leading-relaxed text-zinc-400 sm:text-base">
-          Pick a cause, send ETH from your assigned test wallet on Anvil, and watch every transfer
-          hit the public ledger. Built for a capstone: real txs, SQLite records, and a clear trail
-          from donors to the vault and out to beneficiary organisations.
-        </p>
+        <SectionHeader
+          eyebrow="Transparent giving"
+          title="Donate transparently with Vaultex"
+          body="Pick a cause, send ETH from your assigned test wallet on Anvil, and watch every transfer hit the public ledger. Built for a capstone: real txs, SQLite records, and a clear trail from donors to the vault and out to beneficiary organisations."
+        />
         <div className="mt-10 flex w-full flex-col items-center justify-center gap-3 sm:mx-auto sm:w-auto sm:flex-row sm:flex-wrap sm:gap-4">
-          <Link
-            to="/causes"
-            className="rounded-xl px-8 py-3 text-center text-sm font-semibold text-black transition-opacity hover:opacity-90"
-            style={{ backgroundColor: ACCENT }}
-          >
-            Browse causes
-          </Link>
-          <Link
-            to="/ledger"
-            className="rounded-xl border border-white/20 px-8 py-3 text-center text-sm font-medium text-white hover:bg-white/5"
-          >
-            View ledger
-          </Link>
+          <PrimaryLinkButton to="/causes" className="px-8">
+            Donate now
+          </PrimaryLinkButton>
+          <SecondaryLinkButton to="/ledger" className="px-8">
+            View the ledger
+          </SecondaryLinkButton>
         </div>
+        {latestDonation && (
+          <p className="mt-4 text-xs text-[var(--text-muted-1)]">
+            Live ledger updates every {Math.round(6000 / 1000)}s · Last donation {formatEth(latestDonation.amountEth)} ETH ·{' '}
+            {shortHash(latestDonation.txHash)} · {timeAgo(latestDonation.recordedAt)}
+          </p>
+        )}
         {vault && (
-          <p className="mt-12 break-all font-mono text-xs text-zinc-500 sm:break-normal">
-            Main vault (masked): <span className="text-zinc-400">{vault}</span>
+          <p className="mt-12 break-all font-mono text-xs text-[var(--text-muted-2)] sm:break-normal">
+            Main vault (masked): <span className="text-[var(--text-muted-1)]">{vault}</span>
           </p>
         )}
 
         <div className="mt-12 text-left">
-          <div className="rounded-3xl border border-white/[0.08] bg-gradient-to-b from-white/[0.06] via-white/[0.03] to-transparent p-5 shadow-[0_0_60px_rgba(34,211,238,0.12)] sm:p-6">
+          <SurfaceCard className="rounded-3xl border-[var(--border-chrome-2)] shadow-[0_0_60px_var(--fx-glow-accent-low)]">
             <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
               <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-[0.25em]" style={{ color: ACCENT }}>
-                  Donation journey
-                </p>
-                <h2 className="mt-2 text-balance text-xl font-semibold text-white sm:text-2xl">
-                  Follow a donation end‑to‑end
+                <EyebrowLabel>Donation journey</EyebrowLabel>
+                <h2 className="mt-2 text-balance text-xl font-semibold text-[var(--text-high-3)] sm:text-2xl">
+                  Follow a donation end-to-end
                 </h2>
-                <p className="mt-2 text-sm leading-relaxed text-zinc-400">
-                  This is the story users care about: <span className="text-white">who sent</span>,{' '}
-                  <span className="text-white">where it landed</span>, and{' '}
-                  <span className="text-white">when it reached a beneficiary</span>.
+                <p className="mt-2 text-sm leading-relaxed text-[var(--text-muted-1)]">
+                  This is the story users care about: <span className="text-[var(--text-high-3)]">who sent</span>,{' '}
+                  <span className="text-[var(--text-high-3)]">where it landed</span>, and{' '}
+                  <span className="text-[var(--text-high-3)]">when it reached a beneficiary</span>.
                 </p>
               </div>
 
@@ -165,8 +172,8 @@ export function HomePage() {
                     onClick={() => setJourneyStep(t.id)}
                     className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
                       journeyStep === t.id
-                        ? 'border-cyan-400/60 bg-cyan-400/15 text-cyan-200'
-                        : 'border-white/10 bg-white/[0.02] text-zinc-300 hover:bg-white/[0.05]'
+                        ? 'border-[var(--border-accent-soft)] bg-[color:rgb(34_197_94_/_0.14)] text-[var(--text-high-2)]'
+                        : 'border-[var(--border-chrome-1)] bg-[var(--overlay-surface-soft)] text-[var(--text-muted-1)] hover:bg-[color:rgb(255_255_255_/_0.08)]'
                     }`}
                   >
                     {t.label}
@@ -278,7 +285,7 @@ export function HomePage() {
                       <Link
                         to="/ledger"
                         className="rounded-lg px-3 py-2 text-xs font-semibold text-black"
-                        style={{ backgroundColor: ACCENT }}
+                        style={{ backgroundColor: 'var(--accent-core)' }}
                       >
                         Open ledger
                       </Link>
@@ -303,7 +310,7 @@ export function HomePage() {
                       <Link
                         to="/ledger"
                         className="rounded-lg px-3 py-2 text-xs font-semibold text-black"
-                        style={{ backgroundColor: ACCENT }}
+                        style={{ backgroundColor: 'var(--accent-core)' }}
                       >
                         See in ledger
                       </Link>
@@ -322,25 +329,28 @@ export function HomePage() {
                 )}
               </div>
             </div>
-          </div>
+          </SurfaceCard>
         </div>
       </div>
 
-      <section className="relative z-10 border-t border-white/[0.06] bg-black px-4 py-14 sm:py-20">
+      <section className="relative z-10 border-t border-[var(--border-chrome-1)] bg-black px-4 py-14 sm:py-20">
         <div className="mx-auto max-w-5xl">
-          <h2 className="text-center text-lg font-semibold text-white sm:text-xl">Start here</h2>
-          <p className="mx-auto mt-2 max-w-2xl text-center text-sm text-zinc-500">
+          <h2 className="text-center text-lg font-semibold text-[var(--text-high-3)] sm:text-xl">How it works</h2>
+          <p className="mx-auto mt-2 max-w-2xl text-center text-sm text-[var(--text-muted-1)]">
             Follow this flow for the fastest first-time experience.
           </p>
           <ul className="mt-8 grid list-none gap-4 md:grid-cols-3">
             {startSteps.map((step) => (
               <li
                 key={step.title}
-                className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5 text-left transition-transform duration-150 hover:-translate-y-0.5 hover:border-cyan-400/50"
+                className="vtx-surface reveal reveal--visible rounded-2xl p-5 text-left transition-transform duration-150 hover:-translate-y-0.5 hover:border-[var(--border-accent-soft)]"
               >
-                <p className="text-sm font-semibold text-white">{step.title}</p>
-                <p className="mt-2 text-sm text-zinc-400">{step.body}</p>
-                <Link to={step.to} className="mt-4 inline-block text-sm font-medium text-cyan-300 hover:text-cyan-200">
+                <p className="text-sm font-semibold text-[var(--text-high-3)]">{step.title}</p>
+                <p className="mt-2 text-sm text-[var(--text-muted-1)]">{step.body}</p>
+                <Link
+                  to={step.to}
+                  className="mt-4 inline-block text-sm font-medium text-[var(--accent-bright-2)] hover:text-[var(--accent-bright-3)]"
+                >
                   {step.cta} →
                 </Link>
               </li>

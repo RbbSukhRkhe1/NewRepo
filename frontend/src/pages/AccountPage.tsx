@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiJson } from '../lib/api';
 import { loadMeHistory, type MeHistoryResponse, type UserHistoryEntry } from '../lib/userHistory';
+import { PrimaryButton, PrimaryLinkButton, SectionHeader, SurfaceCard } from '../components/ui';
 
 type UserRow = {
   id: number;
@@ -205,9 +206,9 @@ export function AccountPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-10">
-      <h1 className="text-3xl font-bold text-white">Account</h1>
-      <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.03] p-6">
+    <div className="vtx-page max-w-2xl">
+      <SectionHeader title="Account" />
+      <SurfaceCard className="mt-8">
         <p className="text-sm text-zinc-500">Signed in as</p>
         <p className="text-xl font-semibold text-white">{user.name}</p>
         <p className="mt-1 text-sm text-zinc-400">{user.email}</p>
@@ -228,14 +229,11 @@ export function AccountPage() {
           </>
         )}
         {user.role === 'donor' && (
-          <Link
-            to="/causes"
-            className="mt-6 inline-block rounded-lg bg-cyan-400 px-4 py-2 text-sm font-semibold text-black"
-          >
+          <PrimaryLinkButton to="/causes" className="mt-6 px-4 py-2">
             Donate to a cause
-          </Link>
+          </PrimaryLinkButton>
         )}
-      </div>
+      </SurfaceCard>
 
       {user.anvilIndex != null && (
         <>
@@ -268,10 +266,7 @@ export function AccountPage() {
       )}
 
       {user.role === 'admin' && (
-        <form
-          onSubmit={(e) => void disburse(e)}
-          className="mt-8 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-6"
-        >
+        <form onSubmit={(e) => void disburse(e)} className="mt-8 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-6">
           <h2 className="text-lg font-semibold text-amber-200">Disburse from vault</h2>
           <p className="mt-1 text-xs text-zinc-500">
             Sends ETH from Vaultex vault (#0) to a beneficiary wallet. Logged as disbursement.
@@ -281,7 +276,7 @@ export function AccountPage() {
               value={beneficiaryId}
               onChange={(e) => setBeneficiaryId(e.target.value)}
               required
-              className="w-full rounded-lg border border-white/10 bg-black/40 px-4 py-3 text-white"
+              className="vtx-input w-full px-4 py-3"
             >
               <option value="">Select beneficiary</option>
               {beneficiaries.map((b) => (
@@ -295,24 +290,20 @@ export function AccountPage() {
               value={disburseAmount}
               onChange={(e) => setDisburseAmount(e.target.value)}
               placeholder="ETH amount"
-              className="w-full rounded-lg border border-white/10 bg-black/40 px-4 py-3 font-mono text-white"
+              className="vtx-input w-full px-4 py-3 font-mono"
             />
             <input
               type="text"
               value={causeNote}
               onChange={(e) => setCauseNote(e.target.value)}
               placeholder="Cause / memo"
-              className="w-full rounded-lg border border-white/10 bg-black/40 px-4 py-3 text-white"
+              className="vtx-input w-full px-4 py-3"
             />
           </div>
           {msg && <p className="mt-3 text-sm text-amber-200">{msg}</p>}
-          <button
-            type="submit"
-            disabled={busy || !beneficiaryId}
-            className="mt-4 rounded-xl bg-amber-500 px-6 py-2 text-sm font-semibold text-black disabled:opacity-50"
-          >
+          <PrimaryButton type="submit" disabled={busy || !beneficiaryId} className="mt-4 px-6 py-2">
             {busy ? 'Sending…' : 'Send to beneficiary'}
-          </button>
+          </PrimaryButton>
         </form>
       )}
     </div>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { apiJson } from '../lib/api';
+import { PrimaryLinkButton, SectionHeader, SurfaceCard } from '../components/ui';
 
 type Row = {
   id: number;
@@ -22,20 +22,17 @@ export function AdminUsersPage() {
   }, []);
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10">
+    <div className="vtx-page max-w-5xl">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold text-white">Users &amp; wallets</h1>
-        <Link
-          to="/admin/users/new"
-          className="rounded-xl bg-cyan-400 px-4 py-2 text-sm font-semibold text-black"
-        >
+        <SectionHeader title="Users & wallets" />
+        <PrimaryLinkButton to="/admin/users/new" className="px-4 py-2">
           Add donor (pool slot + 100 ETH)
-        </Link>
+        </PrimaryLinkButton>
       </div>
       {err && <p className="mt-4 text-rose-400">{err}</p>}
-      <div className="mt-8 overflow-x-auto rounded-xl border border-white/10">
+      <SurfaceCard className="mt-8 overflow-x-auto rounded-xl p-0">
         <table className="w-full text-left text-sm">
-          <thead className="border-b border-white/10 bg-white/[0.04] text-xs uppercase tracking-wider text-zinc-500">
+          <thead className="border-b border-[var(--border-chrome-2)] bg-[var(--surface-panel-overlay)] text-xs uppercase tracking-wider text-[var(--text-muted-1)]">
             <tr>
               <th className="px-4 py-3">Name</th>
               <th className="px-4 py-3">Email</th>
@@ -44,21 +41,21 @@ export function AdminUsersPage() {
               <th className="px-4 py-3">Address</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/5">
+          <tbody className="divide-y divide-[color:rgb(255_255_255_/_0.04)]">
             {rows.map((r) => (
-              <tr key={r.id} className="text-zinc-300">
-                <td className="px-4 py-3 font-medium text-white">{r.name}</td>
+              <tr key={r.id} className="text-[var(--text-muted-1)]">
+                <td className="px-4 py-3 font-medium text-[var(--text-high-3)]">{r.name}</td>
                 <td className="px-4 py-3">{r.email}</td>
                 <td className="px-4 py-3">{r.role}</td>
                 <td className="px-4 py-3 font-mono">{r.anvilIndex ?? '—'}</td>
-                <td className="px-4 py-3 font-mono text-xs text-zinc-500">
+                <td className="px-4 py-3 font-mono text-xs text-[var(--text-muted-2)]">
                   {r.addressMasked ?? '—'}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-      </div>
+      </SurfaceCard>
     </div>
   );
 }

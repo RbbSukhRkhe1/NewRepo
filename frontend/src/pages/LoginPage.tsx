@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { PrimaryButton, SectionHeader } from '../components/ui';
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -25,9 +26,9 @@ export function LoginPage() {
   }
 
   return (
-    <div className="mx-auto max-w-md px-4 py-16">
-      <h1 className="text-2xl font-bold text-white">Sign in</h1>
-      <p className="mt-2 text-sm text-zinc-500">
+    <div className="vtx-page max-w-md py-16">
+      <SectionHeader title="Sign in" />
+      <p className="mt-2 text-sm text-[var(--text-muted-1)]">
         Admin: <span className="text-zinc-400">admin@vaultex.local</span> — Donors:{' '}
         <span className="text-zinc-400">haha@</span>,{' '}
         <span className="text-zinc-400">sukhan@</span>,{' '}
@@ -43,7 +44,7 @@ export function LoginPage() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-white/10 bg-black/40 px-4 py-3 text-white outline-none focus:border-cyan-500/50"
+            className="vtx-input mt-1 w-full px-4 py-3 outline-none"
             autoComplete="username"
           />
         </div>
@@ -55,27 +56,23 @@ export function LoginPage() {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-white/10 bg-black/40 px-4 py-3 text-white outline-none focus:border-cyan-500/50"
+            className="vtx-input mt-1 w-full px-4 py-3 outline-none"
             autoComplete="current-password"
           />
         </div>
         {err && <p className="text-sm text-rose-400">{err}</p>}
-        <button
-          type="submit"
-          disabled={busy}
-          className="w-full rounded-xl bg-cyan-400 py-3 text-sm font-semibold text-black disabled:opacity-50"
-        >
+        <PrimaryButton type="submit" disabled={busy} className="w-full">
           {busy ? 'Signing in…' : 'Sign in'}
-        </button>
+        </PrimaryButton>
       </form>
-      <p className="mt-6 text-center text-sm text-zinc-500">
+      <p className="mt-6 text-center text-sm text-[var(--text-muted-1)]">
         Don&apos;t have an account?{' '}
-        <Link to="/register" className="text-cyan-400 hover:underline">
+        <Link to="/register" className="text-[var(--accent-bright-2)]">
           Register
         </Link>
       </p>
-      <p className="mt-3 text-center text-sm text-zinc-500">
-        <Link to="/" className="text-cyan-400 hover:underline">
+      <p className="mt-3 text-center text-sm text-[var(--text-muted-1)]">
+        <Link to="/" className="text-[var(--accent-bright-2)]">
           Back home
         </Link>
       </p>

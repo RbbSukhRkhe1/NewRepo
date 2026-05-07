@@ -5,8 +5,8 @@ import {
   type DonationLedgerEntry,
   type DonationLedgerKind,
 } from '../lib/donationLedger';
+import { EyebrowLabel, SectionHeader, SurfaceCard } from '../components/ui';
 
-const ACCENT = '#00f0ff';
 const ROW_HEIGHT = 108;
 const STICK_BOTTOM_THRESHOLD = 80;
 const POLL_MS = 4000;
@@ -100,19 +100,11 @@ export function LedgerPage() {
   }, [entries]);
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10 text-left">
-      <p className="text-xs font-semibold uppercase tracking-[0.2em]" style={{ color: ACCENT }}>
-        On-chain + database
-      </p>
-      <h1 className="mt-2 text-3xl font-bold text-white">Transparency ledger</h1>
-      <p className="mt-2 text-sm text-zinc-400">
-        Pulled from SQLite (app writes + Anvil watcher). Refreshes every few seconds.
-      </p>
+    <div className="vtx-page max-w-3xl text-left">
+      <EyebrowLabel>On-chain + database</EyebrowLabel>
+      <SectionHeader title="Transparency ledger" body="Pulled from SQLite (app writes + Anvil watcher). Refreshes every few seconds." />
 
-      <div
-        className="mt-6 rounded-2xl border border-white/10 bg-white/[0.04] p-5 backdrop-blur-xl"
-        style={{ boxShadow: `0 0 0 1px ${ACCENT}14 inset` }}
-      >
+      <SurfaceCard className="mt-6">
         <p className="text-xs font-medium uppercase tracking-widest text-zinc-500">Totals (loaded window)</p>
         <div className="mt-3 flex flex-wrap gap-6">
           <p className="text-2xl font-semibold tabular-nums text-white">
@@ -124,12 +116,9 @@ export function LedgerPage() {
             <span className="text-base font-normal text-zinc-500">ETH out</span>
           </p>
         </div>
-      </div>
+      </SurfaceCard>
 
-      <div
-        className="mt-6 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] shadow-2xl backdrop-blur-2xl"
-        style={{ boxShadow: `0 25px 80px -20px #000, 0 0 0 1px ${ACCENT}12 inset` }}
-      >
+      <SurfaceCard className="mt-6 overflow-hidden p-0 shadow-2xl backdrop-blur-2xl">
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 px-4 py-4 sm:px-6">
           <h2 className="text-lg font-semibold text-white">Activity</h2>
           <nav className="flex rounded-full border border-white/10 bg-black/30 p-1 text-xs font-medium">
@@ -147,7 +136,7 @@ export function LedgerPage() {
                 className={`rounded-full px-3 py-1.5 transition-colors ${
                   tab === key ? 'text-black' : 'text-zinc-400 hover:text-white'
                 }`}
-                style={tab === key ? { backgroundColor: ACCENT, color: '#020617' } : undefined}
+                style={tab === key ? { backgroundColor: 'var(--accent-core)', color: '#020617' } : undefined}
               >
                 {label}
               </button>
@@ -192,9 +181,9 @@ export function LedgerPage() {
                       <div
                         className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border text-sm font-bold"
                         style={{
-                          borderColor: `${ACCENT}55`,
-                          background: `linear-gradient(145deg, ${ACCENT}22, rgba(59,130,246,0.12))`,
-                          color: ACCENT,
+                          borderColor: 'var(--border-accent-soft)',
+                          background: 'linear-gradient(145deg, rgba(34,197,94,0.2), rgba(59,130,246,0.12))',
+                          color: 'var(--accent-bright-2)',
                         }}
                       >
                         {initials(entry.fromDisplayName)}
@@ -246,7 +235,7 @@ export function LedgerPage() {
             </div>
           )}
         </div>
-      </div>
+      </SurfaceCard>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { apiJson } from '../lib/api';
+import { PrimaryButton, SectionHeader } from '../components/ui';
 
 export function RegisterPage() {
   const nav = useNavigate();
@@ -29,9 +30,9 @@ export function RegisterPage() {
   }
 
   return (
-    <div className="mx-auto max-w-md px-4 py-16">
-      <h1 className="text-2xl font-bold text-white">Create account</h1>
-      <p className="mt-2 text-sm text-zinc-500">
+    <div className="vtx-page max-w-md py-16">
+      <SectionHeader title="Create account" />
+      <p className="mt-2 text-sm text-[var(--text-muted-1)]">
         Register as a donor to support causes, or as a beneficiary to receive funds.
         Your account is assigned an Anvil wallet funded with 100 ETH.
       </p>
@@ -44,7 +45,7 @@ export function RegisterPage() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
-            className="mt-1 w-full rounded-lg border border-white/10 bg-black/40 px-4 py-3 text-white outline-none focus:border-cyan-500/50"
+            className="vtx-input mt-1 w-full px-4 py-3 outline-none"
           />
         </div>
         <div>
@@ -56,7 +57,7 @@ export function RegisterPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="mt-1 w-full rounded-lg border border-white/10 bg-black/40 px-4 py-3 text-white outline-none focus:border-cyan-500/50"
+            className="vtx-input mt-1 w-full px-4 py-3 outline-none"
             autoComplete="username"
           />
         </div>
@@ -69,7 +70,7 @@ export function RegisterPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="mt-1 w-full rounded-lg border border-white/10 bg-black/40 px-4 py-3 text-white outline-none focus:border-cyan-500/50"
+            className="vtx-input mt-1 w-full px-4 py-3 outline-none"
             autoComplete="new-password"
           />
         </div>
@@ -81,8 +82,8 @@ export function RegisterPage() {
                 key={r}
                 className={`flex cursor-pointer items-center gap-2 rounded-lg border px-4 py-3 text-sm transition-colors ${
                   role === r
-                    ? 'border-cyan-400/60 bg-cyan-400/10 text-cyan-300'
-                    : 'border-white/10 text-zinc-400 hover:border-white/20'
+                    ? 'border-[var(--border-accent-soft)] bg-[color:rgb(34_197_94_/_0.14)] text-[var(--text-high-2)]'
+                    : 'border-[var(--border-chrome-2)] text-[var(--text-muted-1)] hover:border-[var(--border-chrome-4)]'
                 }`}
               >
                 <input
@@ -99,17 +100,13 @@ export function RegisterPage() {
           </div>
         </div>
         {err && <p className="text-sm text-rose-400">{err}</p>}
-        <button
-          type="submit"
-          disabled={busy}
-          className="w-full rounded-xl bg-cyan-400 py-3 text-sm font-semibold text-black disabled:opacity-50"
-        >
+        <PrimaryButton type="submit" disabled={busy} className="w-full">
           {busy ? 'Creating account…' : 'Create account'}
-        </button>
+        </PrimaryButton>
       </form>
-      <p className="mt-6 text-center text-sm text-zinc-500">
+      <p className="mt-6 text-center text-sm text-[var(--text-muted-1)]">
         Already have an account?{' '}
-        <Link to="/login" className="text-cyan-400 hover:underline">
+        <Link to="/login" className="text-[var(--accent-bright-2)]">
           Sign in
         </Link>
       </p>
