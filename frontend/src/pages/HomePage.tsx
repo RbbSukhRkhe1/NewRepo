@@ -1,365 +1,398 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { loadDonationLedger, type DonationLedgerEntry } from '../lib/donationLedger';
-import {
-  EyebrowLabel,
-  PrimaryLinkButton,
-  SecondaryLinkButton,
-  SectionHeader,
-  SurfaceCard,
-} from '../components/ui';
 
-type Overview = {
-  vault: { addressMasked: string; balanceEth: string | null };
-  stats: {
-    activeCauses: number;
-    ledgerEntries: number;
-    totalRaisedEth: number;
-    totalDonatedEth: number;
-    totalDisbursedEth: number;
-  };
+type HeroSlide = {
+  title: string;
+  description: string;
+  accent: string;
+  glow: string;
+  background: string;
+  lightBackground: string;
+  icon: JSX.Element;
 };
 
-type JourneyStep = 0 | 1 | 2;
-
-const startSteps = [
+const heroSlides: HeroSlide[] = [
   {
-    title: '1) Register or sign in',
-    body: 'Create a donor or beneficiary account, or sign in with an existing one.',
-    to: '/register',
-    cta: 'Register',
+    title: 'Full Transparency',
+    description: 'Every transaction is on-chain and publicly verifiable forever',
+    accent: '#5ef6de',
+    glow: 'rgba(74, 241, 212, 0.42)',
+    background: 'linear-gradient(145deg, rgba(18,66,79,0.9), rgba(9,26,43,0.85) 58%, rgba(9,18,30,0.95))',
+    lightBackground: 'linear-gradient(145deg, rgba(217,248,245,0.98), rgba(204,236,246,0.95) 58%, rgba(218,231,246,0.97))',
+    icon: (
+      <svg viewBox="0 0 24 24" aria-hidden="true" className="h-14 w-14 fill-current">
+        <path d="M12 4C6.5 4 2.08 7.38 1 12c1.08 4.62 5.5 8 11 8s9.92-3.38 11-8c-1.08-4.62-5.5-8-11-8zm0 13a5 5 0 110-10 5 5 0 010 10zm0-8.2A3.2 3.2 0 1015.2 12 3.2 3.2 0 0012 8.8z" />
+      </svg>
+    ),
   },
   {
-    title: '2) Donate',
-    body: 'Pick a cause and send ETH from your assigned Anvil wallet.',
-    to: '/causes',
-    cta: 'Go to causes',
+    title: 'Direct from Wallet to Cause',
+    description: 'No middleman. Your donation reaches the project instantly',
+    accent: '#ca90ff',
+    glow: 'rgba(194, 118, 255, 0.4)',
+    background: 'linear-gradient(145deg, rgba(66,29,99,0.9), rgba(32,17,58,0.85) 58%, rgba(16,10,34,0.95))',
+    lightBackground: 'linear-gradient(145deg, rgba(238,226,255,0.98), rgba(229,220,249,0.95) 58%, rgba(222,232,247,0.97))',
+    icon: (
+      <svg viewBox="0 0 24 24" aria-hidden="true" className="h-14 w-14 fill-current">
+        <path d="M3 7.5A2.5 2.5 0 015.5 5h8A2.5 2.5 0 0116 7.5v1h2.5A2.5 2.5 0 0121 11v6.5A2.5 2.5 0 0118.5 20h-8A2.5 2.5 0 018 17.5v-1H5.5A2.5 2.5 0 013 14V7.5zm2 0V14h3v-2.5A2.5 2.5 0 0110.5 9H14V7.5a.5.5 0 00-.5-.5h-8a.5.5 0 00-.5.5zm13.5 3h-8a.5.5 0 00-.5.5v6.5a.5.5 0 00.5.5h8a.5.5 0 00.5-.5V11a.5.5 0 00-.5-.5z" />
+      </svg>
+    ),
   },
   {
-    title: '3) Verify',
-    body: 'Track each movement in the ledger and user history pages.',
-    to: '/ledger',
-    cta: 'Open ledger',
+    title: 'Watch Everything Live',
+    description: 'Real-time donations and payouts visible to everyone',
+    accent: '#bcff57',
+    glow: 'rgba(188, 255, 87, 0.42)',
+    background: 'linear-gradient(145deg, rgba(56,91,18,0.92), rgba(24,40,11,0.87) 56%, rgba(13,24,7,0.95))',
+    lightBackground: 'linear-gradient(145deg, rgba(238,249,212,0.98), rgba(228,242,211,0.95) 56%, rgba(222,236,243,0.97))',
+    icon: (
+      <svg viewBox="0 0 24 24" aria-hidden="true" className="h-14 w-14 fill-current">
+        <path d="M3 4h18v2H3V4zm1 4h16v12H4V8zm4 8h2v-4H8v4zm3 0h2v-7h-2v7zm3 0h2v-2h-2v2z" />
+      </svg>
+    ),
+  },
+  {
+    title: 'Only Verified Causes',
+    description: 'Projects with clear goals, budgets, and measurable impact',
+    accent: '#ffbe72',
+    glow: 'rgba(255, 190, 114, 0.38)',
+    background: 'linear-gradient(145deg, rgba(94,55,18,0.9), rgba(46,29,12,0.85) 58%, rgba(29,18,9,0.95))',
+    lightBackground: 'linear-gradient(145deg, rgba(255,239,216,0.98), rgba(250,228,202,0.95) 58%, rgba(236,228,218,0.97))',
+    icon: (
+      <svg viewBox="0 0 24 24" aria-hidden="true" className="h-14 w-14 fill-current">
+        <path d="M12 2l2.4 2.2 3.2-.5 1.1 3 2.9 1.5-1.3 3 1.3 3-2.9 1.5-1.1 3-3.2-.5L12 22l-2.4-2.2-3.2.5-1.1-3-2.9-1.5 1.3-3-1.3-3 2.9-1.5 1.1-3 3.2.5L12 2zm-1.1 13.8l6-6-1.4-1.4-4.6 4.6-2.4-2.4-1.4 1.4 3.8 3.8z" />
+      </svg>
+    ),
   },
 ];
 
-function shortHash(hash: string): string {
-  if (hash.length <= 14) return hash;
-  return `${hash.slice(0, 8)}…${hash.slice(-6)}`;
-}
-
-function formatEth(v: string): string {
-  const n = Number.parseFloat(v);
-  if (!Number.isFinite(n)) return v;
-  return n.toFixed(4);
-}
-
-function timeAgo(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const s = Math.max(0, Math.floor(diff / 1000));
-  if (s < 60) return `${s}s ago`;
-  const m = Math.floor(s / 60);
-  if (m < 60) return `${m}m ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  return `${Math.floor(h / 24)}d ago`;
-}
-
 export function HomePage() {
-  const [vault, setVault] = useState<string | null>(null);
-  const [overview, setOverview] = useState<Overview | null>(null);
-  const [ledger, setLedger] = useState<DonationLedgerEntry[] | null>(null);
-  const [journeyStep, setJourneyStep] = useState<JourneyStep>(0);
+  const [activeSlide, setActiveSlide] = useState(0);
+  const [isCarouselPaused, setIsCarouselPaused] = useState(false);
+  const [isLightMode, setIsLightMode] = useState(
+    () => typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'light',
+  );
 
   useEffect(() => {
-    fetch('/api/config', { credentials: 'include' })
-      .then((r) => r.json())
-      .then((c: { superRichMasked?: string }) => setVault(c.superRichMasked ?? null))
-      .catch(() => setVault(null));
-  }, []);
+    if (isCarouselPaused) return;
+    const timer = window.setInterval(() => {
+      setActiveSlide((prev) => (prev + 1) % heroSlides.length);
+    }, 3400);
+    return () => window.clearInterval(timer);
+  }, [isCarouselPaused]);
 
   useEffect(() => {
-    fetch('/api/overview', { credentials: 'include' })
-      .then((r) => r.json())
-      .then((o: Overview) => setOverview(o))
-      .catch(() => setOverview(null));
+    const root = document.documentElement;
+    const syncTheme = () => setIsLightMode(root.getAttribute('data-theme') === 'light');
+    syncTheme();
+    const observer = new MutationObserver(syncTheme);
+    observer.observe(root, { attributes: true, attributeFilter: ['data-theme'] });
+    return () => observer.disconnect();
   }, []);
 
-  useEffect(() => {
-    loadDonationLedger()
-      .then((rows) => setLedger(rows))
-      .catch(() => setLedger(null));
-  }, []);
-
-  const latestDonation = useMemo(() => {
-    if (!ledger?.length) return null;
-    for (let i = ledger.length - 1; i >= 0; i--) {
-      if (ledger[i]?.kind === 'donation_in') return ledger[i];
-    }
-    return null;
-  }, [ledger]);
-
-  const latestDisbursement = useMemo(() => {
-    if (!ledger?.length) return null;
-    for (let i = ledger.length - 1; i >= 0; i--) {
-      if (ledger[i]?.kind === 'disbursement_out') return ledger[i];
-    }
-    return null;
-  }, [ledger]);
-
-  const journeyPreview = useMemo(() => {
-    if (journeyStep === 0) return latestDonation;
-    if (journeyStep === 2) return latestDisbursement;
-    return null;
-  }, [journeyStep, latestDonation, latestDisbursement]);
+  const goNext = () => setActiveSlide((prev) => (prev + 1) % heroSlides.length);
+  const goPrev = () => setActiveSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length);
 
   return (
-    <div className="relative w-full overflow-x-hidden bg-black">
-      <div className="absolute inset-0 z-0 min-h-full bg-black" />
+    <div className="relative w-full overflow-x-hidden bg-[var(--bg-base)]">
+      <div className="absolute inset-0 z-0 min-h-full bg-[var(--bg-base)]" />
+      <div className="pointer-events-none absolute inset-0 z-0 bg-[linear-gradient(rgba(126,149,182,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(126,149,182,0.08)_1px,transparent_1px)] bg-[size:68px_68px] [mask-image:radial-gradient(ellipse_at_center,black_26%,transparent_78%)] opacity-35" />
+      <div className="pointer-events-none absolute -left-24 top-8 z-0 h-80 w-80 animate-[pulse_8s_ease-in-out_infinite] rounded-full bg-teal-400/15 blur-3xl" />
+      <div className="pointer-events-none absolute -right-20 top-20 z-0 h-96 w-96 animate-[pulse_10s_ease-in-out_infinite] rounded-full bg-violet-500/15 blur-3xl" />
+      <div className="pointer-events-none absolute bottom-10 left-1/3 z-0 h-72 w-72 animate-[pulse_11s_ease-in-out_infinite] rounded-full bg-lime-400/12 blur-3xl" />
 
-      <div className="relative z-10 mx-auto w-full max-w-3xl px-4 pb-16 pt-12 text-center sm:pb-20 sm:pt-16 md:pt-20">
-        <SectionHeader
-          eyebrow="Transparent giving"
-          title="Donate transparently with Vaultex"
-          body="Pick a cause, send ETH from your assigned test wallet on Anvil, and watch every transfer hit the public ledger. Built for a capstone: real txs, SQLite records, and a clear trail from donors to the vault and out to beneficiary organisations."
-        />
-        <div className="mt-10 flex w-full flex-col items-center justify-center gap-3 sm:mx-auto sm:w-auto sm:flex-row sm:flex-wrap sm:gap-4">
-          <PrimaryLinkButton to="/causes" className="px-8">
-            Donate now
-          </PrimaryLinkButton>
-          <SecondaryLinkButton to="/ledger" className="px-8">
-            View the ledger
-          </SecondaryLinkButton>
-        </div>
-        {latestDonation && (
-          <p className="mt-4 text-xs text-[var(--text-muted-1)]">
-            Live ledger updates every {Math.round(6000 / 1000)}s · Last donation {formatEth(latestDonation.amountEth)} ETH ·{' '}
-            {shortHash(latestDonation.txHash)} · {timeAgo(latestDonation.recordedAt)}
-          </p>
-        )}
-        {vault && (
-          <p className="mt-12 break-all font-mono text-xs text-[var(--text-muted-2)] sm:break-normal">
-            Main vault (masked): <span className="text-[var(--text-muted-1)]">{vault}</span>
-          </p>
-        )}
+      <div className="relative z-10 mx-auto w-full max-w-5xl px-4 pb-8 pt-3 text-center sm:pb-10 sm:pt-4 md:pt-5">
+        <div className="pointer-events-none absolute left-1/2 top-[90px] h-64 w-[560px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(45,245,173,0.24),rgba(45,245,173,0.03)_48%,transparent_70%)] blur-2xl" />
+        <div className="pointer-events-none absolute left-1/2 top-[176px] h-52 w-[520px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(11,21,39,0.95),transparent_70%)]" />
 
-        <div className="mt-12 text-left">
-          <SurfaceCard className="rounded-3xl border-[var(--border-chrome-2)] shadow-[0_0_60px_var(--fx-glow-accent-low)]">
-            <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
-              <div className="min-w-0">
-                <EyebrowLabel>Donation journey</EyebrowLabel>
-                <h2 className="mt-2 text-balance text-xl font-semibold text-[var(--text-high-3)] sm:text-2xl">
-                  Follow a donation end-to-end
-                </h2>
-                <p className="mt-2 text-sm leading-relaxed text-[var(--text-muted-1)]">
-                  This is the story users care about: <span className="text-[var(--text-high-3)]">who sent</span>,{' '}
-                  <span className="text-[var(--text-high-3)]">where it landed</span>, and{' '}
-                  <span className="text-[var(--text-high-3)]">when it reached a beneficiary</span>.
-                </p>
-              </div>
+        <section
+          className={`relative mx-auto max-w-4xl rounded-[30px] px-6 py-7 backdrop-blur-xl sm:px-9 sm:py-8 ${
+            isLightMode
+              ? 'border border-[rgba(147,171,201,0.42)] bg-[linear-gradient(155deg,rgba(244,249,255,0.92),rgba(230,240,252,0.85))] shadow-[0_22px_50px_rgba(58,91,130,0.2),0_0_45px_rgba(142,198,255,0.2)]'
+              : 'border border-white/10 bg-[linear-gradient(155deg,rgba(15,24,41,0.84),rgba(8,13,24,0.68))] shadow-[0_28px_90px_rgba(0,0,0,0.56),0_0_90px_rgba(45,245,173,0.14)]'
+          }`}
+        >
+          <p className="text-[11px] font-semibold uppercase tracking-[0.34em] text-[#d9bb78]">Trusted Web3 Giving</p>
+          <h1
+            className="mt-3 text-balance text-4xl font-extrabold leading-[1.02] tracking-[-0.03em] sm:text-5xl"
+            style={{
+              backgroundImage: isLightMode
+                ? 'linear-gradient(96deg, #10304d 3%, #1e7664 42%, #458439 72%, #1f5876 100%)'
+                : 'linear-gradient(96deg, #e6f8ff 3%, #bafee0 38%, #c5ff7d 68%, #8bf9ff 100%)',
+              WebkitBackgroundClip: 'text',
+              backgroundClip: 'text',
+              color: 'transparent',
+              textShadow: isLightMode ? '0 0 12px rgba(120,176,235,0.16)' : '0 0 28px rgba(97,252,186,0.16)',
+            }}
+          >
+            Donate on-chain Track with trust
+          </h1>
+          <div className="mx-auto mt-4 max-w-3xl text-center">
+            <p
+              className={`text-balance text-base font-semibold leading-relaxed tracking-[0.012em] sm:text-lg ${
+                isLightMode ? 'text-[#223c57]' : 'text-[var(--text-high-2)]'
+              }`}
+              style={{ textShadow: isLightMode ? 'none' : '0 0 16px rgba(122,255,171,0.1)' }}
+            >
+              What feels small to you could become life-changing for someone else.
+            </p>
+            <p
+              className={`mx-auto mt-2 max-w-2xl text-balance text-sm leading-relaxed tracking-[0.01em] sm:text-base ${
+                isLightMode ? 'text-[#38526f]' : 'text-[var(--text-muted-1)]'
+              }`}
+            >
+              Every act of kindness has the power to leave a lasting impact.
+            </p>
+          </div>
 
-              <div className="flex w-full flex-wrap items-center justify-start gap-2 md:w-auto md:justify-end">
-                {(
-                  [
-                    { id: 0, label: 'Donor → Vault' },
-                    { id: 1, label: 'In the Vault' },
-                    { id: 2, label: 'Vault → Beneficiary' },
-                  ] as const
-                ).map((t) => (
-                  <button
-                    key={t.id}
-                    type="button"
-                    onClick={() => setJourneyStep(t.id)}
-                    className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
-                      journeyStep === t.id
-                        ? 'border-[var(--border-accent-soft)] bg-[color:rgb(34_197_94_/_0.14)] text-[var(--text-high-2)]'
-                        : 'border-[var(--border-chrome-1)] bg-[var(--overlay-surface-soft)] text-[var(--text-muted-1)] hover:bg-[color:rgb(255_255_255_/_0.08)]'
+          <div
+            className="mx-auto mt-5 w-full max-w-2xl"
+            onMouseEnter={() => setIsCarouselPaused(true)}
+            onMouseLeave={() => setIsCarouselPaused(false)}
+          >
+            <div
+              className={`relative min-h-[250px] overflow-hidden rounded-[26px] backdrop-blur-2xl sm:min-h-[280px] ${
+                isLightMode
+                  ? 'border border-[rgba(145,174,206,0.46)] bg-[rgba(243,249,255,0.78)] shadow-[0_20px_46px_rgba(77,106,141,0.22)]'
+                  : 'border border-white/15 bg-[rgba(10,16,28,0.5)] shadow-[0_24px_90px_rgba(0,0,0,0.58)]'
+              }`}
+            >
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(255,255,255,0.08),transparent_36%)]" />
+
+              {heroSlides.map((slide, idx) => (
+                <article
+                  key={slide.title}
+                  className={`absolute inset-0 flex h-full flex-col justify-between p-5 text-left transition-all duration-700 sm:p-6 ${
+                    idx === activeSlide ? 'translate-x-0 opacity-100' : 'translate-x-8 opacity-0'
+                  }`}
+                  style={{ background: isLightMode ? slide.lightBackground : slide.background }}
+                  aria-hidden={idx !== activeSlide}
+                >
+                  <div
+                    className={`relative inline-flex h-14 w-14 items-center justify-center rounded-xl border sm:h-16 sm:w-16 ${
+                      isLightMode
+                        ? 'border-[rgba(145,174,206,0.65)] bg-white/88 text-[var(--text-high-1)]'
+                        : 'border-white/20 bg-black/20 text-white'
                     }`}
+                    style={{
+                      color: slide.accent,
+                      boxShadow: isLightMode
+                        ? '0 6px 18px rgba(79,111,145,0.16), inset 0 0 0 1px rgba(255,255,255,0.86)'
+                        : `0 0 32px ${slide.glow}, inset 0 0 0 1px rgba(255,255,255,0.06)`,
+                      animation: 'vtx-float 5.8s ease-in-out infinite',
+                    }}
                   >
-                    {t.label}
-                  </button>
+                    {slide.icon}
+                  </div>
+
+                  <div className="mt-3 max-w-2xl">
+                    <p
+                      className={`text-[11px] font-semibold uppercase tracking-[0.24em] ${
+                        isLightMode ? 'text-[#355271]' : ''
+                      }`}
+                      style={isLightMode ? undefined : { color: slide.accent }}
+                    >
+                      Premium trust signal
+                    </p>
+                    <h3
+                      className={`mt-1.5 text-2xl font-black leading-tight tracking-[-0.02em] sm:text-3xl ${
+                        isLightMode ? 'text-[#132b46]' : 'text-white'
+                      }`}
+                    >
+                      {slide.title}
+                    </h3>
+                    <p className={`mt-2 max-w-xl text-sm leading-relaxed ${isLightMode ? 'text-[#2f4868]' : 'text-white/78'}`}>
+                      {slide.description}
+                    </p>
+                  </div>
+
+                  <div className="mt-3 flex items-center justify-between">
+                    <span
+                      className={`text-xs font-medium uppercase tracking-[0.18em] sm:text-sm ${
+                        isLightMode ? 'text-[#304e6e]' : 'text-white/70'
+                      }`}
+                      style={isLightMode ? undefined : { textShadow: `0 0 18px ${slide.glow}` }}
+                    >
+                      Vaultex vision
+                    </span>
+                    <span
+                      className="invisible text-4xl font-semibold leading-none sm:text-5xl"
+                      style={{ color: slide.accent }}
+                      aria-hidden="true"
+                    >
+                      →
+                    </span>
+                  </div>
+                </article>
+              ))}
+
+              <button
+                type="button"
+                onClick={goPrev}
+                className="invisible absolute left-4 top-1/2 z-20 -translate-y-1/2 rounded-full border border-white/20 bg-black/35 p-3 text-white shadow-[0_0_24px_rgba(80,233,255,0.24)] transition hover:scale-105 hover:border-cyan-300/55 hover:shadow-[0_0_30px_rgba(80,233,255,0.4)]"
+                aria-label="Previous slide"
+                aria-hidden="true"
+                tabIndex={-1}
+              >
+                <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M15 6l-6 6 6 6" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                onClick={goNext}
+                className="invisible absolute right-4 top-1/2 z-20 -translate-y-1/2 rounded-full border border-white/20 bg-black/35 p-3 text-white shadow-[0_0_24px_rgba(186,115,255,0.24)] transition hover:scale-105 hover:border-violet-300/55 hover:shadow-[0_0_30px_rgba(186,115,255,0.4)]"
+                aria-label="Next slide"
+                aria-hidden="true"
+                tabIndex={-1}
+              >
+                <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M9 6l6 6-6 6" />
+                </svg>
+              </button>
+
+              <div className="absolute bottom-5 left-1/2 z-20 flex -translate-x-1/2 items-center gap-3">
+                {heroSlides.map((slide, idx) => (
+                  <button
+                    key={slide.title}
+                    type="button"
+                    onClick={() => setActiveSlide(idx)}
+                    className={`rounded-full border transition-all duration-300 ${
+                      idx === activeSlide ? 'h-4 w-10 border-white/70' : 'h-4 w-4 border-white/35 bg-white/12'
+                    }`}
+                    style={idx === activeSlide ? { background: slide.accent, boxShadow: `0 0 20px ${slide.glow}` } : {}}
+                    aria-label={`Go to slide ${idx + 1}`}
+                  />
                 ))}
               </div>
             </div>
+          </div>
+        </section>
 
-            <div className="mt-6 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-              <div className="rounded-2xl border border-white/[0.08] bg-black/40 p-5">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">Flow</p>
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
-                    Step {journeyStep + 1}/3
-                  </p>
-                </div>
-
-                <div className="relative mt-5">
-                  <div className="absolute left-0 right-0 top-1/2 h-[2px] -translate-y-1/2 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-                  <div className="absolute left-0 right-0 top-1/2 h-[2px] -translate-y-1/2 bg-gradient-to-r from-cyan-400/0 via-cyan-400/40 to-cyan-400/0 blur-[6px]" />
-
-                  <div className="relative grid grid-cols-3 items-center">
-                    {(['Donor', 'Vault', 'Beneficiary'] as const).map((label, idx) => {
-                      const active =
-                        (journeyStep === 0 && idx <= 1) ||
-                        (journeyStep === 1 && idx === 1) ||
-                        (journeyStep === 2 && idx >= 1);
-                      const dot =
-                        (journeyStep === 0 && idx === 0) ||
-                        (journeyStep === 1 && idx === 1) ||
-                        (journeyStep === 2 && idx === 2);
-                      return (
-                        <div key={label} className="flex flex-col items-center">
-                          <div
-                            className={`grid h-10 w-10 place-items-center rounded-full border transition-colors ${
-                              active ? 'border-cyan-400/60 bg-cyan-400/10' : 'border-white/10 bg-white/[0.02]'
-                            }`}
-                          >
-                            <div
-                              className={`h-2.5 w-2.5 rounded-full transition-colors ${
-                                dot ? 'bg-cyan-300 shadow-[0_0_18px_rgba(34,211,238,0.7)]' : 'bg-white/15'
-                              }`}
-                            />
-                          </div>
-                          <p className={`mt-2 text-xs font-semibold ${active ? 'text-white' : 'text-zinc-500'}`}>
-                            {label}
-                          </p>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  <div className="pointer-events-none absolute left-0 top-1/2 h-8 w-full -translate-y-1/2">
-                    <div
-                      className="absolute top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-cyan-300 shadow-[0_0_24px_rgba(34,211,238,0.8)] transition-transform duration-500 ease-out"
-                      style={{
-                        transform:
-                          journeyStep === 0
-                            ? 'translateX(16%)'
-                            : journeyStep === 1
-                              ? 'translateX(50%)'
-                              : 'translateX(84%)',
-                      }}
-                    />
-                  </div>
-                </div>
-
-                <div className="mt-5 grid gap-2 text-sm text-zinc-400 sm:grid-cols-3">
-                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">Donor</p>
-                    <p className="mt-1 text-zinc-200">Sends ETH</p>
-                  </div>
-                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">Vault</p>
-                    <p className="mt-1 text-zinc-200">Receives + holds</p>
-                  </div>
-                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">Beneficiary</p>
-                    <p className="mt-1 text-zinc-200">Gets disbursed</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-white/[0.08] bg-black/40 p-5">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">Ledger preview</p>
-                <p className="mt-2 text-sm text-zinc-400">
-                  {journeyStep === 1
-                    ? 'The vault accumulates incoming donations and later disburses out.'
-                    : 'A real entry from the ledger, tied to this step.'}
-                </p>
-
-                {journeyStep === 1 ? (
-                  <div className="mt-4 rounded-xl border border-cyan-400/20 bg-cyan-400/5 p-4">
-                    <p className="text-sm font-semibold text-white">Vault status</p>
-                    <p className="mt-2 font-mono text-xs text-zinc-300">
-                      {overview?.vault.addressMasked ?? vault ?? '—'}
-                    </p>
-                    <p className="mt-2 text-xs text-zinc-500">Balance</p>
-                    <p className="mt-1 font-mono text-lg text-cyan-200">
-                      {overview?.vault.balanceEth ? `${parseFloat(overview.vault.balanceEth).toFixed(4)} ETH` : '—'}
-                    </p>
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      <Link
-                        to="/account"
-                        className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-semibold text-white hover:bg-white/[0.06]"
-                      >
-                        View your wallet
-                      </Link>
-                      <Link
-                        to="/ledger"
-                        className="rounded-lg px-3 py-2 text-xs font-semibold text-black"
-                        style={{ backgroundColor: 'var(--accent-core)' }}
-                      >
-                        Open ledger
-                      </Link>
-                    </div>
-                  </div>
-                ) : journeyPreview ? (
-                  <div className="mt-4 rounded-xl border border-white/[0.08] bg-white/[0.03] p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-white">
-                          {journeyPreview.fromDisplayName} → {journeyPreview.toDisplayName}
-                        </p>
-                        <p className="mt-1 text-xs text-zinc-500">{new Date(journeyPreview.recordedAt).toLocaleString()}</p>
-                      </div>
-                      <p className="whitespace-nowrap font-mono text-base font-bold text-amber-100">
-                        {formatEth(journeyPreview.amountEth)} ETH
-                      </p>
-                    </div>
-                    <p className="mt-2 text-xs text-zinc-500">{journeyPreview.causeName ? `Cause: ${journeyPreview.causeName}` : ' '}</p>
-                    <p className="mt-2 font-mono text-xs text-zinc-600">{shortHash(journeyPreview.txHash)}</p>
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      <Link
-                        to="/ledger"
-                        className="rounded-lg px-3 py-2 text-xs font-semibold text-black"
-                        style={{ backgroundColor: 'var(--accent-core)' }}
-                      >
-                        See in ledger
-                      </Link>
-                      <Link
-                        to="/account"
-                        className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-semibold text-white hover:bg-white/[0.06]"
-                      >
-                        Your history
-                      </Link>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="mt-4 rounded-xl border border-white/[0.08] bg-white/[0.02] p-4 text-sm text-zinc-500">
-                    No matching ledger entries yet. Make a donation, then come back.
-                  </div>
-                )}
-              </div>
-            </div>
-          </SurfaceCard>
-        </div>
-      </div>
-
-      <section className="relative z-10 border-t border-[var(--border-chrome-1)] bg-black px-4 py-14 sm:py-20">
-        <div className="mx-auto max-w-5xl">
-          <h2 className="text-center text-lg font-semibold text-[var(--text-high-3)] sm:text-xl">How it works</h2>
-          <p className="mx-auto mt-2 max-w-2xl text-center text-sm text-[var(--text-muted-1)]">
-            Follow this flow for the fastest first-time experience.
-          </p>
-          <ul className="mt-8 grid list-none gap-4 md:grid-cols-3">
-            {startSteps.map((step) => (
-              <li
-                key={step.title}
-                className="vtx-surface reveal reveal--visible rounded-2xl p-5 text-left transition-transform duration-150 hover:-translate-y-0.5 hover:border-[var(--border-accent-soft)]"
+        <section className="mt-12">
+          <h2 className="text-center text-3xl font-bold tracking-[-0.02em] text-[var(--text-high-3)] sm:text-4xl">Wallet to Impact</h2>
+          <div className="mx-auto mt-4 max-w-3xl text-center">
+            <p
+              className={`text-balance text-base font-semibold leading-relaxed tracking-[0.012em] sm:text-lg ${
+                isLightMode ? 'text-[#1f3a58]' : ''
+              }`}
+              style={{
+                backgroundImage: isLightMode ? undefined : 'linear-gradient(96deg, #dcf1ff 8%, #c7ffe8 48%, #d8f8ff 92%)',
+                WebkitBackgroundClip: isLightMode ? undefined : 'text',
+                backgroundClip: isLightMode ? undefined : 'text',
+                color: isLightMode ? '#1f3a58' : 'transparent',
+                textShadow: isLightMode ? 'none' : '0 0 16px rgba(130,214,255,0.1)',
+              }}
+            >
+              Behind every verified transaction is a life being helped.
+            </p>
+            <p
+              className={`mx-auto mt-2 max-w-2xl text-balance text-sm leading-relaxed tracking-[0.01em] sm:text-base ${
+                isLightMode ? 'text-[#38526f]' : 'text-[var(--text-muted-1)]'
+              }`}
+            >
+              See how your generosity turns into meaningful change.
+            </p>
+          </div>
+          <div className="mt-8 grid gap-5 text-left md:grid-cols-3">
+            <Link
+              to="/causes"
+              className={`group relative flex min-h-[270px] flex-col rounded-3xl p-7 backdrop-blur-xl transition duration-500 ease-out hover:-translate-y-2 hover:scale-[1.03] ${
+                isLightMode
+                  ? 'border border-[rgba(111,185,166,0.45)] bg-[linear-gradient(165deg,rgba(219,245,241,0.9),rgba(208,232,241,0.76))] shadow-[0_12px_30px_rgba(75,108,136,0.18)] hover:border-[rgba(64,219,176,0.75)] hover:shadow-[0_18px_36px_rgba(79,130,140,0.28)]'
+                  : 'border border-[rgba(64,219,176,0.38)] bg-[linear-gradient(165deg,rgba(18,40,54,0.64),rgba(7,19,28,0.45))] shadow-[0_14px_35px_rgba(1,8,15,0.48),0_0_0_1px_rgba(51,255,190,0.1)_inset] hover:border-[rgba(64,219,176,0.75)] hover:shadow-[0_22px_48px_rgba(0,16,16,0.62),0_0_56px_rgba(50,245,193,0.34)]'
+              }`}
+            >
+              <div
+                className={`mb-6 flex h-11 w-11 items-center justify-center rounded-xl border ${
+                  isLightMode
+                    ? 'border-teal-500/35 bg-white/85 text-teal-700 shadow-[0_6px_16px_rgba(55,137,146,0.18)]'
+                    : 'border-teal-300/35 bg-teal-300/10 text-teal-200 shadow-[0_0_24px_rgba(45,245,205,0.24)]'
+                }`}
               >
-                <p className="text-sm font-semibold text-[var(--text-high-3)]">{step.title}</p>
-                <p className="mt-2 text-sm text-[var(--text-muted-1)]">{step.body}</p>
-                <Link
-                  to={step.to}
-                  className="mt-4 inline-block text-sm font-medium text-[var(--accent-bright-2)] hover:text-[var(--accent-bright-3)]"
-                >
-                  {step.cta} →
-                </Link>
-              </li>
-            ))}
-          </ul>
+                <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6 fill-current">
+                  <path d="M12 3l8 4v5c0 5.25-3.45 8.71-8 10-4.55-1.29-8-4.75-8-10V7l8-4zm0 2.18L6 8v4c0 4.13 2.54 6.98 6 8.12 3.46-1.14 6-3.99 6-8.12V8l-6-2.82z" />
+                </svg>
+              </div>
+              <span className="absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-emerald-300/45 to-transparent" />
+              <h3 className={`text-2xl font-bold ${isLightMode ? 'text-[#13344e]' : 'text-[#dcfff4]'}`}>Browse Causes</h3>
+              <p className="mt-3 text-sm leading-relaxed text-[var(--text-muted-1)]">
+                Discover verified projects with clear goals, transparent budgets, and measurable impact.
+              </p>
+              <span
+                className="invisible mt-auto self-end text-4xl font-semibold text-[#2af4bf] transition-transform duration-300 group-hover:translate-x-2"
+                aria-hidden="true"
+              >
+                →
+              </span>
+            </Link>
 
-          {/* Live overview + How this demo works removed per request */}
-        </div>
-      </section>
+            <Link
+              to="/account"
+              className={`group relative flex min-h-[270px] flex-col rounded-3xl p-7 backdrop-blur-xl transition duration-500 ease-out hover:-translate-y-2 hover:scale-[1.03] ${
+                isLightMode
+                  ? 'border border-[rgba(168,146,209,0.46)] bg-[linear-gradient(165deg,rgba(238,228,252,0.9),rgba(224,224,246,0.8))] shadow-[0_12px_30px_rgba(84,83,128,0.2)] hover:border-[rgba(183,111,255,0.72)] hover:shadow-[0_18px_36px_rgba(118,95,170,0.28)]'
+                  : 'border border-[rgba(183,111,255,0.35)] bg-[linear-gradient(165deg,rgba(40,24,63,0.64),rgba(16,10,31,0.45))] shadow-[0_14px_35px_rgba(8,3,18,0.5),0_0_0_1px_rgba(188,117,255,0.1)_inset] hover:border-[rgba(183,111,255,0.72)] hover:shadow-[0_22px_48px_rgba(15,4,32,0.62),0_0_56px_rgba(183,111,255,0.34)]'
+              }`}
+            >
+              <div
+                className={`mb-6 flex h-11 w-11 items-center justify-center rounded-xl border ${
+                  isLightMode
+                    ? 'border-violet-500/35 bg-white/85 text-violet-700 shadow-[0_6px_16px_rgba(124,93,170,0.18)]'
+                    : 'border-violet-300/35 bg-violet-300/10 text-violet-200 shadow-[0_0_24px_rgba(183,111,255,0.24)]'
+                }`}
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6 fill-current">
+                  <path d="M17 8V7a5 5 0 10-10 0v1H5v13h14V8h-2zm-8 0V7a3 3 0 016 0v1H9zm3 8.8a2.2 2.2 0 112.2-2.2A2.2 2.2 0 0112 16.8z" />
+                </svg>
+              </div>
+              <span className="absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-violet-300/45 to-transparent" />
+              <h3 className={`text-2xl font-bold ${isLightMode ? 'text-[#2a2f56]' : 'text-[#f0e6ff]'}`}>Donate Securely</h3>
+              <p className="mt-3 text-sm leading-relaxed text-[var(--text-muted-1)]">
+                Connect your wallet and send ETH directly. Receive instant on-chain proof of your donation.
+              </p>
+              <span
+                className="invisible mt-auto self-end text-4xl font-semibold text-[#c782ff] transition-transform duration-300 group-hover:translate-x-2"
+                aria-hidden="true"
+              >
+                →
+              </span>
+            </Link>
+
+            <Link
+              to="/ledger"
+              className={`group relative flex min-h-[270px] flex-col rounded-3xl p-7 backdrop-blur-xl transition duration-500 ease-out hover:-translate-y-2 hover:scale-[1.03] ${
+                isLightMode
+                  ? 'border border-[rgba(163,201,118,0.48)] bg-[linear-gradient(165deg,rgba(236,247,218,0.9),rgba(221,234,218,0.8))] shadow-[0_12px_30px_rgba(91,113,83,0.2)] hover:border-[rgba(153,255,77,0.75)] hover:shadow-[0_18px_36px_rgba(105,146,70,0.26)]'
+                  : 'border border-[rgba(153,255,77,0.38)] bg-[linear-gradient(165deg,rgba(34,45,17,0.64),rgba(14,22,10,0.45))] shadow-[0_14px_35px_rgba(10,14,2,0.5),0_0_0_1px_rgba(183,255,103,0.1)_inset] hover:border-[rgba(153,255,77,0.75)] hover:shadow-[0_22px_48px_rgba(11,20,4,0.62),0_0_56px_rgba(176,255,72,0.34)]'
+              }`}
+            >
+              <div
+                className={`mb-6 flex h-11 w-11 items-center justify-center rounded-xl border ${
+                  isLightMode
+                    ? 'border-lime-500/35 bg-white/85 text-lime-700 shadow-[0_6px_16px_rgba(114,145,68,0.2)]'
+                    : 'border-lime-300/35 bg-lime-300/10 text-lime-200 shadow-[0_0_24px_rgba(176,255,72,0.24)]'
+                }`}
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6 fill-current">
+                  <path d="M4 4h16v2H4zm2 4h12v12H6zm3 3v6h2v-6zm4 2v4h2v-4z" />
+                </svg>
+              </div>
+              <span className="absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-lime-300/45 to-transparent" />
+              <h3 className={`text-2xl font-bold ${isLightMode ? 'text-[#2a4521]' : 'text-[#efffd9]'}`}>Live Ledger</h3>
+              <p className="mt-3 text-sm leading-relaxed text-[var(--text-muted-1)]">
+                Watch every donation and payout in real-time. Full transparency on the blockchain.
+              </p>
+              <span
+                className="invisible mt-auto self-end text-4xl font-semibold text-[#b8ff4a] transition-transform duration-300 group-hover:translate-x-2"
+                aria-hidden="true"
+              >
+                →
+              </span>
+            </Link>
+          </div>
+        </section>
+      </div>
     </div>
   );
 }

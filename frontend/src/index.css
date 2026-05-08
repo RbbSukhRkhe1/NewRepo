@@ -79,6 +79,31 @@
   }
 }
 
+:root[data-theme='light'] {
+  --bg-base: #f3f8ff;
+  --bg-depth-1: #eaf2ff;
+  --bg-depth-2: #e7f0ff;
+  --bg-depth-3: #dde9ff;
+  --surface-panel-primary: #f8fbff;
+  --surface-panel-secondary: #eef5ff;
+  --surface-panel-tertiary: #eaf2ff;
+  --surface-panel-overlay: rgba(248, 252, 255, 0.86);
+  --text-high-1: #10213a;
+  --text-high-2: #162c49;
+  --text-high-3: #0f2138;
+  --text-muted-1: #3d5577;
+  --text-muted-2: #506689;
+  --text-muted-3: #5d7597;
+  --text-muted-4: #6f85a5;
+  --border-chrome-1: #c8d8ef;
+  --border-chrome-2: #bfd0e8;
+  --border-chrome-3: #b2c5de;
+  --border-chrome-4: #95afd0;
+  --overlay-surface-soft: rgba(16, 46, 84, 0.06);
+  --fx-atmo-emerald-soft: rgba(34, 197, 94, 0.1);
+  --fx-atmo-warm-soft: rgba(251, 191, 36, 0.08);
+}
+
 #root {
   width: 100%;
   max-width: 100%;
@@ -98,6 +123,21 @@ body {
     radial-gradient(1200px circle at 12% -8%, var(--fx-atmo-emerald-soft), transparent 45%),
     radial-gradient(800px circle at 88% 0%, var(--fx-atmo-warm-soft), transparent 40%),
     var(--bg-base);
+  transition: background-color 320ms ease;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@keyframes vtx-float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
 }
 
 /* Drop legacy template heading margins; size/weight come from Tailwind classes */
