@@ -200,7 +200,13 @@ code {
   /* Ensure password bullets inherit the intended text color */
   color: var(--text-high-3);
   -webkit-text-fill-color: var(--text-high-3);
-  text-fill-color: var(--text-high-3);
+}
+
+.vtx-input:-webkit-autofill,
+.vtx-input:-webkit-autofill:hover,
+.vtx-input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text-high-3);
+  box-shadow: 0 0 0 1000px transparent inset;
 }
 
 .vtx-input::placeholder {
@@ -216,7 +222,6 @@ code {
 :root[data-theme='light'] .vtx-input[type='password'] {
   color: var(--text-high-3);
   -webkit-text-fill-color: var(--text-high-3);
-  text-fill-color: var(--text-high-3);
 }
 
 :root[data-theme='light'] .vtx-input::placeholder {
