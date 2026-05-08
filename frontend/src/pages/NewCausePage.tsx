@@ -37,7 +37,7 @@ export function NewCausePage() {
       <SectionHeader title="New cause" body="Like GoFundMe - goal and raised update from donations." />
       <form onSubmit={(e) => void submit(e)} className="mt-8 space-y-4">
         <SurfaceCard>
-          <label className="text-xs uppercase tracking-wider text-zinc-500">Title</label>
+          <label className="text-xs uppercase tracking-wider text-[var(--text-muted-1)]">Title</label>
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -46,7 +46,7 @@ export function NewCausePage() {
           />
         </SurfaceCard>
         <SurfaceCard>
-          <label className="text-xs uppercase tracking-wider text-zinc-500">Description</label>
+          <label className="text-xs uppercase tracking-wider text-[var(--text-muted-1)]">Description</label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
@@ -56,7 +56,7 @@ export function NewCausePage() {
           />
         </SurfaceCard>
         <SurfaceCard>
-          <label className="text-xs uppercase tracking-wider text-zinc-500">Goal (ETH)</label>
+          <label className="text-xs uppercase tracking-wider text-[var(--text-muted-1)]">Goal (ETH)</label>
           <input
             type="number"
             min={0.01}

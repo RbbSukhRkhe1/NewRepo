@@ -38,7 +38,7 @@ export function RegisterPage() {
       </p>
       <form onSubmit={(e) => void onSubmit(e)} className="mt-8 space-y-4">
         <div>
-          <label className="block text-xs font-medium uppercase tracking-wider text-zinc-500">
+          <label className="block text-xs font-medium uppercase tracking-wider text-[var(--text-muted-1)]">
             Display name
           </label>
           <input
@@ -49,7 +49,7 @@ export function RegisterPage() {
           />
         </div>
         <div>
-          <label className="block text-xs font-medium uppercase tracking-wider text-zinc-500">
+          <label className="block text-xs font-medium uppercase tracking-wider text-[var(--text-muted-1)]">
             Email
           </label>
           <input
@@ -62,7 +62,7 @@ export function RegisterPage() {
           />
         </div>
         <div>
-          <label className="block text-xs font-medium uppercase tracking-wider text-zinc-500">
+          <label className="block text-xs font-medium uppercase tracking-wider text-[var(--text-muted-1)]">
             Password
           </label>
           <input
@@ -75,7 +75,7 @@ export function RegisterPage() {
           />
         </div>
         <div>
-          <p className="block text-xs font-medium uppercase tracking-wider text-zinc-500">Role</p>
+          <p className="block text-xs font-medium uppercase tracking-wider text-[var(--text-muted-1)]">Role</p>
           <div className="mt-2 flex gap-4">
             {(['donor', 'beneficiary'] as const).map((r) => (
               <label

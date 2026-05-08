@@ -50,7 +50,7 @@ function WalletMeter({
       </div>
 
       <div className="relative mt-5">
-        <div className="flex justify-between text-[10px] font-medium uppercase tracking-wider text-zinc-500">
+        <div className="flex justify-between text-[10px] font-medium uppercase tracking-wider text-[var(--text-muted-1)]">
           <span>Remaining</span>
           <span>
             Pool ~{ref.toFixed(2)} ETH
@@ -67,14 +67,16 @@ function WalletMeter({
             aria-label="Wallet balance level"
           />
         </div>
-        <p className="mt-2 text-center text-[11px] tabular-nums text-zinc-500">
+        <p className="mt-2 text-center text-[11px] tabular-nums text-[var(--text-muted-1)]">
           {role === 'beneficiary' ? (
             <>
-              Received (ledger): <span className="text-zinc-400">{parseFloat(summary.totalReceivedEth).toFixed(4)}</span> ETH
+              Received (ledger):{' '}
+              <span className="text-[var(--text-muted-2)]">{parseFloat(summary.totalReceivedEth).toFixed(4)}</span> ETH
             </>
           ) : (
             <>
-              Sent to vault (ledger): <span className="text-zinc-400">{parseFloat(summary.totalSentEth).toFixed(4)}</span> ETH
+              Sent to vault (ledger):{' '}
+              <span className="text-[var(--text-muted-2)]">{parseFloat(summary.totalSentEth).toFixed(4)}</span> ETH
             </>
           )}
         </p>
@@ -96,7 +98,7 @@ function HistoryRow({ e }: { e: UserHistoryEntry }) {
         {incoming ? 'Received' : 'Sent'}
       </div>
       <div className="min-w-0">
-        <p className="truncate text-zinc-200">
+        <p className="truncate text-[var(--text-high-1)]">
           {e.kind === 'donation_in'
             ? incoming
               ? `${e.fromDisplayName} → you`
@@ -105,8 +107,8 @@ function HistoryRow({ e }: { e: UserHistoryEntry }) {
               ? `${e.fromDisplayName} → you`
               : `You → ${e.toDisplayName}`}
         </p>
-        {e.causeName && <p className="truncate text-xs text-zinc-500">{e.causeName}</p>}
-        <p className="mt-0.5 font-mono text-[10px] text-zinc-600">{shortHash(e.txHash)}</p>
+        {e.causeName && <p className="truncate text-xs text-[var(--text-muted-1)]">{e.causeName}</p>}
+        <p className="mt-0.5 font-mono text-[10px] text-[var(--text-muted-3)]">{shortHash(e.txHash)}</p>
       </div>
       <div className="font-mono text-right text-base font-semibold tabular-nums text-amber-100 sm:text-lg">
         {incoming ? '+' : '−'}
@@ -191,13 +193,13 @@ export function AccountPage() {
   }
 
   if (loading) {
-    return <div className="p-12 text-center text-zinc-500">Loading…</div>;
+    return <div className="p-12 text-center text-[var(--text-muted-1)]">Loading…</div>;
   }
 
   if (!user) {
     return (
       <div className="mx-auto max-w-md px-4 py-16 text-center">
-        <p className="text-zinc-400">Sign in to see your wallet and role.</p>
+        <p className="text-[var(--text-muted-2)]">Sign in to see your wallet and role.</p>
         <Link to="/login" className="mt-4 inline-block text-cyan-400 hover:underline">
           Sign in
         </Link>
@@ -209,20 +211,20 @@ export function AccountPage() {
     <div className="vtx-page max-w-2xl">
       <SectionHeader title="Account" />
       <SurfaceCard className="mt-8">
-        <p className="text-sm text-zinc-500">Signed in as</p>
-        <p className="text-xl font-semibold text-white">{user.name}</p>
-        <p className="mt-1 text-sm text-zinc-400">{user.email}</p>
-        <p className="mt-4 text-xs uppercase tracking-wider text-zinc-500">Role</p>
+        <p className="text-sm text-[var(--text-muted-1)]">Signed in as</p>
+        <p className="text-xl font-semibold text-[var(--text-high-3)]">{user.name}</p>
+        <p className="mt-1 text-sm text-[var(--text-muted-2)]">{user.email}</p>
+        <p className="mt-4 text-xs uppercase tracking-wider text-[var(--text-muted-1)]">Role</p>
         <p className="text-cyan-400">{user.role}</p>
         {user.anvilIndex != null && (
           <>
-            <p className="mt-4 text-xs uppercase tracking-wider text-zinc-500">Anvil account index</p>
-            <p className="font-mono text-white">{user.anvilIndex}</p>
-            <p className="mt-2 text-xs uppercase tracking-wider text-zinc-500">Address (masked)</p>
-            <p className="font-mono text-sm text-zinc-400">{user.addressMasked}</p>
+            <p className="mt-4 text-xs uppercase tracking-wider text-[var(--text-muted-1)]">Anvil account index</p>
+            <p className="font-mono text-[var(--text-high-3)]">{user.anvilIndex}</p>
+            <p className="mt-2 text-xs uppercase tracking-wider text-[var(--text-muted-1)]">Address (masked)</p>
+            <p className="font-mono text-sm text-[var(--text-muted-2)]">{user.addressMasked}</p>
             {eth != null && history?.summary == null && (
               <>
-                <p className="mt-4 text-xs uppercase tracking-wider text-zinc-500">Balance (Anvil)</p>
+                <p className="mt-4 text-xs uppercase tracking-wider text-[var(--text-muted-1)]">Balance (Anvil)</p>
                 <p className="font-mono text-lg text-emerald-400">{parseFloat(eth).toFixed(4)} ETH</p>
               </>
             )}
@@ -244,15 +246,15 @@ export function AccountPage() {
           )}
 
           <section className="mt-8 rounded-2xl border border-white/10 bg-white/[0.02] p-5 sm:p-6" aria-labelledby="acct-history">
-            <h2 id="acct-history" className="text-lg font-semibold text-white">
+            <h2 id="acct-history" className="text-lg font-semibold text-[var(--text-high-3)]">
               Your activity
             </h2>
-            <p className="mt-1 text-xs text-zinc-500">
+            <p className="mt-1 text-xs text-[var(--text-muted-1)]">
               Transfers where your wallet is the sender or recipient (from the app ledger).
             </p>
             {historyErr && <p className="mt-3 text-sm text-rose-400">{historyErr}</p>}
             {!historyErr && history && history.entries.length === 0 && (
-              <p className="mt-6 text-center text-sm text-zinc-500">No recorded transfers yet.</p>
+              <p className="mt-6 text-center text-sm text-[var(--text-muted-1)]">No recorded transfers yet.</p>
             )}
             {history && history.entries.length > 0 && (
               <ul className="mt-4 divide-y divide-white/[0.04]">
@@ -268,7 +270,7 @@ export function AccountPage() {
       {user.role === 'admin' && (
         <form onSubmit={(e) => void disburse(e)} className="mt-8 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-6">
           <h2 className="text-lg font-semibold text-amber-200">Disburse from vault</h2>
-          <p className="mt-1 text-xs text-zinc-500">
+          <p className="mt-1 text-xs text-[var(--text-muted-1)]">
             Sends ETH from Vaultex vault (#0) to a beneficiary wallet. Logged as disbursement.
           </p>
           <div className="mt-4 space-y-3">

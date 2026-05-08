@@ -105,22 +105,22 @@ export function LedgerPage() {
       <SectionHeader title="Transparency ledger" body="Pulled from SQLite (app writes + Anvil watcher). Refreshes every few seconds." />
 
       <SurfaceCard className="mt-6">
-        <p className="text-xs font-medium uppercase tracking-widest text-zinc-500">Totals (loaded window)</p>
+        <p className="text-xs font-medium uppercase tracking-widest text-[var(--text-muted-1)]">Totals (loaded window)</p>
         <div className="mt-3 flex flex-wrap gap-6">
-          <p className="text-2xl font-semibold tabular-nums text-white">
+          <p className="text-2xl font-semibold tabular-nums text-[var(--text-high-3)]">
             {totals.inEth.toLocaleString(undefined, { maximumFractionDigits: 4 })}{' '}
-            <span className="text-base font-normal text-zinc-500">ETH in</span>
+            <span className="text-base font-normal text-[var(--text-muted-1)]">ETH in</span>
           </p>
-          <p className="text-2xl font-semibold tabular-nums text-white">
+          <p className="text-2xl font-semibold tabular-nums text-[var(--text-high-3)]">
             {totals.outEth.toLocaleString(undefined, { maximumFractionDigits: 4 })}{' '}
-            <span className="text-base font-normal text-zinc-500">ETH out</span>
+            <span className="text-base font-normal text-[var(--text-muted-1)]">ETH out</span>
           </p>
         </div>
       </SurfaceCard>
 
       <SurfaceCard className="mt-6 overflow-hidden p-0 shadow-2xl backdrop-blur-2xl">
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 px-4 py-4 sm:px-6">
-          <h2 className="text-lg font-semibold text-white">Activity</h2>
+          <h2 className="text-lg font-semibold text-[var(--text-high-3)]">Activity</h2>
           <nav className="flex rounded-full border border-white/10 bg-black/30 p-1 text-xs font-medium">
             {(
               [
@@ -134,7 +134,7 @@ export function LedgerPage() {
                 type="button"
                 onClick={() => setTab(key)}
                 className={`rounded-full px-3 py-1.5 transition-colors ${
-                  tab === key ? 'text-black' : 'text-zinc-400 hover:text-white'
+                  tab === key ? 'text-black' : 'text-[var(--text-muted-2)] hover:text-[var(--text-high-1)]'
                 }`}
                 style={tab === key ? { backgroundColor: 'var(--accent-core)', color: '#020617' } : undefined}
               >
@@ -156,7 +156,7 @@ export function LedgerPage() {
           className="max-h-[min(560px,70vh)] overflow-auto"
         >
           {filtered.length === 0 && !loadError ? (
-            <div className="px-6 py-16 text-center text-sm text-zinc-500">
+            <div className="px-6 py-16 text-center text-sm text-[var(--text-muted-1)]">
               No entries yet. Run Anvil, use the app, or adjust filters.
             </div>
           ) : filtered.length === 0 ? null : (
@@ -189,19 +189,19 @@ export function LedgerPage() {
                         {initials(entry.fromDisplayName)}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="font-medium leading-snug text-white">{summaryLine(entry)}</p>
-                        <p className="mt-1 font-mono text-[11px] leading-relaxed text-zinc-500 sm:text-xs">
-                          <span className="text-zinc-400">{entry.fromDisplayName}</span>{' '}
-                          <span className="text-zinc-600">({entry.fromMasked})</span>
+                        <p className="font-medium leading-snug text-[var(--text-high-3)]">{summaryLine(entry)}</p>
+                        <p className="mt-1 font-mono text-[11px] leading-relaxed text-[var(--text-muted-1)] sm:text-xs">
+                          <span className="text-[var(--text-muted-2)]">{entry.fromDisplayName}</span>{' '}
+                          <span className="text-[var(--text-muted-3)]">({entry.fromMasked})</span>
                           {' · '}
-                          <span className="text-zinc-400">{entry.toDisplayName}</span>{' '}
-                          <span className="text-zinc-600">({entry.toMasked})</span>
+                          <span className="text-[var(--text-muted-2)]">{entry.toDisplayName}</span>{' '}
+                          <span className="text-[var(--text-muted-3)]">({entry.toMasked})</span>
                         </p>
-                        <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[11px] text-zinc-500">
+                        <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[11px] text-[var(--text-muted-1)]">
                           <span className="inline-flex items-center gap-1 rounded-md border border-emerald-500/25 bg-emerald-500/10 px-2 py-0.5 text-emerald-300/90">
                             ✓ On-chain
                           </span>
-                          <span className="text-zinc-600">Tx</span>{' '}
+                          <span className="text-[var(--text-muted-3)]">Tx</span>{' '}
                           <button
                             type="button"
                             title="Copy hash"
@@ -210,8 +210,8 @@ export function LedgerPage() {
                           >
                             {shortHash(entry.txHash)}
                           </button>
-                          <span className="hidden sm:inline text-zinc-600">·</span>
-                          <span className="text-zinc-400">Cause: {entry.causeName || '—'}</span>
+                          <span className="hidden sm:inline text-[var(--text-muted-3)]">·</span>
+                          <span className="text-[var(--text-muted-2)]">Cause: {entry.causeName || '—'}</span>
                         </p>
                       </div>
                       <div className="shrink-0 text-right">
@@ -222,9 +222,9 @@ export function LedgerPage() {
                         >
                           {incoming ? '+' : '−'}
                           {entry.amountEth}
-                          <span className="ml-0.5 text-sm font-normal text-zinc-500">ETH</span>
+                          <span className="ml-0.5 text-sm font-normal text-[var(--text-muted-1)]">ETH</span>
                         </p>
-                        <p className="mt-1 text-[10px] font-medium uppercase tracking-wider text-zinc-500">
+                        <p className="mt-1 text-[10px] font-medium uppercase tracking-wider text-[var(--text-muted-1)]">
                           {incoming ? 'Donation' : 'Disbursement'}
                         </p>
                       </div>

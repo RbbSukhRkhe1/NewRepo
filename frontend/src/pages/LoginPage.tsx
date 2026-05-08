@@ -29,15 +29,16 @@ export function LoginPage() {
     <div className="vtx-page max-w-md py-16">
       <SectionHeader title="Sign in" />
       <p className="mt-2 text-sm text-[var(--text-muted-1)]">
-        Admin: <span className="text-zinc-400">admin@vaultex.local</span> — Donors:{' '}
-        <span className="text-zinc-400">haha@</span>,{' '}
-        <span className="text-zinc-400">sukhan@</span>,{' '}
-        <span className="text-zinc-400">tasin@</span>
+        Admin:{' '}
+        <span className="text-[var(--text-muted-2)]">admin@vaultex.local</span> — Donors:{' '}
+        <span className="text-[var(--text-muted-2)]">haha@</span>,{' '}
+        <span className="text-[var(--text-muted-2)]">sukhan@</span>,{' '}
+        <span className="text-[var(--text-muted-2)]">tasin@</span>
         vaultex.local — password <code className="text-cyan-400">demo123</code>
       </p>
       <form onSubmit={(e) => void onSubmit(e)} className="mt-8 space-y-4">
         <div>
-          <label className="block text-xs font-medium uppercase tracking-wider text-zinc-500">
+          <label className="block text-xs font-medium uppercase tracking-wider text-[var(--text-muted-1)]">
             Email
           </label>
           <input
@@ -49,7 +50,7 @@ export function LoginPage() {
           />
         </div>
         <div>
-          <label className="block text-xs font-medium uppercase tracking-wider text-zinc-500">
+          <label className="block text-xs font-medium uppercase tracking-wider text-[var(--text-muted-1)]">
             Password
           </label>
           <input

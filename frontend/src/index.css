@@ -199,6 +199,16 @@ code {
   color: var(--text-muted-2);
 }
 
+:root[data-theme='light'] .vtx-input {
+  background: rgba(255, 255, 255, 0.78);
+  border-color: var(--border-chrome-2);
+  color: var(--text-high-3);
+}
+
+:root[data-theme='light'] .vtx-input::placeholder {
+  color: var(--text-muted-2);
+}
+
 .reveal {
   opacity: 0;
   transform: translateY(12px) scale(0.99);

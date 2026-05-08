@@ -24,7 +24,7 @@ export function CausesPage() {
   if (err) {
     return (
       <div className="px-4 py-12 text-center text-rose-400">
-        {err} — is the API running? Use <code className="text-zinc-400">npm run dev</code>
+        {err} — is the API running? Use <code className="text-[var(--text-muted-2)]">npm run dev</code>
       </div>
     );
   }
@@ -64,7 +64,7 @@ export function CausesPage() {
         })}
       </ul>
       {causes.length === 0 && !err && (
-        <p className="mt-8 text-center text-zinc-500">No causes yet. Admins can add one.</p>
+        <p className="mt-8 text-center text-[var(--text-muted-1)]">No causes yet. Admins can add one.</p>
       )}
     </div>
   );

@@ -53,7 +53,7 @@ export function CauseDetailPage() {
 
   if (err || !cause) {
     return (
-      <div className="px-4 py-12 text-center text-zinc-400">
+      <div className="px-4 py-12 text-center text-[var(--text-muted-2)]">
         {err || 'Loading…'}{' '}
         <Link to="/causes" className="text-cyan-400">
           Back
@@ -91,8 +91,8 @@ export function CauseDetailPage() {
       {canDonate ? (
         <SurfaceCard className="mt-10">
           <form onSubmit={(e) => void donate(e)}>
-          <h2 className="text-lg font-semibold text-white">Donate ETH</h2>
-          <p className="mt-1 text-xs text-zinc-500">
+          <h2 className="text-lg font-semibold text-[var(--text-high-3)]">Donate ETH</h2>
+          <p className="mt-1 text-xs text-[var(--text-muted-1)]">
             Sends from your assigned Anvil wallet to the main vault. Recorded on-chain and in the
             ledger.
           </p>
