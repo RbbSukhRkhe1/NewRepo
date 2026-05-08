@@ -106,7 +106,7 @@ export function RegisterPage() {
       </form>
       <p className="mt-6 text-center text-sm text-[var(--text-muted-1)]">
         Already have an account?{' '}
-        <Link to="/login" className="text-[var(--accent-bright-2)]">
+        <Link to="/login" className="auth-accent-text">
           Sign in
         </Link>
       </p>

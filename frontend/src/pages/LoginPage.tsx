@@ -34,7 +34,7 @@ export function LoginPage() {
         <span className="text-[var(--text-muted-2)]">haha@</span>,{' '}
         <span className="text-[var(--text-muted-2)]">sukhan@</span>,{' '}
         <span className="text-[var(--text-muted-2)]">tasin@</span>
-        vaultex.local — password <code className="text-cyan-400">demo123</code>
+        vaultex.local — password <code className="auth-accent-text">demo123</code>
       </p>
       <form onSubmit={(e) => void onSubmit(e)} className="mt-8 space-y-4">
         <div>
@@ -68,12 +68,12 @@ export function LoginPage() {
       </form>
       <p className="mt-6 text-center text-sm text-[var(--text-muted-1)]">
         Don&apos;t have an account?{' '}
-        <Link to="/register" className="text-[var(--accent-core)]">
+        <Link to="/register" className="auth-accent-text">
           Register
         </Link>
       </p>
       <p className="mt-3 text-center text-sm text-[var(--text-muted-1)]">
-        <Link to="/" className="text-[var(--accent-core)]">
+        <Link to="/" className="auth-accent-text">
           Back home
         </Link>
       </p>
