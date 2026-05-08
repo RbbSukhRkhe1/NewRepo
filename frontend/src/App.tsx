@@ -11,6 +11,7 @@ import { AdminUsersPage } from './pages/AdminUsersPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { AccountPage } from './pages/AccountPage';
 import { LedgerPage } from './pages/LedgerPage';
+import { DonationPage } from './pages/DonationPage';
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
             <Route path="/causes/:id" element={<CauseDetailPage />} />
             <Route path="/ledger" element={<LedgerPage />} />
             <Route path="/account" element={<AccountPage />} />
+            <Route path="/donate" element={<DonationPage />} />
             <Route
               path="/admin/users"
               element={

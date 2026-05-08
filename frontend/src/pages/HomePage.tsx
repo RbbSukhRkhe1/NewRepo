@@ -106,10 +106,10 @@ export function HomePage() {
         <div className="pointer-events-none absolute left-1/2 top-[176px] h-52 w-[520px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(11,21,39,0.95),transparent_70%)]" />
 
         <section
-          className={`relative mx-auto max-w-4xl rounded-[30px] px-6 py-7 backdrop-blur-xl sm:px-9 sm:py-8 ${
+          className={`relative mx-auto max-w-4xl rounded-[30px] px-7 py-8 backdrop-blur-xl sm:px-10 sm:py-9 ${
             isLightMode
-              ? 'border border-[rgba(147,171,201,0.42)] bg-[linear-gradient(155deg,rgba(244,249,255,0.92),rgba(230,240,252,0.85))] shadow-[0_22px_50px_rgba(58,91,130,0.2),0_0_45px_rgba(142,198,255,0.2)]'
-              : 'border border-white/10 bg-[linear-gradient(155deg,rgba(15,24,41,0.84),rgba(8,13,24,0.68))] shadow-[0_28px_90px_rgba(0,0,0,0.56),0_0_90px_rgba(45,245,173,0.14)]'
+              ? 'border border-[rgba(165,185,211,0.38)] bg-[linear-gradient(155deg,rgba(251,253,255,0.96),rgba(237,244,252,0.9))] shadow-[0_18px_34px_rgba(76,103,136,0.14)]'
+              : 'border border-white/[0.08] bg-[linear-gradient(155deg,rgba(15,24,41,0.74),rgba(8,13,24,0.58))] shadow-[0_18px_42px_rgba(0,0,0,0.36),0_0_40px_rgba(45,245,173,0.1)]'
           }`}
         >
           <p className="text-[11px] font-semibold uppercase tracking-[0.34em] text-[#d9bb78]">Trusted Web3 Giving</p>
@@ -153,8 +153,8 @@ export function HomePage() {
             <div
               className={`relative min-h-[250px] overflow-hidden rounded-[26px] backdrop-blur-2xl sm:min-h-[280px] ${
                 isLightMode
-                  ? 'border border-[rgba(145,174,206,0.46)] bg-[rgba(243,249,255,0.78)] shadow-[0_20px_46px_rgba(77,106,141,0.22)]'
-                  : 'border border-white/15 bg-[rgba(10,16,28,0.5)] shadow-[0_24px_90px_rgba(0,0,0,0.58)]'
+                  ? 'border border-[rgba(165,185,211,0.36)] bg-[rgba(248,252,255,0.86)] shadow-[0_14px_28px_rgba(76,103,136,0.14)]'
+                  : 'border border-white/[0.08] bg-[rgba(10,16,28,0.42)] shadow-[0_16px_34px_rgba(0,0,0,0.34)]'
               }`}
             >
               <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(255,255,255,0.08),transparent_36%)]" />
@@ -297,10 +297,10 @@ export function HomePage() {
           <div className="mt-8 grid gap-5 text-left md:grid-cols-3">
             <Link
               to="/causes"
-              className={`group relative flex min-h-[270px] flex-col rounded-3xl p-7 backdrop-blur-xl transition duration-500 ease-out hover:-translate-y-2 hover:scale-[1.03] ${
+              className={`group relative flex min-h-[270px] flex-col rounded-3xl p-8 backdrop-blur-xl transition duration-500 ease-out hover:-translate-y-1.5 hover:scale-[1.015] ${
                 isLightMode
-                  ? 'border border-[rgba(111,185,166,0.45)] bg-[linear-gradient(165deg,rgba(219,245,241,0.9),rgba(208,232,241,0.76))] shadow-[0_12px_30px_rgba(75,108,136,0.18)] hover:border-[rgba(64,219,176,0.75)] hover:shadow-[0_18px_36px_rgba(79,130,140,0.28)]'
-                  : 'border border-[rgba(64,219,176,0.38)] bg-[linear-gradient(165deg,rgba(18,40,54,0.64),rgba(7,19,28,0.45))] shadow-[0_14px_35px_rgba(1,8,15,0.48),0_0_0_1px_rgba(51,255,190,0.1)_inset] hover:border-[rgba(64,219,176,0.75)] hover:shadow-[0_22px_48px_rgba(0,16,16,0.62),0_0_56px_rgba(50,245,193,0.34)]'
+                  ? 'border border-[rgba(163,188,206,0.34)] bg-[linear-gradient(165deg,rgba(251,253,255,0.95),rgba(239,246,252,0.88))] shadow-[0_12px_24px_rgba(70,94,124,0.12)] hover:border-[rgba(111,185,166,0.55)] hover:shadow-[0_18px_32px_rgba(79,130,140,0.2)]'
+                  : 'border border-white/[0.07] bg-[linear-gradient(165deg,rgba(18,40,54,0.48),rgba(7,19,28,0.34))] shadow-[0_12px_28px_rgba(1,8,15,0.34),0_0_0_1px_rgba(255,255,255,0.03)_inset] hover:border-[rgba(64,219,176,0.42)] hover:shadow-[0_18px_34px_rgba(0,16,16,0.42),0_0_26px_rgba(50,245,193,0.2)]'
               }`}
             >
               <div
@@ -328,11 +328,11 @@ export function HomePage() {
             </Link>
 
             <Link
-              to="/account"
-              className={`group relative flex min-h-[270px] flex-col rounded-3xl p-7 backdrop-blur-xl transition duration-500 ease-out hover:-translate-y-2 hover:scale-[1.03] ${
+              to="/donate"
+              className={`group relative flex min-h-[270px] flex-col rounded-3xl p-8 backdrop-blur-xl transition duration-500 ease-out hover:-translate-y-1.5 hover:scale-[1.015] ${
                 isLightMode
-                  ? 'border border-[rgba(168,146,209,0.46)] bg-[linear-gradient(165deg,rgba(238,228,252,0.9),rgba(224,224,246,0.8))] shadow-[0_12px_30px_rgba(84,83,128,0.2)] hover:border-[rgba(183,111,255,0.72)] hover:shadow-[0_18px_36px_rgba(118,95,170,0.28)]'
-                  : 'border border-[rgba(183,111,255,0.35)] bg-[linear-gradient(165deg,rgba(40,24,63,0.64),rgba(16,10,31,0.45))] shadow-[0_14px_35px_rgba(8,3,18,0.5),0_0_0_1px_rgba(188,117,255,0.1)_inset] hover:border-[rgba(183,111,255,0.72)] hover:shadow-[0_22px_48px_rgba(15,4,32,0.62),0_0_56px_rgba(183,111,255,0.34)]'
+                  ? 'border border-[rgba(175,163,206,0.34)] bg-[linear-gradient(165deg,rgba(250,248,255,0.95),rgba(239,238,252,0.88))] shadow-[0_12px_24px_rgba(84,83,128,0.14)] hover:border-[rgba(183,111,255,0.52)] hover:shadow-[0_18px_32px_rgba(118,95,170,0.22)]'
+                  : 'border border-white/[0.07] bg-[linear-gradient(165deg,rgba(40,24,63,0.48),rgba(16,10,31,0.34))] shadow-[0_12px_28px_rgba(8,3,18,0.34),0_0_0_1px_rgba(255,255,255,0.03)_inset] hover:border-[rgba(183,111,255,0.42)] hover:shadow-[0_18px_34px_rgba(15,4,32,0.42),0_0_26px_rgba(183,111,255,0.2)]'
               }`}
             >
               <div
@@ -361,10 +361,10 @@ export function HomePage() {
 
             <Link
               to="/ledger"
-              className={`group relative flex min-h-[270px] flex-col rounded-3xl p-7 backdrop-blur-xl transition duration-500 ease-out hover:-translate-y-2 hover:scale-[1.03] ${
+              className={`group relative flex min-h-[270px] flex-col rounded-3xl p-8 backdrop-blur-xl transition duration-500 ease-out hover:-translate-y-1.5 hover:scale-[1.015] ${
                 isLightMode
-                  ? 'border border-[rgba(163,201,118,0.48)] bg-[linear-gradient(165deg,rgba(236,247,218,0.9),rgba(221,234,218,0.8))] shadow-[0_12px_30px_rgba(91,113,83,0.2)] hover:border-[rgba(153,255,77,0.75)] hover:shadow-[0_18px_36px_rgba(105,146,70,0.26)]'
-                  : 'border border-[rgba(153,255,77,0.38)] bg-[linear-gradient(165deg,rgba(34,45,17,0.64),rgba(14,22,10,0.45))] shadow-[0_14px_35px_rgba(10,14,2,0.5),0_0_0_1px_rgba(183,255,103,0.1)_inset] hover:border-[rgba(153,255,77,0.75)] hover:shadow-[0_22px_48px_rgba(11,20,4,0.62),0_0_56px_rgba(176,255,72,0.34)]'
+                  ? 'border border-[rgba(170,198,150,0.36)] bg-[linear-gradient(165deg,rgba(249,253,242,0.95),rgba(238,246,234,0.88))] shadow-[0_12px_24px_rgba(91,113,83,0.14)] hover:border-[rgba(153,217,114,0.52)] hover:shadow-[0_18px_32px_rgba(105,146,70,0.2)]'
+                  : 'border border-white/[0.07] bg-[linear-gradient(165deg,rgba(34,45,17,0.48),rgba(14,22,10,0.34))] shadow-[0_12px_28px_rgba(10,14,2,0.34),0_0_0_1px_rgba(255,255,255,0.03)_inset] hover:border-[rgba(153,255,77,0.42)] hover:shadow-[0_18px_34px_rgba(11,20,4,0.42),0_0_26px_rgba(176,255,72,0.18)]'
               }`}
             >
               <div
@@ -389,6 +389,24 @@ export function HomePage() {
               >
                 →
               </span>
+            </Link>
+          </div>
+
+          <div
+            className={`mx-auto mt-10 max-w-3xl rounded-3xl px-7 py-11 text-center backdrop-blur-xl sm:px-12 ${
+              isLightMode
+                ? 'border border-[rgba(169,188,212,0.34)] bg-[linear-gradient(180deg,rgba(251,253,255,0.95),rgba(239,246,252,0.88))] shadow-[0_14px_30px_rgba(70,94,124,0.12)]'
+                : 'border border-white/[0.07] bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))] shadow-[0_16px_32px_rgba(1,8,15,0.34),0_0_24px_rgba(45,245,173,0.12)]'
+            }`}
+          >
+            <p className="mx-auto max-w-2xl text-balance text-sm leading-relaxed text-[var(--text-muted-1)] sm:text-base">
+              Create your free account and start donating with full transparency
+            </p>
+            <Link
+              to="/register"
+              className="mt-6 inline-flex min-h-12 items-center justify-center rounded-full border border-[rgba(58,255,176,0.58)] bg-[linear-gradient(180deg,#3dffc4,#23d78f)] px-10 py-2.5 text-base font-semibold text-[#042112] shadow-[0_0_0_1px_rgba(63,255,186,0.2)_inset,0_0_34px_rgba(51,255,178,0.45)] transition duration-300 hover:scale-[1.02] hover:brightness-110"
+            >
+              Join the Vault
             </Link>
           </div>
         </section>
