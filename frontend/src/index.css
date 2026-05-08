@@ -80,6 +80,7 @@
 }
 
 :root[data-theme='light'] {
+  color-scheme: light;
   --bg-base: #f3f8ff;
   --bg-depth-1: #eaf2ff;
   --bg-depth-2: #e7f0ff;
@@ -195,6 +196,13 @@ code {
   min-height: 44px;
 }
 
+.vtx-input[type='password'] {
+  /* Ensure password bullets inherit the intended text color */
+  color: var(--text-high-3);
+  -webkit-text-fill-color: var(--text-high-3);
+  text-fill-color: var(--text-high-3);
+}
+
 .vtx-input::placeholder {
   color: var(--text-muted-2);
 }
@@ -203,6 +211,12 @@ code {
   background: rgba(255, 255, 255, 0.78);
   border-color: var(--border-chrome-2);
   color: var(--text-high-3);
+}
+
+:root[data-theme='light'] .vtx-input[type='password'] {
+  color: var(--text-high-3);
+  -webkit-text-fill-color: var(--text-high-3);
+  text-fill-color: var(--text-high-3);
 }
 
 :root[data-theme='light'] .vtx-input::placeholder {

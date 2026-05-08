@@ -68,12 +68,12 @@ export function LoginPage() {
       </form>
       <p className="mt-6 text-center text-sm text-[var(--text-muted-1)]">
         Don&apos;t have an account?{' '}
-        <Link to="/register" className="text-[var(--accent-bright-2)]">
+        <Link to="/register" className="text-[var(--accent-core)]">
           Register
         </Link>
       </p>
       <p className="mt-3 text-center text-sm text-[var(--text-muted-1)]">
-        <Link to="/" className="text-[var(--accent-bright-2)]">
+        <Link to="/" className="text-[var(--accent-core)]">
           Back home
         </Link>
       </p>
