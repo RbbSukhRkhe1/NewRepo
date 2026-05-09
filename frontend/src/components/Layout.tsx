@@ -103,7 +103,8 @@ export function Layout() {
         <Outlet />
       </main>
       <footer className="border-t border-[var(--border-chrome-1)] py-6 text-center text-xs text-[var(--text-muted-2)]">
-        Capstone demo · Anvil + SQLite · Transparent on-chain activity ·{' '}
+        Trusted donation platform · Secure giving with on-chain transparency · Verified causes and impact
+        tracking ·{' '}
         <a href="#" className="text-[var(--text-high-1)]">
           Contract
         </a>{' '}

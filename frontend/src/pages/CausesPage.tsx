@@ -267,7 +267,7 @@ function CauseCard({
 function AddCauseCard({ isLightMode }: { isLightMode: boolean }) {
   return (
     <Link
-      to="/admin/causes/new"
+      to="/causes/new"
       className={`group flex w-full flex-col items-center justify-center rounded-3xl border-2 border-dashed px-6 py-14 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl transition hover:-translate-y-0.5 hover:brightness-[1.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/55 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] ${
         isLightMode
           ? 'border-emerald-600/45 bg-[linear-gradient(162deg,rgba(236,252,246,0.95),rgba(220,246,236,0.88))] shadow-[0_10px_32px_rgba(16,120,90,0.12)] hover:border-emerald-600/58 hover:shadow-[0_14px_40px_rgba(16,120,90,0.16)]'

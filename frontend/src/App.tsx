@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { Layout } from './components/Layout';
 import { RequireAdmin } from './components/RequireAdmin';
+import { RequireAuth } from './components/RequireAuth';
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
 import { CausesPage } from './pages/CausesPage';
@@ -24,6 +25,14 @@ function App() {
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/causes" element={<CausesPage />} />
             <Route path="/causes/:id" element={<CauseDetailPage />} />
+            <Route
+              path="/causes/new"
+              element={
+                <RequireAuth>
+                  <NewCausePage />
+                </RequireAuth>
+              }
+            />
             <Route path="/ledger" element={<LedgerPage />} />
             <Route path="/account" element={<AccountPage />} />
             <Route path="/donate" element={<DonationPage />} />

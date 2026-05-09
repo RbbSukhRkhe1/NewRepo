@@ -142,7 +142,7 @@ export function DonationPage() {
           })}
           <button
             type="button"
-            onClick={() => nav('/admin/causes/new')}
+            onClick={() => nav('/causes/new')}
             className="group rounded-2xl border border-dashed border-[var(--border-chrome-3)] bg-[var(--overlay-surface-soft)] p-4 text-left transition hover:border-[var(--border-accent-soft)] hover:bg-[color:rgb(34_197_94_/_0.08)]"
           >
             <div className="flex h-full min-h-[140px] flex-col items-center justify-center text-center">
