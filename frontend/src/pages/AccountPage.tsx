@@ -124,7 +124,7 @@ export function AccountPage() {
   const [beneficiaries, setBeneficiaries] = useState<UserRow[]>([]);
   const [beneficiaryId, setBeneficiaryId] = useState('');
   const [disburseAmount, setDisburseAmount] = useState('1');
-  const [causeNote, setCauseNote] = useState('Baby Cancer');
+  const [causeNote, setCauseNote] = useState('Education');
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [history, setHistory] = useState<MeHistoryResponse | null>(null);

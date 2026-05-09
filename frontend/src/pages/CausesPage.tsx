@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { apiJson } from '../lib/api';
 
 type ShowcaseCause = {
+  /** Must equal `causes.title` in the DB so View Details resolves the correct `/causes/:id` */
+  apiTitle: string;
   section: 'urgent' | 'completed';
   sectionLabel: string;
   storyTitle: string;
@@ -20,35 +23,88 @@ type ShowcaseCause = {
 
 const causes: ShowcaseCause[] = [
   {
+    apiTitle: 'LGBTQs',
     section: 'urgent',
     sectionLabel: 'Urgent',
-    storyTitle: 'Students First',
+    storyTitle: 'Community first',
     storyBody: 'Verified beneficiaries and transparent fund flow powered by on-chain records.',
-    title: 'Students First',
-    subtitle: 'Providing mental health support for students under pressure and burnout.',
+    title: 'LGBTQs',
+    subtitle: 'Safe housing, counselling, and mutual aid for queer and trans communities.',
     donors: 174,
     daysLeft: 5,
     locationTag: 'Sydney, AU',
-    categoryTag: 'Mental Health',
+    categoryTag: 'Community',
     progressPct: 0,
     progressLabel: '0%',
-    amountLabel: '0.00 ETH raised of 10.00 ETH goal',
+    amountLabel: '0.00 ETH raised of 25.00 ETH goal',
     accent: 'orange',
   },
   {
+    apiTitle: 'War',
+    section: 'urgent',
+    sectionLabel: 'Urgent',
+    storyTitle: 'Relief corridors',
+    storyBody: 'Verified beneficiaries and transparent fund flow powered by on-chain records.',
+    title: 'War',
+    subtitle: 'Emergency relief, medical supplies, and resettlement support for conflict-affected families.',
+    donors: 228,
+    daysLeft: 4,
+    locationTag: 'Regional',
+    categoryTag: 'Humanitarian',
+    progressPct: 0,
+    progressLabel: '0%',
+    amountLabel: '0.00 ETH raised of 50.00 ETH goal',
+    accent: 'green',
+  },
+  {
+    apiTitle: 'Disaster',
+    section: 'urgent',
+    sectionLabel: 'Urgent',
+    storyTitle: 'Rapid response',
+    storyBody: 'Verified beneficiaries and transparent fund flow powered by on-chain records.',
+    title: 'Disaster',
+    subtitle: 'Shelters, food, and rebuilding after earthquakes, floods, and climate shocks.',
+    donors: 341,
+    daysLeft: 8,
+    locationTag: 'Pacific region',
+    categoryTag: 'Disaster Relief',
+    progressPct: 0,
+    progressLabel: '0%',
+    amountLabel: '0.00 ETH raised of 40.00 ETH goal',
+    accent: 'orange',
+  },
+  {
+    apiTitle: 'Hospital',
     section: 'completed',
     sectionLabel: 'Completed',
-    storyTitle: 'Children & Education',
+    storyTitle: 'Care networks',
     storyBody: 'Verified beneficiaries and transparent fund flow powered by on-chain records.',
-    title: 'Heart Break',
-    subtitle: 'Supporting children with safe learning spaces and daily essentials.',
-    donors: 180,
-    daysLeft: 6,
-    locationTag: 'Brisbane, AU',
-    categoryTag: 'Education',
+    title: 'Hospital',
+    subtitle: 'Medical equipment and patient care funds for overstretched public hospitals.',
+    donors: 512,
+    daysLeft: 0,
+    locationTag: 'National',
+    categoryTag: 'Healthcare',
     progressPct: 100,
     progressLabel: '100%',
     amountLabel: 'GOAL REACHED - EXPANDING IMPACT',
+    accent: 'green',
+  },
+  {
+    apiTitle: 'Education',
+    section: 'urgent',
+    sectionLabel: 'Active',
+    storyTitle: 'Every learner',
+    storyBody: 'Verified beneficiaries and transparent fund flow powered by on-chain records.',
+    title: 'Education',
+    subtitle: 'Scholarships, supplies, and digital access where school budgets fall short.',
+    donors: 198,
+    daysLeft: 14,
+    locationTag: 'Remote AU',
+    categoryTag: 'Education',
+    progressPct: 30,
+    progressLabel: '30%',
+    amountLabel: '9.00 ETH raised of 30.00 ETH goal',
     accent: 'green',
   },
 ];
@@ -72,7 +128,16 @@ function tagStyle(accent: ShowcaseCause['accent'], kind: 'frame' | 'story' | 'pr
   return 'from-emerald-400 to-cyan-400';
 }
 
-function CauseCard({ cause, isLightMode }: { cause: ShowcaseCause; isLightMode: boolean }) {
+function CauseCard({
+  cause,
+  isLightMode,
+  detailCauseId,
+}: {
+  cause: ShowcaseCause;
+  isLightMode: boolean;
+  /** Backend cause id — links to Cause detail when present; otherwise buttons fall back to /donate */
+  detailCauseId?: number;
+}) {
   const accentText =
     cause.accent === 'orange'
       ? isLightMode
@@ -81,6 +146,8 @@ function CauseCard({ cause, isLightMode }: { cause: ShowcaseCause; isLightMode: 
       : isLightMode
         ? 'text-emerald-700'
         : 'text-emerald-300';
+
+  const detailHref = detailCauseId != null ? `/causes/${detailCauseId}` : '/causes';
 
   return (
     <article
@@ -168,7 +235,7 @@ function CauseCard({ cause, isLightMode }: { cause: ShowcaseCause; isLightMode: 
               DONATE NOW
             </Link>
             <Link
-              to="/donate"
+              to={detailHref}
               className={`inline-flex min-h-11 items-center rounded-full px-6 py-2 text-sm font-semibold text-[var(--text-high-3)] ${
                 isLightMode
                   ? 'border border-[rgba(164,184,207,0.5)] bg-white/80 hover:bg-white'
@@ -224,10 +291,13 @@ function AddCauseCard({ isLightMode }: { isLightMode: boolean }) {
   );
 }
 
+type ApiCauseRow = { id: number; title: string };
+
 export function CausesPage() {
   const [isLightMode, setIsLightMode] = useState(
     () => typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'light',
   );
+  const [apiCauseIds, setApiCauseIds] = useState<number[]>([]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -236,6 +306,22 @@ export function CausesPage() {
     const observer = new MutationObserver(syncTheme);
     observer.observe(root, { attributes: true, attributeFilter: ['data-theme'] });
     return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    apiJson<ApiCauseRow[]>('/causes')
+      .then((rows) => {
+        if (cancelled) return;
+        const ids = [...rows].sort((a, b) => a.id - b.id).map((r) => r.id);
+        setApiCauseIds(ids);
+      })
+      .catch(() => {
+        if (!cancelled) setApiCauseIds([]);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (
@@ -269,8 +355,13 @@ export function CausesPage() {
       </div>
 
       <div className="mt-8 space-y-6">
-        {causes.map((cause) => (
-          <CauseCard key={`${cause.section}-${cause.title}`} cause={cause} isLightMode={isLightMode} />
+        {causes.map((cause, idx) => (
+          <CauseCard
+            key={`${cause.section}-${cause.apiTitle}`}
+            cause={cause}
+            isLightMode={isLightMode}
+            detailCauseId={apiCauseIds[idx]}
+          />
         ))}
         <AddCauseCard isLightMode={isLightMode} />
       </div>
