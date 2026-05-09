@@ -197,6 +197,33 @@ function CauseCard({ cause, isLightMode }: { cause: ShowcaseCause; isLightMode: 
   );
 }
 
+function AddCauseCard({ isLightMode }: { isLightMode: boolean }) {
+  return (
+    <Link
+      to="/admin/causes/new"
+      className={`group flex w-full flex-col items-center justify-center rounded-3xl border-2 border-dashed px-6 py-14 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl transition hover:-translate-y-0.5 hover:brightness-[1.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/55 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] ${
+        isLightMode
+          ? 'border-emerald-600/45 bg-[linear-gradient(162deg,rgba(236,252,246,0.95),rgba(220,246,236,0.88))] shadow-[0_10px_32px_rgba(16,120,90,0.12)] hover:border-emerald-600/58 hover:shadow-[0_14px_40px_rgba(16,120,90,0.16)]'
+          : 'border-emerald-500/28 bg-[linear-gradient(168deg,rgba(6,24,18,0.72),rgba(4,14,22,0.68))] shadow-[0_0_40px_rgba(16,185,129,0.12),inset_0_0_0_1px_rgba(52,211,153,0.08)] hover:border-emerald-400/42 hover:shadow-[0_0_48px_rgba(45,245,180,0.18)]'
+      }`}
+      aria-label="Add cause — Create a new fundraising cause"
+    >
+      <span
+        className={`flex h-14 w-14 items-center justify-center rounded-full border-2 text-3xl font-light leading-none ${
+          isLightMode ? 'border-emerald-600/55 text-emerald-900' : 'border-emerald-400/55 text-white'
+        }`}
+        aria-hidden
+      >
+        +
+      </span>
+      <p className={`mt-5 text-lg font-bold tracking-[-0.02em] ${isLightMode ? 'text-emerald-950' : 'text-white'}`}>Add cause</p>
+      <p className={`mt-2 max-w-[13rem] text-sm leading-snug ${isLightMode ? 'text-emerald-900/72' : 'text-slate-400'}`}>
+        Create a new fundraising cause
+      </p>
+    </Link>
+  );
+}
+
 export function CausesPage() {
   const [isLightMode, setIsLightMode] = useState(
     () => typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'light',
@@ -245,6 +272,7 @@ export function CausesPage() {
         {causes.map((cause) => (
           <CauseCard key={`${cause.section}-${cause.title}`} cause={cause} isLightMode={isLightMode} />
         ))}
+        <AddCauseCard isLightMode={isLightMode} />
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Link, Outlet, useLocation } from 'react-router-dom';
+import { useEffect, useLayoutEffect, useState } from 'react';
+import { Link, Outlet, useLocation, useNavigationType } from 'react-router-dom';
 import { NavPill, SecondaryButton } from './ui';
 import { useAuth } from '../context/AuthContext';
 
@@ -9,7 +9,13 @@ const THEME_STORAGE_KEY = 'vaultex-theme-mode';
 export function Layout() {
   const { user, logout } = useAuth();
   const loc = useLocation();
+  const navigationType = useNavigationType();
   const [themeMode, setThemeMode] = useState<ThemeMode>('dark');
+
+  useLayoutEffect(() => {
+    if (navigationType === 'POP') return;
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, [loc.pathname, loc.search, navigationType]);
 
   useEffect(() => {
     const stored = window.localStorage.getItem(THEME_STORAGE_KEY);

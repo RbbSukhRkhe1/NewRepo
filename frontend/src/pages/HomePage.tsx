@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactElement } from 'react';
 import { Link } from 'react-router-dom';
 
 type HeroSlide = {
@@ -8,7 +8,7 @@ type HeroSlide = {
   glow: string;
   background: string;
   lightBackground: string;
-  icon: JSX.Element;
+  icon: ReactElement;
 };
 
 const heroSlides: HeroSlide[] = [
@@ -62,6 +62,122 @@ const heroSlides: HeroSlide[] = [
       <svg viewBox="0 0 24 24" aria-hidden="true" className="h-14 w-14 fill-current">
         <path d="M12 2l2.4 2.2 3.2-.5 1.1 3 2.9 1.5-1.3 3 1.3 3-2.9 1.5-1.1 3-3.2-.5L12 22l-2.4-2.2-3.2.5-1.1-3-2.9-1.5 1.3-3-1.3-3 2.9-1.5 1.1-3 3.2.5L12 2zm-1.1 13.8l6-6-1.4-1.4-4.6 4.6-2.4-2.4-1.4 1.4 3.8 3.8z" />
       </svg>
+    ),
+  },
+];
+
+type BenefitTone = 'teal' | 'violet' | 'lime';
+
+/** Join-the-Vault row: Wallet-style glass / neon (dark) & saturated pastel (light) */
+const miniBenefitStyles: Record<
+  BenefitTone,
+  {
+    shellLight: string;
+    shellDark: string;
+    iconLight: string;
+    iconDark: string;
+    orbLight: string;
+    orbDark: string;
+    hairLight: string;
+    hairDark: string;
+    titleLight: string;
+    titleDark: string;
+    blurbLight: string;
+    blurbDark: string;
+    svgLight: string;
+    svgDark: string;
+    titleGlowDark?: string;
+  }
+> = {
+  teal: {
+    shellLight:
+      'border-2 border-teal-700/42 bg-[linear-gradient(168deg,#c8eae4_0%,#aedfd6_52%,#d4f4ee_100%)] shadow-[0_14px_36px_rgba(16,107,96,0.22),inset_0_1px_0_rgba(255,255,255,0.87),inset_0_-1px_0_rgba(15,118,107,0.06)]',
+    shellDark:
+      'before:pointer-events-none before:absolute before:inset-0 before:z-0 before:rounded-[inherit] before:bg-[radial-gradient(ellipse_118%_92%_at_42%_-32%,rgba(56,246,220,0.32),transparent_58%)] before:opacity-[0.88] before:[content:_""] after:pointer-events-none after:absolute after:inset-0 after:z-0 after:rounded-[inherit] after:bg-[radial-gradient(ellipse_95%_65%_at_106%_102%,rgba(45,235,218,0.14),transparent_68%)] after:[content:_""] border border-teal-300/42 bg-[linear-gradient(168deg,rgba(10,62,74,0.58),rgba(6,42,56,0.4)_55%,rgba(5,26,42,0.48))] shadow-[0_16px_40px_rgba(0,4,14,0.54),inset_0_1px_0_rgba(255,255,255,0.09),inset_0_0_0_1px_rgba(94,246,222,0.08),0_0_50px_rgba(45,245,205,0.15)] backdrop-blur-md',
+    iconLight:
+      'border-teal-800/38 bg-gradient-to-br from-white via-teal-50 to-teal-100/96 text-teal-950 shadow-[0_12px_28px_rgba(15,118,107,0.22),inset_0_1px_0_rgba(255,255,255,0.94)] ring-2 ring-teal-500/45',
+    iconDark:
+      'border-teal-200/34 bg-teal-200/[0.1] text-teal-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_0_30px_rgba(45,245,206,0.42),0_0_54px_rgba(45,220,215,0.16)] ring-1 ring-teal-100/22 backdrop-blur-sm',
+    orbLight: '-right-10 -top-5 h-[8.75rem] w-[8.75rem] bg-teal-500/[0.34]',
+    orbDark: '-right-8 top-[-0.85rem] h-[7.75rem] w-[7.75rem] bg-teal-400/24 opacity-95',
+    hairLight: 'from-transparent via-teal-700/52 to-transparent',
+    hairDark: 'from-transparent via-teal-200/38 to-transparent',
+    titleLight: 'text-[#053535]',
+    titleDark: 'text-[#dcfff8]',
+    blurbLight: 'text-[#0f3836]',
+    blurbDark: 'text-[#cceef0]/88',
+    svgLight: 'text-teal-950',
+    svgDark: 'text-teal-100',
+    titleGlowDark: '0 0 28px rgba(45,245,206,0.28)',
+  },
+  violet: {
+    shellLight:
+      'border-2 border-violet-700/45 bg-[linear-gradient(170deg,#dfd5ff_0%,#cbc0ff_48%,#e8e4ff_100%)] shadow-[0_14px_36px_rgba(91,71,154,0.24),inset_0_1px_0_rgba(255,255,255,0.85),inset_0_-1px_0_rgba(109,71,212,0.07)]',
+    shellDark:
+      'before:pointer-events-none before:absolute before:inset-0 before:z-0 before:rounded-[inherit] before:bg-[radial-gradient(ellipse_120%_94%_at_92%_-28%,rgba(196,138,255,0.34),transparent_56%)] before:opacity-[0.9] before:[content:_""] after:pointer-events-none after:absolute after:inset-0 after:z-0 after:rounded-[inherit] after:bg-[radial-gradient(ellipse_92%_60%_at_-4%_104%,rgba(170,118,248,0.16),transparent_66%)] after:[content:_""] border border-violet-400/44 bg-[linear-gradient(170deg,rgba(48,20,92,0.55),rgba(28,12,64,0.4)_53%,rgba(18,14,54,0.48))] shadow-[0_16px_40px_rgba(4,2,26,0.58),inset_0_1px_0_rgba(255,255,255,0.08),inset_0_0_0_1px_rgba(199,154,255,0.12),0_0_52px_rgba(183,111,255,0.16)] backdrop-blur-md',
+    iconLight:
+      'border-violet-900/38 bg-gradient-to-br from-white via-violet-100 to-violet-200/93 text-[#391f6b] shadow-[0_12px_28px_rgba(91,71,154,0.26),inset_0_1px_0_rgba(255,255,255,0.93)] ring-2 ring-violet-500/48',
+    iconDark:
+      'border-violet-200/38 bg-violet-300/[0.1] text-violet-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.11),0_0_34px_rgba(198,154,255,0.45),0_0_58px_rgba(170,118,246,0.18)] ring-1 ring-violet-200/25 backdrop-blur-sm',
+    orbLight: '-left-14 top-28 h-[9.5rem] w-[9.5rem] bg-violet-500/[0.38]',
+    orbDark: '-left-10 bottom-[-1.75rem] h-[8rem] w-[8rem] bg-violet-500/[0.22] opacity-[0.9]',
+    hairLight: 'from-transparent via-violet-700/54 to-transparent',
+    hairDark: 'from-transparent via-violet-200/42 to-transparent',
+    titleLight: 'text-[#2a1552]',
+    titleDark: 'text-[#f3eaff]',
+    blurbLight: 'text-[#3b2b64]',
+    blurbDark: 'text-[#e5ddff]/86',
+    svgLight: 'text-violet-950',
+    svgDark: 'text-violet-100',
+    titleGlowDark: '0 0 30px rgba(198,154,255,0.28)',
+  },
+  lime: {
+    shellLight:
+      'border-2 border-lime-800/42 bg-[linear-gradient(169deg,#d4edc0_0%,#bde8a8_52%,#e0f7d8_100%)] shadow-[0_14px_36px_rgba(56,98,42,0.23),inset_0_1px_0_rgba(255,255,255,0.82),inset_0_-1px_0_rgba(73,131,53,0.07)]',
+    shellDark:
+      'before:pointer-events-none before:absolute before:inset-0 before:z-0 before:rounded-[inherit] before:bg-[radial-gradient(ellipse_110%_90%_at_52%_-30%,rgba(184,255,108,0.26),transparent_56%)] before:opacity-[0.92] before:[content:_""] after:pointer-events-none after:absolute after:inset-0 after:z-0 after:rounded-[inherit] after:bg-[radial-gradient(ellipse_95%_55%_at_98%_102%,rgba(160,246,118,0.14),transparent_66%)] after:[content:_""] border border-lime-300/46 bg-[linear-gradient(169deg,rgba(36,74,26,0.56),rgba(18,58,26,0.4)_53%,rgba(14,62,34,0.48))] shadow-[0_16px_40px_rgba(0,14,4,0.56),inset_0_1px_0_rgba(255,255,255,0.09),inset_0_0_0_1px_rgba(190,255,130,0.11),0_0_50px_rgba(140,246,104,0.2)] backdrop-blur-md',
+    iconLight:
+      'border-lime-900/38 bg-gradient-to-br from-white via-lime-100 to-lime-200/93 text-[#1e4614] shadow-[0_12px_28px_rgba(73,131,53,0.25),inset_0_1px_0_rgba(255,255,255,0.93)] ring-2 ring-lime-600/44',
+    iconDark:
+      'border-lime-200/38 bg-lime-200/[0.1] text-lime-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_0_34px_rgba(184,255,108,0.4),0_0_60px_rgba(140,240,118,0.18)] ring-1 ring-lime-200/22 backdrop-blur-sm',
+    orbLight: 'left-14 -top-12 h-[8.75rem] w-[8.75rem] bg-lime-500/[0.36]',
+    orbDark: 'left-1/2 top-[-1.25rem] h-[7.25rem] w-[7.25rem] -translate-x-1/2 bg-lime-400/[0.2] opacity-90',
+    hairLight: 'from-transparent via-lime-700/54 to-transparent',
+    hairDark: 'from-transparent via-lime-200/43 to-transparent',
+    titleLight: 'text-[#163814]',
+    titleDark: 'text-[#edffe6]',
+    blurbLight: 'text-[#2a4a22]',
+    blurbDark: 'text-[#dff7d9]/87',
+    svgLight: 'text-lime-950',
+    svgDark: 'text-lime-100',
+    titleGlowDark: '0 0 30px rgba(184,255,130,0.22)',
+  },
+};
+
+const VAULT_JOIN_BENEFITS: {
+  title: string;
+  blurb: string;
+  icon: ReactElement;
+  tone: BenefitTone;
+}[] = [
+  {
+    tone: 'teal',
+    title: 'On-chain proof',
+    blurb: 'Every donation leaves a receipt you can verify forever.',
+    icon: <path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z" />,
+  },
+  {
+    tone: 'violet',
+    title: 'Live transparency',
+    blurb: 'Follow funds in real time—no black boxes.',
+    icon: <path d="M4 18h3V8H4v10zm5 0h3V4H9v14zm5 0h3v-7h-3v7zm5 0h3V9h-3v9z" />,
+  },
+  {
+    tone: 'lime',
+    title: 'Free to join',
+    blurb: 'No signup fees—your support goes where it matters.',
+    icon: (
+      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 6 4 4 6.5 4c1.74 0 3.41 1.01 4.22 2.09C11.59 5.01 13.26 4 15 4 17.5 4 19.5 6 19.5 8.5c0 3.78-3.4 6.86-8.55 11.53L12 21.35z" />
     ),
   },
 ];
@@ -125,11 +241,13 @@ export function HomePage() {
               textShadow: isLightMode ? '0 0 12px rgba(120,176,235,0.16)' : '0 0 28px rgba(97,252,186,0.16)',
             }}
           >
-            Donate on-chain Track with trust
+            Donate on Chain
+            <br />
+            Track with Trust
           </h1>
-          <div className="mx-auto mt-4 max-w-3xl text-center">
+          <div className="mx-auto mt-4 flex w-full max-w-3xl flex-col items-center px-2 text-center sm:px-3">
             <p
-              className={`text-balance text-base font-semibold leading-relaxed tracking-[0.012em] sm:text-lg ${
+              className={`mx-auto max-w-[min(100%,40rem)] text-balance text-center text-base font-semibold leading-relaxed tracking-[0.012em] sm:text-lg ${
                 isLightMode ? 'text-[#223c57]' : 'text-[var(--text-high-2)]'
               }`}
               style={{ textShadow: isLightMode ? 'none' : '0 0 16px rgba(122,255,171,0.1)' }}
@@ -137,7 +255,7 @@ export function HomePage() {
               What feels small to you could become life-changing for someone else.
             </p>
             <p
-              className={`mx-auto mt-2 max-w-2xl text-balance text-sm leading-relaxed tracking-[0.01em] sm:text-base ${
+              className={`mx-auto mt-2 w-full max-w-[min(100%,42rem)] text-balance text-center text-sm leading-relaxed tracking-[0.01em] sm:text-base ${
                 isLightMode ? 'text-[#38526f]' : 'text-[var(--text-muted-1)]'
               }`}
             >
@@ -151,76 +269,100 @@ export function HomePage() {
             onMouseLeave={() => setIsCarouselPaused(false)}
           >
             <div
-              className={`relative min-h-[250px] overflow-hidden rounded-[26px] backdrop-blur-2xl sm:min-h-[280px] ${
+              className={`relative min-h-[278px] overflow-hidden rounded-[26px] sm:min-h-[308px] ${
                 isLightMode
-                  ? 'border border-[rgba(165,185,211,0.36)] bg-[rgba(248,252,255,0.86)] shadow-[0_14px_28px_rgba(76,103,136,0.14)]'
-                  : 'border border-white/[0.08] bg-[rgba(10,16,28,0.42)] shadow-[0_16px_34px_rgba(0,0,0,0.34)]'
+                  ? 'border border-[rgba(165,185,211,0.36)] bg-[rgba(248,252,255,0.86)] shadow-[0_14px_28px_rgba(76,103,136,0.14)] backdrop-blur-2xl'
+                  : 'border border-cyan-400/20 bg-[rgba(8,18,32,0.52)] shadow-[0_20px_50px_rgba(0,0,0,0.45),0_0_0_1px_rgba(94,246,222,0.14)_inset,0_0_70px_rgba(45,245,215,0.28),0_0_110px_rgba(45,220,230,0.12)] backdrop-blur-[44px]'
               }`}
             >
-              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(255,255,255,0.08),transparent_36%)]" />
+              {isLightMode ? (
+                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(255,255,255,0.08),transparent_36%)]" />
+              ) : (
+                <>
+                  <div className="pointer-events-none absolute inset-0 opacity-100 bg-[radial-gradient(ellipse_120%_100%_at_50%_50%,rgba(80,246,229,0.38)_0%,rgba(45,218,235,0.18)_42%,rgba(30,170,185,0.08)_62%,transparent_85%)]" />
+                  <div className="pointer-events-none absolute inset-0 opacity-90 mix-blend-screen bg-[radial-gradient(circle_at_50%_50%,rgba(180,255,248,0.22)_0%,transparent_55%)]" />
+                </>
+              )}
 
+              <div className="relative min-h-[278px] overflow-x-hidden sm:min-h-[308px]">
               {heroSlides.map((slide, idx) => (
                 <article
                   key={slide.title}
-                  className={`absolute inset-0 flex h-full flex-col justify-between p-5 text-left transition-all duration-700 sm:p-6 ${
+                  className={`absolute inset-0 flex min-h-0 flex-col items-center justify-center gap-5 px-6 pb-16 pt-16 text-center transition-all duration-700 sm:gap-6 sm:px-8 sm:pb-20 sm:pt-[4.75rem] ${
                     idx === activeSlide ? 'translate-x-0 opacity-100' : 'translate-x-8 opacity-0'
                   }`}
-                  style={{ background: isLightMode ? slide.lightBackground : slide.background }}
+                  style={{
+                    background: isLightMode ? slide.lightBackground : slide.background,
+                  }}
                   aria-hidden={idx !== activeSlide}
                 >
+                  {!isLightMode ? (
+                    <>
+                      <div
+                        aria-hidden
+                        className="pointer-events-none absolute inset-0 [background:radial-gradient(ellipse_100%_90%_at_50%_50%,rgba(72,251,229,0.34)_0%,rgba(52,218,238,0.16)_48%,rgba(30,240,216,0.06)_72%,transparent_100%)]"
+                      />
+                      <div
+                        aria-hidden
+                        className="pointer-events-none absolute inset-0 backdrop-blur-[2px] [mask-image:radial-gradient(ellipse_95%_90%_at_50%_50%,black_20%,transparent_75%)] [background:rgba(45,245,220,0.08)]"
+                      />
+                    </>
+                  ) : null}
+
                   <div
-                    className={`relative inline-flex h-14 w-14 items-center justify-center rounded-xl border sm:h-16 sm:w-16 ${
+                    className={`relative z-10 mx-auto flex h-[3.25rem] w-[3.25rem] shrink-0 items-center justify-center rounded-xl border backdrop-blur-sm sm:h-14 sm:w-14 [&>svg]:!h-11 [&>svg]:!w-11 sm:[&>svg]:!h-[3.05rem] sm:[&>svg]:!w-[3.05rem] ${
                       isLightMode
-                        ? 'border-[rgba(145,174,206,0.65)] bg-white/88 text-[var(--text-high-1)]'
-                        : 'border-white/20 bg-black/20 text-white'
+                        ? 'border-[rgba(145,174,206,0.65)] bg-white/88 text-[var(--text-high-1)] shadow-[0_10px_24px_rgba(79,111,145,0.14),inset_0_1px_0_rgba(255,255,255,0.9)]'
+                        : 'border-white/[0.16] bg-white/[0.08] text-white'
                     }`}
                     style={{
                       color: slide.accent,
                       boxShadow: isLightMode
-                        ? '0 6px 18px rgba(79,111,145,0.16), inset 0 0 0 1px rgba(255,255,255,0.86)'
-                        : `0 0 32px ${slide.glow}, inset 0 0 0 1px rgba(255,255,255,0.06)`,
-                      animation: 'vtx-float 5.8s ease-in-out infinite',
+                        ? undefined
+                        : `0 2px 8px rgba(0,28,36,0.5), inset 0 0 0 1px rgba(184,253,246,0.14), inset 0 2px 4px rgba(94,246,222,0.06), 0 0 18px rgba(94,246,222,0.5), 0 0 28px rgba(45,235,218,0.22)`,
+                      animation: 'vtx-float-carousel 7s ease-in-out infinite',
                     }}
                   >
                     {slide.icon}
                   </div>
 
-                  <div className="mt-3 max-w-2xl">
+                  <div className="relative z-10 mx-auto flex max-w-2xl flex-col items-center text-center">
                     <p
                       className={`text-[11px] font-semibold uppercase tracking-[0.24em] ${
                         isLightMode ? 'text-[#355271]' : ''
                       }`}
-                      style={isLightMode ? undefined : { color: slide.accent }}
+                      style={isLightMode ? undefined : { color: slide.accent, textShadow: `0 0 24px ${slide.glow}` }}
                     >
                       Premium trust signal
                     </p>
                     <h3
-                      className={`mt-1.5 text-2xl font-black leading-tight tracking-[-0.02em] sm:text-3xl ${
-                        isLightMode ? 'text-[#132b46]' : 'text-white'
+                      className={`mt-2 text-2xl font-black leading-tight tracking-[-0.02em] sm:text-3xl ${
+                        isLightMode ? 'text-[#132b46]' : 'text-white [text-shadow:0_0_32px_rgba(94,246,222,0.35)]'
                       }`}
                     >
                       {slide.title}
                     </h3>
-                    <p className={`mt-2 max-w-xl text-sm leading-relaxed ${isLightMode ? 'text-[#2f4868]' : 'text-white/78'}`}>
+                    <p
+                      className={`mt-3 max-w-xl text-sm leading-relaxed sm:text-[0.9375rem] ${
+                        isLightMode ? 'text-[#2f4868]' : 'text-white/82 [text-shadow:0_1px_20px_rgba(45,240,216,0.12)]'
+                      }`}
+                    >
                       {slide.description}
                     </p>
                   </div>
 
-                  <div className="mt-3 flex items-center justify-between">
+                  <div className="relative z-10 mt-1 flex w-full shrink-0 justify-center px-2">
                     <span
-                      className={`text-xs font-medium uppercase tracking-[0.18em] sm:text-sm ${
-                        isLightMode ? 'text-[#304e6e]' : 'text-white/70'
+                      className={`text-center text-xs font-medium uppercase tracking-[0.18em] sm:text-sm ${
+                        isLightMode ? 'text-[#304e6e]' : 'text-white/75'
                       }`}
-                      style={isLightMode ? undefined : { textShadow: `0 0 18px ${slide.glow}` }}
+                      style={
+                        isLightMode
+                          ? undefined
+                          : { textShadow: `0 0 22px rgba(94,246,222,0.55), 0 0 40px ${slide.glow}` }
+                      }
                     >
                       Vaultex vision
-                    </span>
-                    <span
-                      className="invisible text-4xl font-semibold leading-none sm:text-5xl"
-                      style={{ color: slide.accent }}
-                      aria-hidden="true"
-                    >
-                      →
                     </span>
                   </div>
                 </article>
@@ -251,19 +393,38 @@ export function HomePage() {
                 </svg>
               </button>
 
-              <div className="absolute bottom-5 left-1/2 z-20 flex -translate-x-1/2 items-center gap-3">
+              <div
+                className="pointer-events-none absolute bottom-3.5 left-1/2 z-30 flex max-w-[min(92%,18rem)] -translate-x-1/2 items-center gap-2 sm:bottom-4 sm:gap-2"
+                role="presentation"
+              >
                 {heroSlides.map((slide, idx) => (
                   <button
                     key={slide.title}
                     type="button"
                     onClick={() => setActiveSlide(idx)}
-                    className={`rounded-full border transition-all duration-300 ${
-                      idx === activeSlide ? 'h-4 w-10 border-white/70' : 'h-4 w-4 border-white/35 bg-white/12'
+                    className={`pointer-events-auto rounded-full border transition-[width,height,box-shadow,background-color,border-color] duration-[580ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                      idx === activeSlide
+                        ? isLightMode
+                          ? `h-[5px] w-[1.2rem] border-slate-500/38 sm:h-1 sm:w-[1.35rem]`
+                          : `h-[5px] w-[1.35rem] border-cyan-200/70 sm:h-1 sm:w-6`
+                        : isLightMode
+                          ? 'h-[3.5px] w-[3.5px] border-slate-500/45 bg-slate-600/12'
+                          : 'h-[3.5px] w-[3.5px] border-white/52 bg-white/18'
                     }`}
-                    style={idx === activeSlide ? { background: slide.accent, boxShadow: `0 0 20px ${slide.glow}` } : {}}
+                    style={
+                      idx === activeSlide
+                        ? {
+                            background: slide.accent,
+                            boxShadow: isLightMode
+                              ? `0 0 8px rgba(80,210,188,0.32), 0 0 12px ${slide.glow}`
+                              : `0 0 10px rgba(94,246,222,0.65), 0 0 18px rgba(45,235,218,0.35), 0 0 12px ${slide.glow}`,
+                          }
+                        : undefined
+                    }
                     aria-label={`Go to slide ${idx + 1}`}
                   />
                 ))}
+              </div>
               </div>
             </div>
           </div>
@@ -297,30 +458,47 @@ export function HomePage() {
           <div className="mt-8 grid gap-5 text-left md:grid-cols-3">
             <Link
               to="/causes"
-              className={`group relative flex min-h-[270px] flex-col rounded-3xl p-8 backdrop-blur-xl transition duration-500 ease-out hover:-translate-y-1.5 hover:scale-[1.015] ${
+              className={`group relative isolate flex min-h-[270px] flex-col overflow-hidden rounded-3xl p-8 transition duration-500 ease-out hover:-translate-y-1.5 hover:scale-[1.015] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(42,216,178,0.45)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] ${
                 isLightMode
-                  ? 'border border-[rgba(163,188,206,0.34)] bg-[linear-gradient(165deg,rgba(251,253,255,0.95),rgba(239,246,252,0.88))] shadow-[0_12px_24px_rgba(70,94,124,0.12)] hover:border-[rgba(111,185,166,0.55)] hover:shadow-[0_18px_32px_rgba(79,130,140,0.2)]'
-                  : 'border border-white/[0.07] bg-[linear-gradient(165deg,rgba(18,40,54,0.48),rgba(7,19,28,0.34))] shadow-[0_12px_28px_rgba(1,8,15,0.34),0_0_0_1px_rgba(255,255,255,0.03)_inset] hover:border-[rgba(64,219,176,0.42)] hover:shadow-[0_18px_34px_rgba(0,16,16,0.42),0_0_26px_rgba(50,245,193,0.2)]'
+                  ? 'border-2 border-teal-600/38 bg-[linear-gradient(168deg,#c8eae4_0%,#aedfd6_46%,#d4f4ee_100%)] shadow-[0_16px_40px_rgba(16,107,96,0.2),inset_0_1px_0_rgba(255,255,255,0.88),inset_0_-1px_0_rgba(15,118,107,0.06)] backdrop-blur-sm hover:border-teal-600/55 hover:shadow-[0_24px_52px_rgba(16,112,101,0.26)]'
+                  : 'before:pointer-events-none before:absolute before:inset-0 before:z-0 before:rounded-[inherit] before:bg-[radial-gradient(ellipse_112%_70%_at_15%_-8%,rgba(56,246,220,0.28),transparent_58%)] before:opacity-[0.85] before:[content:_""] border border-teal-300/35 bg-[linear-gradient(168deg,rgba(16,62,74,0.42),rgba(8,34,54,0.28)_55%,rgba(6,20,42,0.38))] shadow-[0_16px_40px_rgba(0,4,14,0.55),inset_0_1px_0_rgba(255,255,255,0.08),inset_0_0_0_1px_rgba(94,246,222,0.08),0_0_52px_rgba(45,245,205,0.14)] backdrop-blur-[22px] after:pointer-events-none after:absolute after:inset-0 after:z-0 after:rounded-[inherit] after:bg-[radial-gradient(ellipse_85%_45%_at_100%_115%,rgba(45,235,218,0.12),transparent_65%)] after:opacity-90 after:[content:_""] hover:border-teal-200/48 hover:shadow-[0_22px_52px_rgba(0,4,14,0.58),inset_0_1px_0_rgba(255,255,255,0.1),0_0_72px_rgba(45,245,205,0.22)]'
               }`}
             >
+              <span
+                className={`pointer-events-none absolute -right-24 top-24 h-[11rem] w-[11rem] rounded-full blur-3xl ${
+                  isLightMode ? 'bg-teal-500/[0.32]' : 'bg-teal-400/18 opacity-75'
+                }`}
+                aria-hidden
+              />
               <div
-                className={`mb-6 flex h-11 w-11 items-center justify-center rounded-xl border ${
+                className={`relative z-[1] mb-6 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border backdrop-blur-sm ${
                   isLightMode
-                    ? 'border-teal-500/35 bg-white/85 text-teal-700 shadow-[0_6px_16px_rgba(55,137,146,0.18)]'
-                    : 'border-teal-300/35 bg-teal-300/10 text-teal-200 shadow-[0_0_24px_rgba(45,245,205,0.24)]'
+                    ? 'border-teal-700/38 bg-gradient-to-br from-white via-teal-50 to-teal-100/98 text-teal-950 shadow-[0_12px_28px_rgba(15,118,107,0.22),inset_0_1px_0_rgba(255,255,255,0.96)] ring-2 ring-teal-500/40'
+                    : 'border-teal-200/28 bg-teal-200/[0.09] text-teal-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_0_28px_rgba(45,245,206,0.35),0_0_54px_rgba(45,220,215,0.15)] ring-1 ring-teal-200/14'
                 }`}
               >
                 <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6 fill-current">
                   <path d="M12 3l8 4v5c0 5.25-3.45 8.71-8 10-4.55-1.29-8-4.75-8-10V7l8-4zm0 2.18L6 8v4c0 4.13 2.54 6.98 6 8.12 3.46-1.14 6-3.99 6-8.12V8l-6-2.82z" />
                 </svg>
               </div>
-              <span className="absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-emerald-300/45 to-transparent" />
-              <h3 className={`text-2xl font-bold ${isLightMode ? 'text-[#13344e]' : 'text-[#dcfff4]'}`}>Browse Causes</h3>
-              <p className="mt-3 text-sm leading-relaxed text-[var(--text-muted-1)]">
+              <span className={`absolute inset-x-6 top-0 z-[1] h-px bg-gradient-to-r ${isLightMode ? 'from-transparent via-teal-700/55 to-transparent' : 'from-transparent via-teal-200/40 to-transparent'}`} />
+              <h3
+                className={`relative z-[1] text-2xl font-bold ${isLightMode ? 'text-[#053535]' : 'text-[#d8fff6]'}`}
+                style={
+                  !isLightMode ? { textShadow: '0 0 38px rgba(45,245,206,0.18)' } : undefined
+                }
+              >
+                Browse Causes
+              </h3>
+              <p
+                className={`relative z-[1] mt-3 text-sm font-medium leading-relaxed ${
+                  isLightMode ? 'text-[#0f3836]' : 'text-white/73'
+                }`}
+              >
                 Discover verified projects with clear goals, transparent budgets, and measurable impact.
               </p>
               <span
-                className="invisible mt-auto self-end text-4xl font-semibold text-[#2af4bf] transition-transform duration-300 group-hover:translate-x-2"
+                className="relative z-[1] invisible mt-auto self-end text-4xl font-semibold text-[#2af4bf] transition-transform duration-300 group-hover:translate-x-2"
                 aria-hidden="true"
               >
                 →
@@ -329,30 +507,45 @@ export function HomePage() {
 
             <Link
               to="/donate"
-              className={`group relative flex min-h-[270px] flex-col rounded-3xl p-8 backdrop-blur-xl transition duration-500 ease-out hover:-translate-y-1.5 hover:scale-[1.015] ${
+              className={`group relative isolate flex min-h-[270px] flex-col overflow-hidden rounded-3xl p-8 transition duration-500 ease-out hover:-translate-y-1.5 hover:scale-[1.015] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(192,138,255,0.5)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] ${
                 isLightMode
-                  ? 'border border-[rgba(175,163,206,0.34)] bg-[linear-gradient(165deg,rgba(250,248,255,0.95),rgba(239,238,252,0.88))] shadow-[0_12px_24px_rgba(84,83,128,0.14)] hover:border-[rgba(183,111,255,0.52)] hover:shadow-[0_18px_32px_rgba(118,95,170,0.22)]'
-                  : 'border border-white/[0.07] bg-[linear-gradient(165deg,rgba(40,24,63,0.48),rgba(16,10,31,0.34))] shadow-[0_12px_28px_rgba(8,3,18,0.34),0_0_0_1px_rgba(255,255,255,0.03)_inset] hover:border-[rgba(183,111,255,0.42)] hover:shadow-[0_18px_34px_rgba(15,4,32,0.42),0_0_26px_rgba(183,111,255,0.2)]'
+                  ? 'border-2 border-violet-600/40 bg-[linear-gradient(170deg,#e1d9ff_0%,#cbc0ff_44%,#e8e4ff_100%)] shadow-[0_16px_40px_rgba(91,71,154,0.22),inset_0_1px_0_rgba(255,255,255,0.82),inset_0_-1px_0_rgba(109,71,212,0.07)] backdrop-blur-sm hover:border-violet-700/52 hover:shadow-[0_24px_52px_rgba(88,64,164,0.28)]'
+                  : 'before:pointer-events-none before:absolute before:inset-0 before:z-0 before:rounded-[inherit] before:bg-[radial-gradient(ellipse_118%_68%_at_85%_-6%,rgba(196,138,255,0.3),transparent_58%)] before:opacity-[0.88] before:[content:_""] border border-violet-400/38 bg-[linear-gradient(170deg,rgba(52,24,92,0.44),rgba(28,14,62,0.32)_52%,rgba(18,12,52,0.4))] shadow-[0_16px_40px_rgba(4,0,22,0.58),inset_0_1px_0_rgba(255,255,255,0.07),inset_0_0_0_1px_rgba(199,154,255,0.1),0_0_56px_rgba(183,111,255,0.14)] backdrop-blur-[22px] after:pointer-events-none after:absolute after:inset-0 after:z-0 after:rounded-[inherit] after:bg-[radial-gradient(ellipse_80%_50%_at_12%_108%,rgba(170,118,248,0.14),transparent_62%)] after:[content:_""] hover:border-violet-300/50 hover:shadow-[0_22px_52px_rgba(5,2,26,0.6),inset_0_1px_0_rgba(255,255,255,0.09),0_0_74px_rgba(183,111,255,0.24)]'
               }`}
             >
+              <span
+                className={`pointer-events-none absolute -left-28 bottom-0 h-[12rem] w-[12rem] rounded-full blur-3xl ${isLightMode ? 'bg-violet-500/[0.35]' : 'bg-violet-500/22 opacity-[0.82]'}`}
+                aria-hidden
+              />
               <div
-                className={`mb-6 flex h-11 w-11 items-center justify-center rounded-xl border ${
+                className={`relative z-[1] mb-6 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border backdrop-blur-sm ${
                   isLightMode
-                    ? 'border-violet-500/35 bg-white/85 text-violet-700 shadow-[0_6px_16px_rgba(124,93,170,0.18)]'
-                    : 'border-violet-300/35 bg-violet-300/10 text-violet-200 shadow-[0_0_24px_rgba(183,111,255,0.24)]'
+                    ? 'border-violet-800/34 bg-gradient-to-br from-white via-violet-100 to-violet-200/92 text-[#391f6b] shadow-[0_12px_28px_rgba(91,71,154,0.24),inset_0_1px_0_rgba(255,255,255,0.94)] ring-2 ring-violet-500/45'
+                    : 'border-violet-300/38 bg-violet-300/[0.09] text-violet-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_0_34px_rgba(198,154,255,0.4),0_0_62px_rgba(160,112,246,0.16)] ring-1 ring-violet-300/18'
                 }`}
               >
                 <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6 fill-current">
                   <path d="M17 8V7a5 5 0 10-10 0v1H5v13h14V8h-2zm-8 0V7a3 3 0 016 0v1H9zm3 8.8a2.2 2.2 0 112.2-2.2A2.2 2.2 0 0112 16.8z" />
                 </svg>
               </div>
-              <span className="absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-violet-300/45 to-transparent" />
-              <h3 className={`text-2xl font-bold ${isLightMode ? 'text-[#2a2f56]' : 'text-[#f0e6ff]'}`}>Donate Securely</h3>
-              <p className="mt-3 text-sm leading-relaxed text-[var(--text-muted-1)]">
+              <span className={`absolute inset-x-6 top-0 z-[1] h-px bg-gradient-to-r ${isLightMode ? 'from-transparent via-violet-800/48 to-transparent' : 'from-transparent via-violet-200/45 to-transparent'}`} />
+              <h3
+                className={`relative z-[1] text-2xl font-bold ${isLightMode ? 'text-[#2a1855]' : 'text-[#f3eaff]'}`}
+                style={
+                  !isLightMode ? { textShadow: '0 0 36px rgba(198,154,255,0.2)' } : undefined
+                }
+              >
+                Donate Securely
+              </h3>
+              <p
+                className={`relative z-[1] mt-3 text-sm font-medium leading-relaxed ${
+                  isLightMode ? 'text-[#38285d]' : 'text-white/72'
+                }`}
+              >
                 Connect your wallet and send ETH directly. Receive instant on-chain proof of your donation.
               </p>
               <span
-                className="invisible mt-auto self-end text-4xl font-semibold text-[#c782ff] transition-transform duration-300 group-hover:translate-x-2"
+                className="relative z-[1] invisible mt-auto self-end text-4xl font-semibold text-[#c782ff] transition-transform duration-300 group-hover:translate-x-2"
                 aria-hidden="true"
               >
                 →
@@ -361,30 +554,47 @@ export function HomePage() {
 
             <Link
               to="/ledger"
-              className={`group relative flex min-h-[270px] flex-col rounded-3xl p-8 backdrop-blur-xl transition duration-500 ease-out hover:-translate-y-1.5 hover:scale-[1.015] ${
+              className={`group relative isolate flex min-h-[270px] flex-col overflow-hidden rounded-3xl p-8 transition duration-500 ease-out hover:-translate-y-1.5 hover:scale-[1.015] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(160,246,118,0.55)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] ${
                 isLightMode
-                  ? 'border border-[rgba(170,198,150,0.36)] bg-[linear-gradient(165deg,rgba(249,253,242,0.95),rgba(238,246,234,0.88))] shadow-[0_12px_24px_rgba(91,113,83,0.14)] hover:border-[rgba(153,217,114,0.52)] hover:shadow-[0_18px_32px_rgba(105,146,70,0.2)]'
-                  : 'border border-white/[0.07] bg-[linear-gradient(165deg,rgba(34,45,17,0.48),rgba(14,22,10,0.34))] shadow-[0_12px_28px_rgba(10,14,2,0.34),0_0_0_1px_rgba(255,255,255,0.03)_inset] hover:border-[rgba(153,255,77,0.42)] hover:shadow-[0_18px_34px_rgba(11,20,4,0.42),0_0_26px_rgba(176,255,72,0.18)]'
+                  ? 'border-2 border-lime-700/38 bg-[linear-gradient(169deg,#d8efc5_0%,#bde8a8_42%,#dcf2cf_100%)] shadow-[0_16px_40px_rgba(56,98,42,0.21),inset_0_1px_0_rgba(255,255,255,0.82),inset_0_-1px_0_rgba(73,131,53,0.08)] backdrop-blur-sm hover:border-lime-800/45 hover:shadow-[0_24px_52px_rgba(52,96,38,0.27)]'
+                  : 'before:pointer-events-none before:absolute before:inset-0 before:z-0 before:rounded-[inherit] before:bg-[radial-gradient(ellipse_100%_64%_at_50%_-12%,rgba(184,255,108,0.22),transparent_55%)] before:opacity-[0.9] before:[content:_""] border border-lime-300/42 bg-[linear-gradient(169deg,rgba(36,62,26,0.46),rgba(18,42,22,0.3)_54%,rgba(14,48,26,0.38))] shadow-[0_16px_40px_rgba(0,10,2,0.55),inset_0_1px_0_rgba(255,255,255,0.08),inset_0_0_0_1px_rgba(190,255,130,0.1),0_0_48px_rgba(140,246,104,0.18)] backdrop-blur-[22px] after:pointer-events-none after:absolute after:inset-0 after:z-0 after:rounded-[inherit] after:bg-[radial-gradient(ellipse_90%_45%_at_105%_100%,rgba(160,246,118,0.12),transparent_65%)] after:[content:_""] hover:border-lime-200/52 hover:shadow-[0_22px_52px_rgba(0,12,4,0.58),inset_0_1px_0_rgba(255,255,255,0.09),0_0_74px_rgba(160,250,126,0.26)]'
               }`}
             >
+              <span
+                className={`pointer-events-none absolute left-16 -top-20 h-[10rem] w-[10rem] rounded-full blur-3xl ${
+                  isLightMode ? 'bg-lime-500/[0.35]' : 'bg-lime-400/26 opacity-[0.75]'
+                }`}
+                aria-hidden
+              />
               <div
-                className={`mb-6 flex h-11 w-11 items-center justify-center rounded-xl border ${
+                className={`relative z-[1] mb-6 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border backdrop-blur-sm ${
                   isLightMode
-                    ? 'border-lime-500/35 bg-white/85 text-lime-700 shadow-[0_6px_16px_rgba(114,145,68,0.2)]'
-                    : 'border-lime-300/35 bg-lime-300/10 text-lime-200 shadow-[0_0_24px_rgba(176,255,72,0.24)]'
+                    ? 'border-lime-900/35 bg-gradient-to-br from-white via-lime-100 to-lime-200/93 text-[#1e3d14] shadow-[0_12px_28px_rgba(73,131,53,0.24),inset_0_1px_0_rgba(255,255,255,0.93)] ring-2 ring-lime-600/40'
+                    : 'border-lime-200/32 bg-lime-200/[0.08] text-lime-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_0_32px_rgba(184,255,108,0.38),0_0_62px_rgba(140,240,118,0.18)] ring-1 ring-lime-200/16'
                 }`}
               >
                 <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6 fill-current">
                   <path d="M4 4h16v2H4zm2 4h12v12H6zm3 3v6h2v-6zm4 2v4h2v-4z" />
                 </svg>
               </div>
-              <span className="absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-lime-300/45 to-transparent" />
-              <h3 className={`text-2xl font-bold ${isLightMode ? 'text-[#2a4521]' : 'text-[#efffd9]'}`}>Live Ledger</h3>
-              <p className="mt-3 text-sm leading-relaxed text-[var(--text-muted-1)]">
+              <span className={`absolute inset-x-6 top-0 z-[1] h-px bg-gradient-to-r ${isLightMode ? 'from-transparent via-lime-800/50 to-transparent' : 'from-transparent via-lime-200/43 to-transparent'}`} />
+              <h3
+                className={`relative z-[1] text-2xl font-bold ${isLightMode ? 'text-[#173212]' : 'text-[#f4ffe6]'}`}
+                style={
+                  !isLightMode ? { textShadow: '0 0 38px rgba(184,255,130,0.16)' } : undefined
+                }
+              >
+                Live Ledger
+              </h3>
+              <p
+                className={`relative z-[1] mt-3 text-sm font-medium leading-relaxed ${
+                  isLightMode ? 'text-[#27421f]' : 'text-white/72'
+                }`}
+              >
                 Watch every donation and payout in real-time. Full transparency on the blockchain.
               </p>
               <span
-                className="invisible mt-auto self-end text-4xl font-semibold text-[#b8ff4a] transition-transform duration-300 group-hover:translate-x-2"
+                className="relative z-[1] invisible mt-auto self-end text-4xl font-semibold text-[#b8ff4a] transition-transform duration-300 group-hover:translate-x-2"
                 aria-hidden="true"
               >
                 →
@@ -393,21 +603,125 @@ export function HomePage() {
           </div>
 
           <div
-            className={`mx-auto mt-10 max-w-3xl rounded-3xl px-7 py-11 text-center backdrop-blur-xl sm:px-12 ${
+            className={`relative mx-auto mt-14 max-w-3xl overflow-hidden rounded-[2.25rem] px-8 py-16 text-center backdrop-blur-[28px] sm:px-12 sm:py-[4.75rem] ${
               isLightMode
-                ? 'border border-[rgba(169,188,212,0.34)] bg-[linear-gradient(180deg,rgba(251,253,255,0.95),rgba(239,246,252,0.88))] shadow-[0_14px_30px_rgba(70,94,124,0.12)]'
-                : 'border border-white/[0.07] bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))] shadow-[0_16px_32px_rgba(1,8,15,0.34),0_0_24px_rgba(45,245,173,0.12)]'
+                ? 'border border-[rgba(154,174,206,0.22)] bg-[linear-gradient(165deg,rgba(255,255,255,0.96)_0%,rgba(244,249,253,0.88)_42%,rgba(238,246,251,0.94)_100%)] shadow-[0_24px_60px_rgba(58,76,112,0.09),0_0_0_1px_rgba(255,255,255,0.85)_inset,0_1px_0_rgba(255,255,255,0.6)_inset]'
+                : 'border border-white/[0.07] bg-[linear-gradient(165deg,rgba(26,34,54,0.72)_0%,rgba(14,18,30,0.55)_38%,rgba(12,26,42,0.62)_100%)] shadow-[0_28px_70px_rgba(2,8,22,0.55),0_0_0_1px_rgba(255,255,255,0.045)_inset,0_0_100px_rgba(45,245,173,0.07)]'
             }`}
           >
-            <p className="mx-auto max-w-2xl text-balance text-sm leading-relaxed text-[var(--text-muted-1)] sm:text-base">
-              Create your free account and start donating with full transparency
-            </p>
-            <Link
-              to="/register"
-              className="mt-6 inline-flex min-h-12 items-center justify-center rounded-full border border-[rgba(58,255,176,0.58)] bg-[linear-gradient(180deg,#3dffc4,#23d78f)] px-10 py-2.5 text-base font-semibold text-[#042112] shadow-[0_0_0_1px_rgba(63,255,186,0.2)_inset,0_0_34px_rgba(51,255,178,0.45)] transition duration-300 hover:scale-[1.02] hover:brightness-110"
+            <div
+              aria-hidden="true"
+              className={`pointer-events-none absolute inset-0 opacity-95 ${
+                isLightMode
+                  ? '[background:radial-gradient(ellipse_90%_55%_at_50%_0%,rgba(94,246,222,0.16),transparent_58%)]'
+                  : '[background:radial-gradient(ellipse_90%_50%_at_50%_0%,rgba(45,245,173,0.14),transparent_60%)]'
+              }`}
+            />
+            <div
+              className={`pointer-events-none absolute left-1/2 top-0 h-px w-[min(88%,26rem)] -translate-x-1/2 bg-gradient-to-r from-transparent to-transparent sm:w-[min(90%,34rem)] ${
+                isLightMode ? 'via-white/70' : 'via-white/15'
+              }`}
+            />
+            <div
+              className={`pointer-events-none absolute -left-20 top-[18%] h-44 w-44 rounded-full blur-3xl ${
+                isLightMode ? 'bg-violet-400/22' : 'bg-violet-500/14'
+              }`}
+            />
+            <div
+              className={`pointer-events-none absolute -right-24 bottom-[8%] h-52 w-52 rounded-full blur-3xl ${
+                isLightMode ? 'bg-cyan-300/18' : 'bg-teal-400/14'
+              }`}
+            />
+
+            <p
+              className={`relative mx-auto inline-block rounded-full px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.32em] sm:text-[11px] ${
+                isLightMode
+                  ? 'bg-white/70 text-[#5c6d82] ring-1 ring-[rgba(120,148,178,0.18)] shadow-sm'
+                  : 'bg-white/[0.06] text-[#9fb3c8] ring-1 ring-white/[0.08]'
+              }`}
             >
-              Join the Vault
-            </Link>
+              Join thousands giving with clarity
+            </p>
+
+            <h2
+              className={`relative mx-auto mt-7 max-w-[22rem] text-balance font-serif text-[1.75rem] font-medium leading-[1.14] tracking-[-0.02em] sm:mt-8 sm:max-w-2xl sm:text-[2.35rem] sm:leading-[1.1] ${
+                isLightMode ? 'text-[#121a2e]' : 'text-[#f8fafc]'
+              }`}
+            >
+              Stand behind{' '}
+              <span className={isLightMode ? 'text-[#0d6f5c]' : 'text-[#6ef5d8]'}>every gift</span> you make—nothing hidden.
+            </h2>
+
+            <p className="relative mx-auto mt-6 max-w-lg text-pretty font-light leading-relaxed text-[var(--text-muted-1)] sm:mt-7 sm:text-lg sm:leading-[1.65]">
+              Open your Vault in minutes: wallet-ready donations, immutable receipts, and a live ledger anyone can audit.
+              Quiet confidence—for you and everyone you support.
+            </p>
+
+            <ul className="relative mx-auto mt-11 grid max-w-3xl gap-6 sm:mt-12 sm:grid-cols-3 sm:gap-7">
+              {VAULT_JOIN_BENEFITS.map((item) => {
+                const m = miniBenefitStyles[item.tone];
+                const shell = isLightMode ? m.shellLight : m.shellDark;
+                return (
+                  <li
+                    key={item.title}
+                    className={`group relative isolate flex min-h-[210px] flex-col items-center gap-6 overflow-hidden rounded-[1.65rem] px-6 py-8 text-center transition-all duration-500 ease-out hover:-translate-y-1 hover:brightness-[1.02] sm:min-h-[196px] ${shell} ${isLightMode ? 'backdrop-blur-sm' : ''}`}
+                  >
+                    <span
+                      className={`pointer-events-none absolute rounded-full blur-3xl ${isLightMode ? m.orbLight : m.orbDark}`}
+                      aria-hidden="true"
+                    />
+                    <span
+                      aria-hidden="true"
+                      className={`absolute inset-x-6 top-0 z-[2] h-px bg-gradient-to-r sm:inset-x-7 ${isLightMode ? m.hairLight : m.hairDark}`}
+                    />
+                    <span
+                      className={`relative z-[3] flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${
+                        isLightMode ? m.iconLight : m.iconDark
+                      }`}
+                      aria-hidden="true"
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                        className={`h-6 w-6 shrink-0 fill-current ${isLightMode ? m.svgLight : m.svgDark}`}
+                      >
+                        {item.icon}
+                      </svg>
+                    </span>
+                    <div className="relative z-[3] mt-px flex flex-col gap-3">
+                      <p
+                        className={`max-w-[14rem] text-[15px] font-bold tracking-[-0.02em] sm:text-base ${isLightMode ? m.titleLight : m.titleDark}`}
+                        style={
+                          !isLightMode && m.titleGlowDark ? { textShadow: m.titleGlowDark } : undefined
+                        }
+                      >
+                        {item.title}
+                      </p>
+                      <p
+                        className={`mx-auto max-w-[14rem] text-sm font-semibold leading-relaxed sm:text-[0.938rem] sm:leading-[1.55] ${isLightMode ? m.blurbLight : m.blurbDark}`}
+                      >
+                        {item.blurb}
+                      </p>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+
+            <div className="relative mx-auto mt-12 flex justify-center sm:mt-14">
+              <Link
+                to="/register"
+                className={`group relative isolate inline-flex min-h-[3.65rem] items-center justify-center overflow-hidden rounded-full px-14 py-4 text-[1.075rem] font-semibold tracking-wide transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                  isLightMode
+                    ? 'border border-white/55 bg-gradient-to-br from-[#65ffeb] via-[#3dead0] to-[#18b892] text-[#041f1a] shadow-[0_0_0_1px_rgba(255,255,255,0.5)_inset,0_6px_28px_rgba(32,180,148,0.38),0_0_52px_rgba(58,230,196,0.55),0_0_112px_rgba(58,230,196,0.22)] hover:-translate-y-0.5 hover:scale-[1.035] hover:shadow-[0_0_0_1px_rgba(255,255,255,0.65)_inset,0_12px_40px_rgba(32,180,148,0.48),0_0_72px_rgba(58,230,196,0.65)] active:scale-[0.98] active:translate-y-0'
+                    : 'border border-[rgba(130,255,220,0.4)] bg-gradient-to-br from-[#58ffe0] via-[#32eab8] to-[#14b086] text-[#03140f] shadow-[0_0_0_1px_rgba(190,255,235,0.3)_inset,0_6px_32px_rgba(45,245,173,0.32),0_0_56px_rgba(45,245,173,0.58),0_0_120px_rgba(45,245,173,0.2)] hover:-translate-y-0.5 hover:scale-[1.035] hover:shadow-[0_0_0_1px_rgba(210,255,240,0.38)_inset,0_12px_46px_rgba(45,245,173,0.42),0_0_80px_rgba(45,245,173,0.72)] active:scale-[0.98] active:translate-y-0'
+                }`}
+              >
+                <span className="pointer-events-none absolute -inset-2 rounded-full bg-gradient-to-tr from-transparent via-white/25 to-transparent opacity-0 blur-md transition-opacity duration-500 group-hover:opacity-100 group-hover:duration-[700ms]" />
+                <span className="pointer-events-none absolute inset-[1px] rounded-full bg-gradient-to-t from-white/15 to-transparent opacity-55" aria-hidden="true" />
+                <span className="relative z-10 px-1">Join the Vault</span>
+              </Link>
+            </div>
           </div>
         </section>
       </div>

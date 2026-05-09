@@ -141,6 +141,17 @@ html {
   }
 }
 
+/* Hero carousel icons: tighter motion so glow + float stay inside the card clip */
+@keyframes vtx-float-carousel {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
 /* Drop legacy template heading margins; size/weight come from Tailwind classes */
 #root h1,
 #root h2 {
