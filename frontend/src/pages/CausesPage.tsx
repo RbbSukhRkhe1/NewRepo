@@ -175,7 +175,6 @@ function CauseCard({
 
         <div>
           <h2 className="text-3xl font-bold leading-tight tracking-[-0.01em] text-[var(--text-high-3)] md:text-[2.1rem]">{cause.title}</h2>
-          <p className="mt-2 max-w-2xl text-sm leading-7 text-[var(--text-muted-1)] md:text-base">{cause.subtitle}</p>
 
           <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
             <span

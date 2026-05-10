@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { apiJson } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
@@ -62,10 +62,84 @@ function pieSlicePath(cx: number, cy: number, r: number, startDeg: number, endDe
   return `M ${cx} ${cy} L ${start.x} ${start.y} A ${r} ${r} 0 ${largeArc} 1 ${end.x} ${end.y} Z`;
 }
 
+const URGENCY_BY_SLICE = ['Peak priority', 'Core route', 'Stable lane', 'Support layer'] as const;
+
+function truncateChip(text: string, max = 30) {
+  const t = text.trim();
+  if (t.length <= max) return t;
+  let cut = t.slice(0, max - 1);
+  const sp = cut.lastIndexOf(' ');
+  if (sp > 14) cut = cut.slice(0, sp);
+  return `${cut}…`;
+}
+
+function IconZapTiny({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 16 16" className={className} fill="none" aria-hidden>
+      <path
+        d="M9 1.5 4.5 9h4l-.5 6L13 8H9z"
+        fill="currentColor"
+        opacity={0.9}
+      />
+    </svg>
+  );
+}
+
+function IconShieldCheckTiny({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 16 16" className={className} fill="none" aria-hidden>
+      <path
+        d="M8 1.75 13 4v4c0 3.25-2.12 6.06-5 7-2.88-.94-5-3.75-5-7V4z"
+        stroke="currentColor"
+        strokeWidth="1.125"
+        strokeLinejoin="round"
+      />
+      <path d="m5 8 2 2 3.5-3.75" stroke="currentColor" strokeWidth="1.125" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconTargetTiny({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 16 16" className={className} fill="none" aria-hidden>
+      <circle cx="8" cy="8" r="5.75" stroke="currentColor" strokeWidth="1.125" />
+      <circle cx="8" cy="8" r="2.75" stroke="currentColor" strokeWidth="1.125" />
+      <circle cx="8" cy="8" r="1" fill="currentColor" />
+    </svg>
+  );
+}
+
+function IconEthDiamondTiny({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 16 16" className={className} fill="none" aria-hidden>
+      <path
+        d="M3 8 8 2.75 13 8 8 13z"
+        stroke="currentColor"
+        strokeWidth="1.125"
+        strokeLinejoin="round"
+      />
+      <path d="M3 8h10M8 2.75V13" stroke="currentColor" strokeWidth="1.125" strokeOpacity={0.5} />
+    </svg>
+  );
+}
+
+function IconPieTiny({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 16 16" className={className} fill="none" aria-hidden>
+      <path
+        d="M14 9A7 7 0 1 1 7 2v7z"
+        stroke="currentColor"
+        strokeWidth="1.125"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 const DETAIL_COPY_BY_TITLE: Record<string, CauseDetailCopy> = {
   LGBTQs: {
     about:
-      'This fund supports queer and trans communities with direct, practical help—safe housing, counselling, crisis support, and community-led mutual aid. Donations are tracked and visible so supporters can see how funding moves from wallet to impact.',
+      'Queer and trans communities deserve fast, practical relief: safe housing, trauma-informed counselling, crisis support, and community mutual aid. Vaultex routes every gift on-chain—so you can trace funding from wallet to outcome, not guesswork.',
     whatFundsCover: [
       'Emergency accommodation vouchers and short-term housing support',
       'Trauma-informed counselling sessions and crisis hotlines',
@@ -73,9 +147,9 @@ const DETAIL_COPY_BY_TITLE: Record<string, CauseDetailCopy> = {
       'Community mutual-aid grants for food, transport, and essentials',
     ],
     milestones: [
-      'Fund 50 emergency nights of safe housing',
-      'Cover 120 counselling sessions with verified providers',
-      'Deliver 200 mutual-aid microgrants to vetted recipients',
+      '50 emergency nights of safe housing funded',
+      '120 counselling sessions with vetted providers',
+      '200 mutual-aid microgrants to verified recipients',
     ],
     verification: [
       'Beneficiary verification before disbursement',
@@ -85,7 +159,7 @@ const DETAIL_COPY_BY_TITLE: Record<string, CauseDetailCopy> = {
   },
   War: {
     about:
-      'This cause provides emergency relief for families affected by conflict: medical supplies, evacuation support, temporary shelter, and essential goods. Funding is managed with transparent records to reduce “black box” aid and improve accountability.',
+      'Emergency relief for families under conflict: medical supplies, evacuation help, shelter, and essentials. Aid moves with transparent records—so “black box” logistics give way to accountable, donor-visible support.',
     whatFundsCover: [
       'Medical kits, trauma care supplies, and local clinic support',
       'Shelter and temporary accommodation for displaced families',
@@ -105,7 +179,7 @@ const DETAIL_COPY_BY_TITLE: Record<string, CauseDetailCopy> = {
   },
   Disaster: {
     about:
-      'This fund responds quickly to climate and natural disasters—supporting temporary shelter, emergency food and water, and early rebuilding. The goal is speed + accountability: rapid assistance with records anyone can audit.',
+      'When climate and disasters strike, speed matters—shelter, food and water, power where it counts, and early rebuilding. Every deployment pairs rapid assistance with a public ledger you can actually audit.',
     whatFundsCover: [
       'Emergency shelter materials and short-term housing support',
       'Food, clean water, and sanitation supplies',
@@ -125,7 +199,7 @@ const DETAIL_COPY_BY_TITLE: Record<string, CauseDetailCopy> = {
   },
   Hospital: {
     about:
-      'This cause strengthens public hospitals with critical equipment and patient care support—focused on transparent purchasing and measurable outcomes. Contributions help address shortages and improve frontline capacity.',
+      'Strengthens frontline hospitals: critical equipment, patient transport and care support, and compliance-safe maintenance. Purchasing and payouts stay visible—so donors see shortages addressed with receipts, not rhetoric.',
     whatFundsCover: [
       'Critical equipment: monitors, infusion pumps, and consumables',
       'Patient support funds for essential care and transport',
@@ -145,7 +219,7 @@ const DETAIL_COPY_BY_TITLE: Record<string, CauseDetailCopy> = {
   },
   Education: {
     about:
-      'This cause expands access to learning through scholarships, supplies, and digital connectivity. Funds are allocated to clear line items so supporters can see exactly what gets funded and when.',
+      'Widens access to learning: scholarships, supplies, devices, and connectivity for students who need it most. Budget lines stay explicit—see what was funded, for whom, and when—straight from the ledger.',
     whatFundsCover: [
       'Scholarships and fee support for underserved students',
       'School supplies: books, uniforms, stationery, and devices',
@@ -177,6 +251,38 @@ export function CauseDetailPage() {
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [activeSlice, setActiveSlice] = useState<number | null>(null);
+  const dashboardHoverLeaveRef = useRef<ReturnType<typeof window.setTimeout> | null>(null);
+
+  function cancelImpactSliceDeferClear() {
+    if (dashboardHoverLeaveRef.current != null) {
+      window.clearTimeout(dashboardHoverLeaveRef.current);
+      dashboardHoverLeaveRef.current = null;
+    }
+  }
+
+  function focusImpactSlice(next: number) {
+    cancelImpactSliceDeferClear();
+    setActiveSlice(next);
+  }
+
+  function deferClearImpactSlice() {
+    cancelImpactSliceDeferClear();
+    dashboardHoverLeaveRef.current = window.setTimeout(() => {
+      dashboardHoverLeaveRef.current = null;
+      setActiveSlice(null);
+    }, 220);
+  }
+
+  function clearImpactSliceNow() {
+    cancelImpactSliceDeferClear();
+    setActiveSlice(null);
+  }
+
+  useEffect(() => {
+    return () => {
+      if (dashboardHoverLeaveRef.current != null) window.clearTimeout(dashboardHoverLeaveRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (!id) return;
@@ -264,419 +370,741 @@ export function CauseDetailPage() {
       impactMetric,
     };
   });
-  const recentActivity =
-    detailCopy != null
-      ? dashboardRows.map((row, i) => {
-          const bucketEth = (cause.raised_eth * row.pct) / 100;
-          const ethNum =
-            cause.raised_eth > 0
-              ? Math.max(0.3, bucketEth * 0.35 + i * 0.08)
-              : Math.max(0.5, (cause.goal_eth * row.pct) / 100 * 0.06);
-          const ethDisplay = ethNum.toFixed(1);
-          const times = ['2h ago', '6h ago', '12h ago', '1d ago'] as const;
-          const statuses = ['Confirmed', 'In Progress', 'Confirmed', 'Verified'] as const;
-          return {
-            ethDisplay,
-            title: row.title,
-            time: times[i] ?? 'recently',
-            status: statuses[i] ?? 'Confirmed',
-          };
-        })
-      : [];
-
   const pieHoleCategory =
     activeSlice != null ? toSpendTitle(allocationRows[activeSlice]?.label ?? '') : '';
   const pieHoleSubtitle =
     activeSlice == null ? 'Pick a slice' : pieHoleCategory.length > 16 ? `${pieHoleCategory.slice(0, 14)}…` : pieHoleCategory;
 
   return (
-    <div className="vtx-page max-w-6xl">
+    <div className="relative mx-auto w-full max-w-6xl px-4 py-3 sm:px-5 sm:py-4 md:py-5">
+      {isLightMode ? (
+        <>
+          <div
+            className="pointer-events-none absolute -left-[22%] top-[-6rem] z-0 h-[26rem] w-[26rem] rounded-full bg-emerald-600/[0.38] blur-[115px]"
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none absolute -right-[20%] top-[12%] z-0 h-[30rem] w-[30rem] rounded-full bg-cyan-600/[0.32] blur-[115px]"
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none absolute bottom-[-10rem] left-1/2 z-0 h-[22rem] w-[min(100%,44rem)] -translate-x-1/2 rounded-full bg-teal-600/[0.28] blur-[100px]"
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none absolute left-[38%] top-[32%] z-0 h-[18rem] w-[18rem] -translate-x-1/2 rounded-full bg-emerald-500/[0.2] blur-[90px]"
+            aria-hidden
+          />
+        </>
+      ) : null}
+      <div className="relative z-[1]">
       <Link
         to="/causes"
-        className={`inline-flex items-center gap-2 text-sm font-medium ${
-          isLightMode ? 'text-[var(--text-muted-1)] hover:text-[var(--text-high-1)]' : 'text-[var(--accent-bright-2)]'
+        className={`inline-flex items-center gap-2 font-medium ${
+          isLightMode
+            ? 'text-[14px] text-[var(--text-muted-1)] tracking-tight hover:text-emerald-900/90'
+            : 'text-sm text-[var(--accent-bright-2)]'
         }`}
       >
         ← All causes
       </Link>
-      <div className="mt-4">
+      <div
+        className={`mt-2 sm:mt-3 ${isLightMode ? '[&_h1]:text-[clamp(1.5rem,0.9rem+1.8vw,1.875rem)] [&_h1]:font-semibold [&_h1]:tracking-[-0.03em]' : '[&_h1]:text-[1.65rem] [&_h1]:font-bold [&_h1]:leading-tight sm:[&_h1]:text-3xl'}`}
+      >
         <SectionHeader title={cause.title} />
-      </div>
-      <p className="mt-4 max-w-3xl leading-relaxed text-[var(--text-muted-1)]">{cause.description}</p>
-
-      <div className="mt-8 grid gap-4 lg:grid-cols-[1.35fr_1fr]">
-        <SurfaceCard>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted-2)]">Campaign health</p>
-          <div className="mt-4 grid gap-4 sm:grid-cols-[170px_1fr] sm:items-center">
-            <div className="mx-auto">
-              <svg viewBox="0 0 110 110" className="h-36 w-36" aria-label="Funding progress chart">
-                <circle cx="55" cy="55" r="45" fill="none" stroke="var(--bg-depth-1)" strokeWidth="10" />
-                <circle
-                  cx="55"
-                  cy="55"
-                  r="45"
-                  fill="none"
-                  stroke="url(#causeProgress)"
-                  strokeWidth="10"
-                  strokeLinecap="round"
-                  strokeDasharray={`${progressStroke} ${strokeLength}`}
-                  transform="rotate(-90 55 55)"
-                />
-                <defs>
-                  <linearGradient id="causeProgress" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#22c55e" />
-                    <stop offset="100%" stopColor="#06b6d4" />
-                  </linearGradient>
-                </defs>
-                <text x="55" y="52" textAnchor="middle" className="fill-[var(--text-high-3)] text-[0.95rem] font-bold">
-                  {pct.toFixed(0)}%
-                </text>
-                <text x="55" y="66" textAnchor="middle" className="fill-[var(--text-muted-1)] text-[0.46rem]">
-                  funded
-                </text>
-              </svg>
-            </div>
-            <div>
-              <div className="grid gap-2 sm:grid-cols-2">
-                <div className="rounded-xl border border-[var(--border-chrome-2)] bg-[var(--surface-panel-overlay)] p-3">
-                  <p className="text-[11px] uppercase tracking-wide text-[var(--text-muted-2)]">Raised</p>
-                  <p className="mt-1 font-mono text-base font-semibold text-[var(--text-high-3)]">
-                    {cause.raised_eth.toFixed(4)} ETH
-                  </p>
-                </div>
-                <div className="rounded-xl border border-[var(--border-chrome-2)] bg-[var(--surface-panel-overlay)] p-3">
-                  <p className="text-[11px] uppercase tracking-wide text-[var(--text-muted-2)]">Remaining</p>
-                  <p className="mt-1 font-mono text-base font-semibold text-[var(--text-high-3)]">
-                    {remainingEth.toFixed(4)} ETH
-                  </p>
-                </div>
-              </div>
-              <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-[var(--bg-depth-1)]">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-[var(--accent-deep-1)] to-[var(--accent-bright-2)]"
-                  style={{ width: `${pct}%` }}
-                />
-              </div>
-              <p className="mt-2 text-xs text-[var(--text-muted-1)]">Goal: {cause.goal_eth.toFixed(4)} ETH</p>
-            </div>
-          </div>
-        </SurfaceCard>
-
-        <SurfaceCard>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted-2)]">Donor action</p>
-          {canDonate ? (
-            <form onSubmit={(e) => void donate(e)} className="mt-3">
-              <h2 className="text-lg font-semibold text-[var(--text-high-3)]">Donate ETH</h2>
-              <p className="mt-1 text-xs text-[var(--text-muted-1)]">Fast contribution from your assigned wallet.</p>
-              <div className="mt-4 flex flex-wrap gap-3">
-                <input
-                  type="text"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  className="vtx-input w-40 px-4 py-2 font-mono"
-                  placeholder="Amount"
-                />
-                <PrimaryButton type="submit" disabled={busy} className="px-6 py-2">
-                  {busy ? 'Sending…' : 'Donate'}
-                </PrimaryButton>
-              </div>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {QUICK_AMOUNTS.map((v) => (
-                  <button
-                    key={v}
-                    type="button"
-                    onClick={() => setAmount(v)}
-                    className="rounded-full border border-[var(--border-chrome-2)] bg-[var(--surface-panel-overlay)] px-3 py-1.5 text-xs font-semibold text-[var(--text-high-3)] hover:border-[var(--border-chrome-4)]"
-                  >
-                    {v} ETH
-                  </button>
-                ))}
-              </div>
-              <div className="mt-4 grid gap-2 sm:grid-cols-3">
-                <div className="rounded-lg border border-[var(--border-chrome-2)] bg-[var(--surface-panel-overlay)] px-3 py-2">
-                  <p className="text-[11px] uppercase tracking-wide text-[var(--text-muted-2)]">Estimated impact</p>
-                  <p className="mt-1 text-sm font-semibold text-[var(--text-high-3)]">
-                    {estUnits} {unitLabel}
-                  </p>
-                </div>
-                <div className="rounded-lg border border-[var(--border-chrome-2)] bg-[var(--surface-panel-overlay)] px-3 py-2">
-                  <p className="text-[11px] uppercase tracking-wide text-[var(--text-muted-2)]">People supported</p>
-                  <p className="mt-1 text-sm font-semibold text-[var(--text-high-3)]">{estPeople} people</p>
-                </div>
-                <div className="rounded-lg border border-[var(--border-chrome-2)] bg-[var(--surface-panel-overlay)] px-3 py-2">
-                  <p className="text-[11px] uppercase tracking-wide text-[var(--text-muted-2)]">Network fee</p>
-                  <p className="mt-1 font-mono text-sm font-semibold text-[var(--text-high-3)]">{estGas.toFixed(4)} ETH</p>
-                </div>
-              </div>
-              {msg && <p className={`mt-3 text-sm ${isLightMode ? 'text-emerald-700' : 'text-emerald-400'}`}>{msg}</p>}
-            </form>
-          ) : (
-            <div
-              className={`mt-3 rounded-xl border p-4 text-sm ${
-                isLightMode
-                  ? 'border-amber-700/20 bg-amber-500/10 text-amber-900'
-                  : 'border-amber-500/20 bg-amber-500/10 text-amber-200'
-              }`}
-            >
-              {user
-                ? 'Only accounts with an Anvil wallet can donate from UI.'
-                : 'Sign in to donate from your assigned Anvil wallet.'}{' '}
-              <Link to="/login" className={isLightMode ? 'text-amber-950 underline' : 'text-cyan-300 underline'}>
-                Sign in
-              </Link>
-            </div>
-          )}
-        </SurfaceCard>
       </div>
 
       {detailCopy ? (
-        <div className="mt-6 grid min-w-0 items-start gap-6 lg:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)] lg:gap-8 xl:gap-10">
-          <SurfaceCard className="min-w-0 overflow-hidden">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <h2 className="text-lg font-semibold text-[var(--text-high-3)]">Where funds go</h2>
+        <div
+          className={`relative mt-4 min-w-0 overflow-hidden rounded-2xl border sm:mt-5 ${
+            isLightMode
+              ? 'border-emerald-400/45 bg-[linear-gradient(180deg,#ecfdf5_0%,#d1fae5_46%,#a7f3d0_100%)] shadow-[0_36px_80px_-42px_rgba(6,78,59,0.38),0_0_140px_-42px_rgba(16,185,129,0.42),0_0_0_1px_rgba(255,255,255,0.45)_inset,0_1px_0_rgba(255,255,255,0.65)_inset] ring-1 ring-emerald-500/35 backdrop-blur-[3px]'
+              : 'border-cyan-500/25 bg-[linear-gradient(165deg,rgba(10,28,46,0.98)_0%,rgba(6,14,26,1)_52%,rgba(8,36,54,0.92)_100%)] shadow-[inset_0_1px_0_rgba(34,211,238,0.12)]'
+          }`}
+        >
+          <div
+            className={`border-b px-3 py-3 sm:px-4 sm:py-3.5 ${isLightMode ? 'border-emerald-400/35 bg-white/30 backdrop-blur-sm' : 'border-cyan-400/14'}`}
+          >
+            <div className="flex flex-wrap items-start justify-between gap-2 sm:gap-3">
+              <div className="min-w-0">
+                <p
+                  className={`font-semibold uppercase ${
+                    isLightMode
+                      ? 'text-[10px] tracking-[0.2em] text-emerald-800/82 sm:text-[11px] sm:tracking-[0.22em]'
+                      : 'text-[9px] tracking-[0.18em] text-emerald-300/85 sm:text-[10px] sm:tracking-[0.2em]'
+                  }`}
+                >
+                  Impact snapshot
+                </p>
+                <h2
+                  className={`font-semibold tracking-tight ${isLightMode ? 'mt-0.5 text-lg text-neutral-900/92 sm:text-xl' : 'mt-0.5 text-base text-white sm:text-lg'}`}
+                >
+                  Your Impact Dashboard
+                </h2>
+                <p
+                  className={`mt-1 max-w-2xl ${isLightMode ? 'text-[11px] leading-snug text-[var(--text-muted-1)] sm:text-[12px]' : 'text-[10px] leading-snug text-cyan-50/58 sm:text-[11px]'}`}
+                >
+                  How this goal is earmarked across programs—pie and cards highlight together when you hover or keyboard-focus.
+                </p>
+              </div>
               <span
-                className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${
+                className={`shrink-0 self-start rounded-md px-2.5 py-1.5 text-[9px] font-semibold uppercase tracking-[0.12em] sm:rounded-lg sm:px-[0.6875rem] sm:py-2 sm:text-[10px] sm:tracking-[0.14em] ${
                   isLightMode
-                    ? 'border border-emerald-600/35 bg-emerald-600/10 text-emerald-800'
-                    : 'border border-[var(--border-chrome-3)] bg-[var(--surface-panel-overlay)] text-[var(--text-high-2)]'
+                    ? 'border border-emerald-900/14 bg-emerald-50 text-emerald-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)] ring-1 ring-emerald-500/18'
+                    : 'border border-cyan-400/35 bg-white/[0.06] text-cyan-50'
                 }`}
               >
                 Donor view
               </span>
             </div>
-            <p className="mt-1 max-w-prose text-xs text-[var(--text-muted-1)]">
-              Planned split across this campaign’s goal. The highlighted slice shows the full line item below; the impact table mirrors your selection without repeating it.
-            </p>
-            <div className="mt-6 grid min-w-0 gap-6 md:grid-cols-[minmax(0,220px)_minmax(0,1fr)] md:items-start md:gap-8">
-              <div className="mx-auto flex w-full max-w-[220px] shrink-0 justify-center md:mx-0 md:justify-start">
-                <svg viewBox="0 0 200 200" className="h-44 w-full max-w-[200px] sm:h-48 sm:max-w-[220px]" aria-label="Fund allocation pie chart">
-                  {allocationRows.map((item, i) => {
-                    const start = -90 + allocationRows.slice(0, i).reduce((sum, row) => sum + row.pct, 0) * 3.6;
-                    const end = start + item.pct * 3.6;
-                    const mid = (start + end) / 2;
-                    const exploded = activeSlice === i ? 6 : 0;
-                    const offset = polarToCartesian(0, 0, exploded, mid);
-                    return (
-                      <path
-                        key={`slice-${item.label}`}
-                        d={pieSlicePath(100, 100, 76, start, end)}
-                        transform={`translate(${offset.x}, ${offset.y})`}
-                        fill={slicePalette[i % slicePalette.length]}
-                        className="cursor-pointer transition-transform duration-150 ease-out"
-                        onMouseEnter={() => setActiveSlice(i)}
-                        onFocus={() => setActiveSlice(i)}
-                        onMouseLeave={() => setActiveSlice(null)}
-                        onBlur={() => setActiveSlice(null)}
-                        tabIndex={0}
-                        role="img"
-                        aria-label={`${toSpendTitle(item.label)} ${item.pct}%`}
-                      />
-                    );
-                  })}
-                  <circle cx="100" cy="100" r="38" fill="var(--surface-panel-overlay)" />
-                  <text x="100" y="94" textAnchor="middle" className="fill-[var(--text-high-3)] text-[0.72rem] font-semibold">
-                    {activeSlice != null ? `${allocationRows[activeSlice]?.pct}%` : '—'}
-                  </text>
-                  <text x="100" y="110" textAnchor="middle" className="fill-[var(--text-muted-1)] text-[0.45rem]">
-                    {pieHoleSubtitle}
-                  </text>
-                </svg>
-              </div>
-              <div className="min-w-0 space-y-2">
-                {allocationRows.map((item, i) => (
-                  <button
-                    key={`legend-${item.label}`}
-                    type="button"
-                    onMouseEnter={() => setActiveSlice(i)}
-                    onFocus={() => setActiveSlice(i)}
-                    onMouseLeave={() => setActiveSlice(null)}
-                    onBlur={() => setActiveSlice(null)}
-                    className={`flex w-full min-w-0 items-center justify-between gap-3 rounded-lg border px-3 py-2.5 text-left text-xs transition ${
-                      activeSlice === i
-                        ? 'border-[var(--border-chrome-4)] bg-[var(--overlay-surface-soft)]'
-                        : 'border-[var(--border-chrome-2)] bg-[var(--surface-panel-overlay)]'
-                    }`}
-                  >
-                    <span className="flex min-w-0 items-center gap-2 text-[var(--text-muted-1)]">
-                      <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: slicePalette[i % slicePalette.length] }} />
-                      <span className="truncate">{toSpendTitle(item.label)}</span>
-                    </span>
-                    <span className="shrink-0 font-mono text-[var(--text-high-3)]">{item.pct}%</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="mt-4 rounded-lg border border-[var(--border-chrome-2)] bg-[var(--surface-panel-overlay)] px-3 py-2.5 text-xs leading-relaxed">
-              {activeSlice != null ? (
-                <p className="text-[var(--text-muted-1)]">
-                  <span className="font-semibold text-[var(--text-high-3)]">
-                    {toSpendTitle(allocationRows[activeSlice]?.label ?? '')}
-                  </span>
-                  {' — '}
-                  {allocationRows[activeSlice]?.label}
-                </p>
-              ) : (
-                <p className="text-[var(--text-muted-1)]">Hover or focus a slice to read the full line item.</p>
-              )}
-            </div>
-          </SurfaceCard>
+          </div>
 
-          <div
-            className={`min-w-0 flex flex-col rounded-2xl border p-2.5 sm:p-3 ${
-              isLightMode
-                ? 'border-emerald-300/35 bg-gradient-to-b from-white via-white to-emerald-50/40 shadow-[0_4px_20px_rgba(16,185,129,0.07)]'
-                : 'border-cyan-400/20 bg-[radial-gradient(120%_120%_at_0%_0%,rgba(16,185,129,0.16),rgba(10,20,35,0.96)_46%),linear-gradient(180deg,rgba(8,23,38,0.95),rgba(5,14,30,0.96))] shadow-[0_0_0_1px_rgba(34,211,238,0.12)_inset]'
-            }`}
-          >
-            <div className={`shrink-0 border-b pb-2 ${isLightMode ? 'border-emerald-200/60' : 'border-cyan-400/10'}`}>
-              <h2
-                className={`text-sm font-semibold tracking-[-0.01em] sm:text-base ${
-                  isLightMode ? 'text-[var(--text-high-3)]' : 'text-white'
-                }`}
-              >
-                Your Impact Dashboard
-              </h2>
-              <p
-                className={`mt-0.5 text-[10px] leading-snug ${isLightMode ? 'text-[var(--text-muted-1)]' : 'text-cyan-100/55'}`}
-              >
-                Goal-based ETH allocations, impact metrics, and activity — percentages stay on the chart at left.
-              </p>
-            </div>
-
+          <div className="flex flex-col gap-4 px-3 py-3 sm:gap-5 sm:px-4 sm:py-4 md:py-5">
             <div
-              className={`mt-2 shrink-0 overflow-x-auto rounded-lg border ${
-                isLightMode ? 'border-[var(--border-chrome-2)] bg-[var(--surface-panel-overlay)]' : 'border-cyan-400/10 bg-cyan-400/[0.03]'
-              }`}
+              className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,420px),minmax(0,1fr)] lg:gap-7 lg:items-start"
+              onMouseEnter={cancelImpactSliceDeferClear}
+              onMouseLeave={deferClearImpactSlice}
             >
-              <p
-                className={`border-b px-2 py-1.5 text-[9px] leading-snug ${
-                  isLightMode ? 'border-[var(--border-chrome-2)] text-[var(--text-muted-2)]' : 'border-cyan-400/12 text-cyan-200/50'
+              <aside
+                className={`relative flex min-h-0 min-w-0 flex-col rounded-xl px-4 py-4 sm:rounded-2xl sm:px-5 sm:py-5 ${
+                  isLightMode
+                    ? 'border border-emerald-400/40 bg-gradient-to-br from-emerald-50/90 via-teal-50/80 to-cyan-50/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_18px_52px_-28px_rgba(6,95,70,0.22),0_0_72px_-28px_rgba(45,212,191,0.28)] ring-1 ring-emerald-300/45'
+                    : 'border border-cyan-500/40 bg-black/25 shadow-[inset_0_0_0_1px_rgba(16,185,129,0.08)]'
                 }`}
               >
-                Full line-item wording stays under the chart on the left. This grid is ETH + outcomes only.
-              </p>
-              <table className="w-full min-w-[300px] border-collapse text-left text-[10px]">
-                <thead>
-                  <tr
-                    className={`border-b text-[9px] font-semibold uppercase tracking-[0.1em] ${
-                      isLightMode ? 'border-[var(--border-chrome-2)] text-[var(--text-muted-2)]' : 'border-cyan-400/12 text-cyan-200/45'
+                {isLightMode ? (
+                  <div
+                    className="pointer-events-none absolute inset-0 rounded-[inherit] opacity-[0.55]"
+                    style={{
+                      background:
+                        'radial-gradient(ellipse 92% 70% at 50% -15%,rgba(16,185,129,0.38),transparent 58%), radial-gradient(ellipse 70% 55% at 80% 100%,rgba(6,182,212,0.28),transparent 62%)',
+                    }}
+                    aria-hidden
+                  />
+                ) : (
+                  <div
+                    className="pointer-events-none absolute inset-0 rounded-[inherit] opacity-[0.22]"
+                    style={{
+                      background:
+                        'radial-gradient(ellipse 92% 80% at 50% -10%,rgba(52,233,241,0.28),transparent 68%), radial-gradient(ellipse 70% 60% at 50% 100%,rgba(16,185,129,0.16),transparent 72%)',
+                    }}
+                    aria-hidden
+                  />
+                )}
+                <div className="relative z-[1] flex min-h-0 min-w-0 w-full flex-col items-stretch gap-4 lg:flex-row lg:gap-5">
+                  <div className="contain-layout flex shrink-0 justify-center lg:flex-[0_0_auto] lg:items-center lg:justify-start lg:self-start lg:py-0">
+                    <div
+                      className={
+                        isLightMode
+                          ? 'relative mx-auto flex max-w-[200px] justify-center drop-shadow-[0_24px_50px_-14px_rgba(5,100,80,0.45)] sm:max-w-[220px]'
+                          : undefined
+                      }
+                    >
+                      {isLightMode ? (
+                        <div
+                          className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-[125%] w-[125%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(13,148,136,0.55)_0%,rgba(20,184,166,0.35)_38%,rgba(255,255,255,0)_72%)] opacity-95 blur-2xl"
+                          aria-hidden
+                        />
+                      ) : null}
+                    <svg
+                      viewBox="0 0 200 200"
+                      className="block h-40 w-full max-w-[200px] flex-none sm:h-44 sm:max-w-[220px]"
+                      aria-label="Fund allocation pie chart"
+                      style={{ contain: 'paint' }}
+                    >
+                      {allocationRows.map((item, i) => {
+                        const start = -90 + allocationRows.slice(0, i).reduce((sum, row) => sum + row.pct, 0) * 3.6;
+                        const end = start + item.pct * 3.6;
+                        return (
+                          <path
+                            key={`slice-${item.label}`}
+                            d={pieSlicePath(100, 100, 78, start, end)}
+                            fill={slicePalette[i % slicePalette.length]}
+                            className="cursor-pointer transition-opacity duration-150 ease-out motion-reduce:transition-none"
+                            style={{
+                              opacity: activeSlice !== null && activeSlice !== i ? 0.42 : 1,
+                            }}
+                            onMouseEnter={() => focusImpactSlice(i)}
+                            onFocus={() => focusImpactSlice(i)}
+                            onBlur={clearImpactSliceNow}
+                            tabIndex={0}
+                            role="img"
+                            aria-label={`${toSpendTitle(item.label)} ${item.pct}%`}
+                          />
+                        );
+                      })}
+                      <circle cx="100" cy="100" r="41" fill="var(--surface-panel-overlay)" />
+                      <text x="100" y="92" textAnchor="middle" className="fill-[var(--text-high-3)] text-[0.8rem] font-bold">
+                        {activeSlice != null ? `${allocationRows[activeSlice]?.pct}%` : 'Goal'}
+                      </text>
+                      <text x="100" y="111" textAnchor="middle" className="fill-[var(--text-muted-1)] text-[10px]">
+                        {activeSlice != null ? pieHoleSubtitle : 'allocation'}
+                      </text>
+                    </svg>
+                    </div>
+                  </div>
+
+                  <div
+                    className={`contain-layout relative flex min-h-0 min-w-0 w-full flex-col justify-start gap-2 overflow-hidden rounded-lg border px-3 py-2.5 backdrop-blur-md sm:gap-2.5 sm:rounded-xl sm:px-3.5 sm:py-3 lg:flex-1 lg:self-start ${
+                      isLightMode
+                        ? 'border-emerald-400/45 bg-gradient-to-br from-white/95 to-emerald-100/85 shadow-[0_12px_40px_-16px_rgba(6,95,72,0.22),0_0_56px_-20px_rgba(20,184,166,0.32),inset_0_1px_0_rgba(255,255,255,0.85)] ring-1 ring-emerald-400/30'
+                        : 'border-white/18 bg-gradient-to-br from-white/[0.13] via-cyan-500/[0.04] to-white/[0.02] shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_0_42px_-12px_rgba(34,211,238,0.32)] ring-1 ring-cyan-400/40'
                     }`}
                   >
-                    <th className="px-2 py-1.5 font-semibold">Category</th>
-                    <th className="px-2 py-1.5 text-right font-semibold">ETH (goal)</th>
-                    <th className="hidden min-w-[7rem] px-2 py-1.5 font-semibold sm:table-cell">Metric</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {dashboardRows.map((row, i) => (
-                    <tr
-                      key={`alloc-row-${row.label}`}
-                      aria-label={`${row.title}, ${row.pct}% of goal, ${row.allocationEth.toFixed(2)} ETH toward goal`}
-                      onMouseEnter={() => setActiveSlice(i)}
-                      onMouseLeave={() => setActiveSlice(null)}
-                      className={`cursor-pointer border-b transition-colors last:border-0 ${
-                        isLightMode ? 'border-[var(--border-chrome-2)]/80' : 'border-cyan-400/8'
-                      } ${
-                        activeSlice === i
-                          ? isLightMode
-                            ? 'bg-[var(--overlay-surface-soft)] ring-1 ring-inset ring-[var(--border-chrome-4)]'
-                            : 'bg-cyan-400/[0.08] ring-1 ring-inset ring-cyan-400/25'
-                          : isLightMode
-                            ? 'hover:bg-black/[0.02]'
-                            : 'hover:bg-white/[0.03]'
+                    {!isLightMode ? (
+                      <div
+                        className="pointer-events-none absolute -right-6 -top-8 h-24 w-24 rounded-full bg-cyan-400/25 blur-2xl"
+                        aria-hidden
+                      />
+                    ) : (
+                      <div
+                        className="pointer-events-none absolute -bottom-8 -left-8 h-[5.5rem] w-[5.5rem] rounded-full bg-emerald-500/50 blur-3xl"
+                        aria-hidden
+                      />
+                    )}
+                    <div
+                      className={`relative z-[1] flex flex-wrap items-center justify-between gap-1.5 border-b pb-2 sm:pb-2.5 ${
+                        isLightMode ? 'border-emerald-200/65' : 'border-white/24'
                       }`}
                     >
-                      <td className="min-w-[7.5rem] max-w-[12rem] px-2 py-1.5 align-middle">
-                        <span className="flex items-center gap-1.5">
+                      <p
+                        className={`font-semibold uppercase tracking-[0.16em] ${
+                          isLightMode ? 'text-[11px] text-emerald-900/82' : 'text-[10px] text-cyan-200'
+                        }`}
+                      >
+                        Selected budget line
+                      </p>
+                      {activeSlice != null ? (
+                        <span
+                          className={`truncate font-semibold tracking-tight ${isLightMode ? 'max-w-[10rem] text-[13px] text-neutral-900/90 sm:max-w-[14rem]' : 'text-xs text-white'}`}
+                          title={toSpendTitle(allocationRows[activeSlice]?.label ?? '')}
+                        >
+                          {toSpendTitle(allocationRows[activeSlice]?.label ?? '')}
+                        </span>
+                      ) : null}
+                    </div>
+
+                    <div
+                      className={`relative z-[1] flex flex-col ${
+                        isLightMode
+                          ? 'min-h-[6.75rem] sm:min-h-[7.25rem] lg:min-h-[7.5rem]'
+                          : 'min-h-[8.5rem] sm:min-h-[9rem] lg:min-h-[9.25rem]'
+                      } ${activeSlice != null && dashboardRows[activeSlice] != null ? 'justify-start' : 'justify-center'}`}
+                    >
+                    {activeSlice != null && dashboardRows[activeSlice] != null ? (
+                      <div className="flex flex-col gap-1.5 motion-reduce:transition-none sm:gap-2">
+                        <div className="flex flex-wrap gap-1.5 sm:gap-2">
                           <span
-                            className="h-1.5 w-1.5 shrink-0 rounded-full"
+                            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] ring-1 ${
+                              isLightMode
+                                ? 'bg-amber-500/15 text-amber-900 ring-amber-400/25'
+                                : 'bg-amber-400/15 text-amber-100 ring-amber-400/25 shadow-[0_0_16px_-3px_rgba(251,191,36,0.35)]'
+                            }`}
+                          >
+                            <IconZapTiny className="h-3 w-3 shrink-0 text-current opacity-90" />
+                            {URGENCY_BY_SLICE[activeSlice % URGENCY_BY_SLICE.length]}
+                          </span>
+                          <span
+                            className={`inline-flex max-w-full items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold leading-tight tracking-wide ring-1 ${
+                              isLightMode
+                                ? 'bg-emerald-500/15 text-emerald-900 ring-emerald-400/25'
+                                : 'bg-emerald-400/15 text-emerald-100 ring-emerald-400/25 shadow-[0_0_14px_-3px_rgba(52,211,153,0.28)]'
+                            }`}
+                          >
+                            <IconShieldCheckTiny className="h-3 w-3 shrink-0 text-current opacity-90" />
+                            <span className="min-w-0 truncate">
+                              {truncateChip(detailCopy.verification[activeSlice % detailCopy.verification.length], 30)}
+                            </span>
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <div
+                            className={`relative flex items-center gap-2 overflow-hidden rounded-lg border px-2.5 py-2 ring-1 ${
+                              isLightMode
+                                ? 'border-[var(--border-chrome-2)] bg-white/95 shadow-sm ring-black/10'
+                                : 'border-white/14 bg-black/45 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] ring-cyan-400/25'
+                            }`}
+                          >
+                            {!isLightMode ? (
+                              <div
+                                className="pointer-events-none absolute inset-0 bg-cyan-500/10 opacity-100"
+                                aria-hidden
+                              />
+                            ) : null}
+                            <IconEthDiamondTiny
+                              className={`relative z-[1] h-4 w-4 shrink-0 ${isLightMode ? 'text-emerald-950' : 'text-cyan-400'}`}
+                            />
+                            <div className="relative z-[1] min-w-0">
+                              <p
+                                className={`text-[9px] font-semibold uppercase tracking-[0.1em] ${
+                                  isLightMode ? 'text-[var(--text-muted-2)]' : 'text-cyan-200/92'
+                                }`}
+                              >
+                                Allocated ETH
+                              </p>
+                              <p
+                                className={`font-mono text-sm font-semibold tabular-nums tracking-tight ${
+                                  isLightMode ? 'text-[var(--text-high-3)]' : 'text-white'
+                                }`}
+                              >
+                                {dashboardRows[activeSlice].allocationEth.toFixed(3)}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div
+                            className={`relative flex items-center gap-2 overflow-hidden rounded-lg border px-2.5 py-2 ring-1 ${
+                              isLightMode
+                                ? 'border-[var(--border-chrome-2)] bg-white/95 ring-black/10'
+                                : 'border-white/14 bg-white/[0.07] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] ring-cyan-400/20'
+                            }`}
+                          >
+                            {!isLightMode ? (
+                              <div
+                                className="pointer-events-none absolute inset-0 bg-emerald-500/8"
+                                aria-hidden
+                              />
+                            ) : null}
+                            <IconPieTiny
+                              className={`relative z-[1] h-4 w-4 shrink-0 ${isLightMode ? 'text-emerald-950' : 'text-cyan-400'}`}
+                            />
+                            <div className="relative z-[1] min-w-0">
+                              <p
+                                className={`text-[9px] font-semibold uppercase tracking-[0.1em] ${
+                                  isLightMode ? 'text-[var(--text-muted-2)]' : 'text-cyan-200/88'
+                                }`}
+                              >
+                                Slice share
+                              </p>
+                              <p
+                                className={`text-sm font-bold tabular-nums ${isLightMode ? 'text-[var(--text-high-3)]' : 'text-white'}`}
+                              >
+                                {allocationRows[activeSlice].pct}%
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div
+                          className={`relative flex items-start gap-2 overflow-hidden rounded-lg border px-2.5 py-2 ring-1 ${
+                            isLightMode
+                              ? 'border-emerald-200/80 bg-emerald-50/70 ring-emerald-500/20'
+                              : 'border-cyan-400/30 bg-white/[0.06] shadow-[inset_0_1px_0_rgba(34,211,238,0.12)] ring-cyan-400/25'
+                          }`}
+                        >
+                          {!isLightMode ? (
+                            <div
+                              className="pointer-events-none absolute -right-4 top-1/2 h-16 w-16 -translate-y-1/2 rounded-full bg-emerald-400/20 blur-2xl"
+                              aria-hidden
+                            />
+                          ) : null}
+                          <IconTargetTiny
+                            className={`relative z-[1] mt-0.5 h-4 w-4 shrink-0 ${isLightMode ? 'text-emerald-700' : 'text-cyan-400'}`}
+                          />
+                          <div className="relative z-[1] min-w-0">
+                            <p
+                              className={`text-[9px] font-semibold uppercase tracking-[0.1em] ${
+                                isLightMode ? 'text-[var(--text-muted-2)]' : 'text-cyan-200/90'
+                              }`}
+                            >
+                              Impact
+                            </p>
+                            <p
+                              className={`text-xs font-semibold leading-snug ${
+                                isLightMode ? 'text-[var(--text-high-3)]' : 'text-cyan-50'
+                              }`}
+                            >
+                              {dashboardRows[activeSlice].impactMetric}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div
+                        className={`relative z-[1] rounded-lg border border-dashed px-3 py-2.5 ${
+                          isLightMode
+                            ? 'border-emerald-300/55 bg-white/55 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]'
+                            : 'border-cyan-500/25 bg-black/25'
+                        }`}
+                      >
+                        <p
+                          className={`text-center font-medium leading-snug ${
+                            isLightMode ? 'text-[12px] text-[var(--text-muted-1)]' : 'text-[11px] text-cyan-100/80'
+                          }`}
+                        >
+                          Select slice or row · ETH · share · impact · verification
+                        </p>
+                      </div>
+                    )}
+                    </div>
+                  </div>
+                </div>
+              </aside>
+
+              <div className="flex min-h-0 min-w-0 flex-col gap-3.5 sm:gap-4">
+                <div
+                  className={`font-semibold uppercase tracking-[0.14em] ${
+                    isLightMode ? 'text-[12px] text-emerald-900/78' : 'text-[11px] text-cyan-300/62'
+                  }`}
+                >
+                  Fund allocation impact
+                </div>
+                <ul className="grid min-h-0 min-w-0 list-none gap-2 p-0 md:gap-2.5">
+                  {dashboardRows.map((row, i) => {
+                    const isActive = activeSlice === i;
+                    return (
+                      <li key={`alloc-row-${row.label}`}>
+                        <button
+                          type="button"
+                          tabIndex={0}
+                          aria-label={`${row.title}, ${row.pct}% of goal, ${row.allocationEth.toFixed(2)} ETH toward goal`}
+                          onMouseEnter={() => focusImpactSlice(i)}
+                          onFocus={() => focusImpactSlice(i)}
+                          onBlur={clearImpactSliceNow}
+                          className={`flex w-full min-w-0 items-start gap-2.5 rounded-xl border px-3 py-2 text-left ring-2 ring-inset transition-[border-color,background-color,opacity,box-shadow] duration-150 ease-out will-change-[background-color] motion-reduce:transition-none sm:gap-3 sm:px-3.5 sm:py-2.5 ${
+                            isLightMode
+                              ? isActive
+                                ? 'border-emerald-500/50 bg-emerald-50/95 shadow-[0_4px_22px_-14px_rgba(16,100,72,0.18),inset_0_0_0_1px_rgba(16,185,129,0.12)] ring-emerald-700/55'
+                                : 'border-emerald-400/45 bg-emerald-50/70 shadow-[0_6px_22px_-16px_rgba(5,90,70,0.14)] ring-transparent hover:border-emerald-500/55 hover:bg-emerald-100/75 hover:shadow-[0_10px_32px_-14px_rgba(4,100,78,0.22)]'
+                              : isActive
+                                ? 'border-cyan-300/70 bg-emerald-500/[0.11] shadow-[inset_0_0_0_1px_rgba(34,211,238,0.22)] ring-cyan-400/92'
+                                : 'border-[var(--border-chrome-2)]/92 bg-black/37 ring-transparent hover:bg-white/[0.05]'
+                          }`}
+                        >
+                          <span
+                            className="mt-0.5 h-9 w-1 shrink-0 rounded-full shadow-sm"
                             style={{ backgroundColor: slicePalette[i % slicePalette.length] }}
                             aria-hidden
                           />
-                          <span
-                            className={`font-semibold leading-tight ${isLightMode ? 'text-[var(--text-high-3)]' : 'text-white'}`}
-                          >
-                            {row.title}
+                          <span className="min-w-0 flex-1">
+                            <span className="flex flex-wrap items-baseline gap-x-2 gap-y-0">
+                              <span
+                                className={`font-semibold ${isLightMode ? 'text-[15px] leading-snug text-neutral-900/92' : 'text-sm text-white'}`}
+                              >
+                                {row.title}
+                              </span>
+                              <span
+                                className={`rounded-md px-1.5 py-0.5 font-semibold tabular-nums ring-1 ${
+                                  isLightMode
+                                    ? 'bg-emerald-900/[0.05] text-[12px] text-emerald-950/90 ring-emerald-900/10'
+                                    : 'bg-black/45 text-[11px] text-cyan-100 ring-white/22'
+                                }`}
+                              >
+                                {row.pct}%
+                              </span>
+                            </span>
+                            <span
+                              className={`mt-0.5 block leading-snug ${isLightMode ? 'text-[13px] text-[var(--text-muted-1)]' : 'text-xs text-cyan-100/68'}`}
+                            >
+                              {row.impactMetric}
+                            </span>
                           </span>
-                        </span>
-                      </td>
-                      <td
-                        className={`whitespace-nowrap px-2 py-1.5 text-right font-mono tabular-nums ${
-                          isLightMode ? 'text-[var(--text-muted-1)]' : 'text-cyan-200/75'
-                        }`}
-                      >
-                        {row.allocationEth.toFixed(2)}
-                      </td>
-                      <td
-                        className={`hidden px-2 py-1.5 align-top text-[9px] leading-snug sm:table-cell ${
-                          isLightMode ? 'text-[var(--text-muted-1)]' : 'text-cyan-100/70'
-                        }`}
-                      >
-                        {row.impactMetric}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div
-              className={`mt-2.5 shrink-0 border-t pt-2 ${isLightMode ? 'border-[var(--border-chrome-2)]' : 'border-cyan-400/10'}`}
-            >
-              <h3
-                className={`text-[9px] font-semibold uppercase tracking-[0.12em] ${
-                  isLightMode ? 'text-[var(--text-muted-2)]' : 'text-cyan-200/45'
-                }`}
-              >
-                Live activity feed
-              </h3>
-              <ul className="mt-1 space-y-1">
-                {recentActivity.map((item) => (
-                  <li
-                    key={`${item.title}-${item.time}-${item.ethDisplay}`}
-                    className={`flex items-start justify-between gap-2 rounded-md border px-2 py-1 ${
-                      isLightMode
-                        ? 'border-[var(--border-chrome-2)] bg-[var(--surface-panel-overlay)]'
-                        : 'border-cyan-400/8 bg-cyan-400/[0.025]'
-                    }`}
-                  >
-                    <span
-                      className={`min-w-0 flex-1 text-[9px] leading-snug ${
-                        isLightMode ? 'text-[var(--text-muted-1)]' : 'text-cyan-100/75'
-                      }`}
-                    >
-                      <span className={isLightMode ? 'text-emerald-600/90' : 'text-cyan-400/60'} aria-hidden>
-                        ·{' '}
-                      </span>
-                      <span className="font-mono font-semibold">{item.ethDisplay} ETH</span> allocated to {item.title}{' '}
-                      <span className={isLightMode ? 'text-[var(--text-muted-2)]' : 'text-cyan-400/35'}>
-                        · {item.time}
-                      </span>
-                    </span>
-                    <span
-                      className={`shrink-0 rounded px-1 py-0.5 text-[7px] font-semibold uppercase tracking-wide ${
-                        item.status === 'In Progress'
-                          ? isLightMode
-                            ? 'bg-amber-500/15 text-amber-900 ring-1 ring-amber-400/25'
-                            : 'bg-amber-400/15 text-amber-100 ring-1 ring-amber-400/25'
-                          : item.status === 'Verified'
-                            ? isLightMode
-                              ? 'bg-cyan-500/15 text-cyan-900 ring-1 ring-cyan-400/25'
-                              : 'bg-cyan-400/15 text-cyan-100 ring-1 ring-cyan-400/25'
-                            : isLightMode
-                              ? 'bg-emerald-500/15 text-emerald-900 ring-1 ring-emerald-400/25'
-                              : 'bg-emerald-400/15 text-emerald-100 ring-1 ring-emerald-400/25'
-                      }`}
-                    >
-                      {item.status}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+                          <span className={`shrink-0 text-right`}>
+                            <span
+                              className={`block uppercase tracking-wide ${isLightMode ? 'text-[10px] text-[var(--text-muted-2)]' : 'text-[10px] text-cyan-200/62'}`}
+                            >
+                              ETH <span className="sr-only">toward goal</span>
+                            </span>
+                            <span
+                              className={`font-mono font-semibold tabular-nums tracking-tight ${
+                                isLightMode ? 'text-[0.95rem] text-neutral-900/90' : 'text-[0.9rem] text-cyan-50'
+                              }`}
+                            >
+                              {row.allocationEth.toFixed(2)}
+                            </span>
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
             </div>
           </div>
+
+          <footer
+            className={`relative border-t ${
+              isLightMode
+                ? 'border-emerald-400/35 bg-[linear-gradient(180deg,#d1fae5_0%,#ecfdf5_45%,#f0fdfa_100%)] px-4 pb-4 pt-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.55),0_-40px_72px_-44px_rgba(16,185,129,0.28)] sm:px-5 sm:pb-5 sm:pt-5'
+                : 'border-white/26 bg-black/28 px-4 pb-5 pt-4 sm:px-5'
+            }`}
+          >
+            <div
+              className={`flex flex-wrap items-end justify-between gap-3 ${isLightMode ? 'pb-3 sm:pb-3.5' : 'pb-2.5'}`}
+            >
+              <h3
+                className={`font-semibold uppercase tracking-[0.18em] ${
+                  isLightMode ? 'text-[12px] tracking-[0.2em] text-emerald-950/88' : 'text-[11px] text-cyan-100/94'
+                }`}
+              >
+                Cause overview
+              </h3>
+              <span
+                className={`${
+                  isLightMode
+                    ? 'rounded-full bg-emerald-100/90 px-3.5 py-1.5 text-[11px] font-medium leading-none text-emerald-950/75 shadow-[0_4px_18px_-8px_rgba(5,120,90,0.22)] ring-1 ring-emerald-400/40'
+                    : 'text-[10px] leading-none text-cyan-200/76'
+                }`}
+              >
+                Plain-language brief
+              </span>
+            </div>
+            <div
+              className={`overflow-hidden rounded-2xl border backdrop-blur-md ${
+                isLightMode
+                  ? 'border-emerald-400/40 bg-[linear-gradient(180deg,#ecfdf5_0%,#d1fae5_40%,#a7f3d0_100%)] shadow-[0_28px_68px_-42px_rgba(6,78,59,0.3),0_0_80px_-38px_rgba(16,185,129,0.38),0_0_0_1px_rgba(255,255,255,0.38)_inset] ring-1 ring-emerald-500/35'
+                  : 'rounded-xl border-white/14 bg-white/[0.04] shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] ring-1 ring-cyan-400/15'
+              }`}
+            >
+              <div className={isLightMode ? 'px-4 py-5 sm:px-7 sm:py-6' : 'px-3.5 py-4 sm:px-5 sm:py-5'}>
+                <p
+                  className={
+                    isLightMode
+                      ? 'max-w-[42rem] text-[15px] leading-[1.74] tracking-[-0.01em] text-neutral-700 sm:text-[15.5px]'
+                      : 'text-[15px] leading-[1.7] text-cyan-50/[0.94]'
+                  }
+                >
+                  {detailCopy.about}
+                </p>
+              </div>
+              {detailCopy.milestones.length > 0 ? (
+                <div
+                  className={`border-t ${
+                    isLightMode
+                      ? 'relative border-emerald-400/35 bg-[linear-gradient(165deg,#bbf7d0_0%,#d1fae5_38%,#ecfdf5_100%)] px-4 py-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] sm:px-7 sm:py-6'
+                      : 'border-white/[0.08] bg-black/25 px-3.5 py-4 sm:px-5 sm:py-4'
+                  }`}
+                >
+                  <p
+                    className={`font-semibold uppercase tracking-[0.12em] ${
+                      isLightMode ? 'text-[11px] tracking-[0.14em] text-emerald-950/82' : 'text-[10px] text-cyan-200/90'
+                    }`}
+                  >
+                    Outcomes this pool is built for
+                  </p>
+                  <ul className="mt-3.5 list-none space-y-2 p-0 sm:space-y-2.5">
+                    {detailCopy.milestones.map((line, idx) => (
+                      <li
+                        key={line}
+                        className={`group flex items-start gap-2.5 rounded-xl px-2.5 py-2 transition-[background-color,box-shadow,border-color] duration-200 ${
+                          isLightMode
+                            ? 'border border-emerald-400/20 bg-white/40 text-[14px] leading-[1.45] text-neutral-800/95 hover:bg-white/70 hover:shadow-[0_8px_22px_-16px_rgba(5,100,75,0.22)]'
+                            : 'border border-cyan-400/12 bg-white/[0.02] text-[13.5px] leading-[1.45] text-white/[0.92] hover:border-cyan-300/30 hover:bg-cyan-400/[0.04] hover:shadow-[0_0_22px_-12px_rgba(34,211,238,0.52)]'
+                        }`}
+                      >
+                        <span
+                          className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg font-semibold tabular-nums tracking-tight transition-[box-shadow,transform,background-color,border-color] duration-200 group-hover:scale-[1.04] ${
+                            isLightMode
+                              ? 'border border-emerald-500/32 bg-gradient-to-b from-white to-emerald-200/85 text-[11px] text-emerald-950 shadow-[0_4px_12px_-8px_rgba(5,100,75,0.24),inset_0_1px_0_rgba(255,255,255,0.82)] group-hover:shadow-[0_8px_16px_-10px_rgba(5,100,75,0.36)]'
+                              : 'border border-cyan-400/30 bg-[linear-gradient(180deg,rgba(34,211,238,0.14),rgba(8,145,178,0.1))] text-[10px] text-cyan-100 shadow-[0_0_10px_-4px_rgba(34,211,238,0.55),inset_0_1px_0_rgba(255,255,255,0.08)] group-hover:shadow-[0_0_16px_-4px_rgba(34,211,238,0.7)]'
+                          }`}
+                          aria-hidden
+                        >
+                          {idx + 1}
+                        </span>
+                        <span className="min-w-0 pt-[0.12rem]">{line}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+            </div>
+          </footer>
         </div>
       ) : null}
+
+      <div className="mt-5 sm:mt-6">
+        <div className="relative">
+          <SurfaceCard
+            className={
+              isLightMode
+                ? 'relative isolate overflow-hidden rounded-2xl border-cyan-400/40 bg-[linear-gradient(165deg,#ecfeff_0%,#cffafe_45%,#d1fae5_100%)] shadow-[0_32px_72px_-44px_rgba(8,100,95,0.28),0_0_100px_-38px_rgba(6,182,212,0.32),inset_0_1px_0_rgba(255,255,255,0.45)] ring-1 ring-cyan-500/30 backdrop-blur-[3px] before:pointer-events-none before:absolute before:-left-[15%] before:top-[-40%] before:z-0 before:h-[19rem] before:w-[19rem] before:rounded-full before:bg-cyan-500/30 before:blur-3xl before:content-[\'\'] after:pointer-events-none after:absolute after:-bottom-14 after:right-[-12%] after:z-0 after:h-[17rem] after:w-[18rem] after:rounded-full after:bg-emerald-500/25 after:blur-3xl after:content-[\'\'] p-4 sm:p-5 lg:pr-[20rem]'
+                : 'p-4 sm:p-5 lg:pr-[19rem]'
+            }
+          >
+            <p
+              className={`relative z-[1] font-semibold uppercase tracking-[0.2em] ${
+                isLightMode ? 'text-[11px] text-emerald-900/72' : 'text-xs text-[var(--text-muted-2)]'
+              }`}
+            >
+              Donor action
+            </p>
+            {canDonate ? (
+              <form onSubmit={(e) => void donate(e)} className="relative z-[1] mt-3 sm:mt-3.5">
+                <h2
+                  className={`font-semibold text-[var(--text-high-3)] ${isLightMode ? 'text-xl tracking-tight' : 'text-lg'}`}
+                >
+                  Donate ETH
+                </h2>
+                <p
+                  className={`mt-1.5 text-[var(--text-muted-1)] ${isLightMode ? 'max-w-xl text-[13px] leading-relaxed' : 'text-xs'}`}
+                >
+                  Fast contribution from your assigned wallet.
+                </p>
+
+                <div className="mt-3.5 flex flex-wrap items-center gap-2.5 sm:gap-3">
+                  <input
+                    type="text"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    className={`vtx-input w-40 px-4 py-2 font-mono ${isLightMode ? 'border-emerald-300/60 bg-emerald-50/50 ring-1 ring-emerald-400/40 shadow-[inset_0_2px_12px_rgba(15,80,60,0.1),0_8px_32px_-14px_rgba(34,211,153,0.28)]' : ''}`}
+                    placeholder="Amount"
+                  />
+                  <PrimaryButton
+                    type="submit"
+                    disabled={busy}
+                    className={
+                      isLightMode
+                        ? 'min-w-[7.5rem] px-6 py-2.5 shadow-[0_12px_44px_-10px_rgba(5,120,95,0.55),0_0_56px_2px_rgba(16,185,129,0.45)]'
+                        : 'min-w-[7.5rem] px-6 py-2.5'
+                    }
+                  >
+                    {busy ? 'Sending…' : 'Donate'}
+                  </PrimaryButton>
+                </div>
+
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {QUICK_AMOUNTS.map((v) => (
+                    <button
+                      key={v}
+                      type="button"
+                      onClick={() => setAmount(v)}
+                      className={`rounded-full border px-3 py-1.5 font-semibold text-[var(--text-high-3)] transition-[border-color,box-shadow,background-color] duration-150 ${
+                        isLightMode
+                          ? 'border-emerald-400/50 bg-emerald-100/90 text-[13px] shadow-[inset_0_1px_0_rgba(255,255,255,0.55),0_8px_26px_-12px_rgba(5,100,75,0.28)] ring-1 ring-emerald-400/35 hover:border-emerald-500/60 hover:bg-emerald-200/80 hover:shadow-[0_10px_32px_-10px_rgba(4,120,95,0.32)]'
+                          : 'border-[var(--border-chrome-2)] bg-[var(--surface-panel-overlay)] text-xs hover:border-[var(--border-chrome-4)]'
+                      }`}
+                    >
+                      {v} ETH
+                    </button>
+                  ))}
+                </div>
+
+                <ul className="mt-4 flex flex-wrap gap-2.5">
+                  <li
+                    className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 ${
+                      isLightMode
+                        ? 'border-emerald-400/35 bg-emerald-100/85 text-emerald-950/80'
+                        : 'border-white/14 bg-white/[0.04] text-cyan-100/88'
+                    }`}
+                  >
+                    <span className="text-[10px] uppercase tracking-[0.1em] opacity-75">Impact</span>
+                    <span className="text-sm font-semibold">{estUnits} {unitLabel}</span>
+                  </li>
+                  <li
+                    className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 ${
+                      isLightMode
+                        ? 'border-emerald-400/35 bg-emerald-100/85 text-emerald-950/80'
+                        : 'border-white/14 bg-white/[0.04] text-cyan-100/88'
+                    }`}
+                  >
+                    <span className="text-[10px] uppercase tracking-[0.1em] opacity-75">People</span>
+                    <span className="text-sm font-semibold">{estPeople}</span>
+                  </li>
+                  <li
+                    className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 ${
+                      isLightMode
+                        ? 'border-emerald-400/35 bg-emerald-100/85 text-emerald-950/80'
+                        : 'border-white/14 bg-white/[0.04] text-cyan-100/88'
+                    }`}
+                  >
+                    <span className="text-[10px] uppercase tracking-[0.1em] opacity-75">Fee</span>
+                    <span className="font-mono text-sm font-semibold">{estGas.toFixed(4)} ETH</span>
+                  </li>
+                </ul>
+                {msg && <p className={`mt-3 text-sm ${isLightMode ? 'text-emerald-700' : 'text-emerald-400'}`}>{msg}</p>}
+              </form>
+            ) : (
+              <div
+                className={`relative z-[1] mt-3 rounded-xl border p-4 text-sm ${
+                  isLightMode
+                    ? 'border-amber-700/20 bg-amber-500/10 text-amber-900'
+                    : 'border-amber-500/20 bg-amber-500/10 text-amber-200'
+                }`}
+              >
+                {user
+                  ? 'Only accounts with an Anvil wallet can donate from UI.'
+                  : 'Sign in to donate from your assigned Anvil wallet.'}{' '}
+                <Link to="/login" className={isLightMode ? 'text-amber-950 underline' : 'text-cyan-300 underline'}>
+                  Sign in
+                </Link>
+              </div>
+            )}
+          </SurfaceCard>
+
+          <SurfaceCard
+            className={`${
+              isLightMode
+                ? 'relative isolate overflow-hidden rounded-2xl border-emerald-400/45 bg-[linear-gradient(165deg,#ecfdf5_0%,#d1fae5_48%,#ccfbf1_100%)] shadow-[0_28px_66px_-40px_rgba(6,78,59,0.32),0_0_80px_-34px_rgba(16,185,129,0.28),inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-emerald-500/35 backdrop-blur-[3px] before:pointer-events-none before:absolute before:-right-16 before:top-[-40%] before:z-0 before:h-[13rem] before:w-[13rem] before:rounded-full before:bg-emerald-500/26 before:blur-3xl before:content-[""]'
+                : 'group relative isolate overflow-hidden rounded-2xl border border-cyan-400/28 bg-[linear-gradient(162deg,rgba(7,22,38,0.96)_0%,rgba(4,14,28,0.98)_48%,rgba(6,24,42,0.95)_100%)] shadow-[0_16px_36px_rgba(2,8,20,0.62),inset_0_1px_0_rgba(255,255,255,0.08),inset_0_0_0_1px_rgba(34,211,238,0.12)] ring-1 ring-cyan-400/22 before:pointer-events-none before:absolute before:-right-10 before:top-[-25%] before:z-0 before:h-[12rem] before:w-[12rem] before:rounded-full before:bg-cyan-400/22 before:blur-3xl before:content-[""] after:pointer-events-none after:absolute after:-left-10 after:bottom-[-30%] after:z-0 after:h-[10rem] after:w-[10rem] after:rounded-full after:bg-emerald-400/18 after:blur-3xl after:content-[""]'
+            } mt-3 p-4 sm:p-4.5 lg:absolute lg:right-4 lg:top-4 lg:mt-0 lg:w-[18rem] transition-transform duration-300 ease-out transform-gpu will-change-transform hover:-translate-x-3 hover:-translate-y-1 hover:scale-[1.02]`}
+          >
+            <p
+              className={`relative z-[1] font-semibold uppercase tracking-[0.18em] ${
+                isLightMode ? 'text-[10px] text-emerald-900/72' : 'text-[10px] text-[var(--text-muted-2)]'
+              }`}
+            >
+              Campaign health
+            </p>
+            <div className="relative z-[1] mt-2.5 flex items-center gap-3">
+              <div className={`shrink-0 ${isLightMode ? 'relative' : 'relative'}`}>
+                {isLightMode ? (
+                  <div
+                    className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-[130%] w-[130%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(5,150,105,0.42)_0%,rgba(20,184,166,0.2)_45%,rgba(255,255,255,0)_68%)] blur-xl"
+                    aria-hidden
+                  />
+                ) : (
+                  <div
+                    className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-[145%] w-[145%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(34,211,238,0.26)_0%,rgba(16,185,129,0.18)_45%,rgba(2,6,23,0)_72%)] blur-xl transition-opacity duration-300 group-hover:opacity-100"
+                    aria-hidden
+                  />
+                )}
+                <svg viewBox="0 0 110 110" className={`relative h-[5.75rem] w-[5.75rem] transition-transform duration-300 ${isLightMode ? '' : 'drop-shadow-[0_0_22px_rgba(34,211,238,0.26)] group-hover:scale-[1.02]'}`} aria-label="Funding progress chart">
+                  <circle cx="55" cy="55" r="45" fill="none" stroke="var(--bg-depth-1)" strokeWidth="10" />
+                  <circle
+                    cx="55"
+                    cy="55"
+                    r="45"
+                    fill="none"
+                    stroke="url(#causeProgress)"
+                    strokeWidth="10"
+                    strokeLinecap="round"
+                    strokeDasharray={`${progressStroke} ${strokeLength}`}
+                    transform="rotate(-90 55 55)"
+                  />
+                  <text x="55" y="52" textAnchor="middle" className="fill-[var(--text-high-3)] text-[0.92rem] font-bold">
+                    {pct.toFixed(0)}%
+                  </text>
+                  <text x="55" y="66" textAnchor="middle" className="fill-[var(--text-muted-1)] text-[0.45rem]">
+                    funded
+                  </text>
+                </svg>
+              </div>
+              <div className="min-w-0 flex-1 space-y-1.5">
+                <p className={`text-[10px] uppercase tracking-[0.1em] ${isLightMode ? 'text-emerald-950/70' : 'text-cyan-200/78'}`}>
+                  Raised
+                </p>
+                <p className={`font-mono text-[0.95rem] font-semibold ${isLightMode ? 'text-[var(--text-high-3)]' : 'text-cyan-50'}`}>{cause.raised_eth.toFixed(4)} ETH</p>
+                <p className={`pt-0.5 text-[10px] uppercase tracking-[0.1em] ${isLightMode ? 'text-emerald-950/70' : 'text-cyan-200/78'}`}>
+                  Remaining
+                </p>
+                <p className={`font-mono text-[0.95rem] font-semibold ${isLightMode ? 'text-[var(--text-high-3)]' : 'text-cyan-50'}`}>{remainingEth.toFixed(4)} ETH</p>
+              </div>
+            </div>
+            <div className={`relative z-[1] mt-3 h-2 overflow-hidden rounded-full ${isLightMode ? 'bg-emerald-200/55' : 'bg-cyan-950/70 ring-1 ring-cyan-400/20'}`}>
+              <div
+                className={`h-full rounded-full bg-gradient-to-r from-[var(--accent-deep-1)] to-[var(--accent-bright-2)] ${isLightMode ? 'shadow-[0_0_20px_rgba(16,185,129,0.55)]' : 'shadow-[0_0_18px_rgba(34,211,238,0.55)]'}`}
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+            <p className={`relative z-[1] mt-2 text-[12px] ${isLightMode ? 'text-[var(--text-muted-1)]' : 'text-[var(--text-muted-1)]'}`}>
+              Goal: {cause.goal_eth.toFixed(4)} ETH
+            </p>
+          </SurfaceCard>
+        </div>
+      </div>
+      </div>
     </div>
   );
 }

@@ -99,7 +99,7 @@ export function Layout() {
           </nav>
         </div>
       </header>
-      <main className="flex-1">
+      <main className="flex min-h-0 flex-1 flex-col">
         <Outlet />
       </main>
       <footer className="border-t border-[var(--border-chrome-1)] py-6 text-center text-xs text-[var(--text-muted-2)]">

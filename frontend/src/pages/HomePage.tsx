@@ -603,7 +603,7 @@ export function HomePage() {
           </div>
 
           <div
-            className={`relative mx-auto mt-14 max-w-3xl overflow-hidden rounded-[2.25rem] px-8 py-16 text-center backdrop-blur-[28px] sm:px-12 sm:py-[4.75rem] ${
+            className={`relative mx-auto mt-14 max-w-3xl overflow-hidden rounded-[2.25rem] px-7 py-14 text-center backdrop-blur-[28px] sm:px-12 sm:py-[4.5rem] ${
               isLightMode
                 ? 'border border-[rgba(154,174,206,0.22)] bg-[linear-gradient(165deg,rgba(255,255,255,0.96)_0%,rgba(244,249,253,0.88)_42%,rgba(238,246,251,0.94)_100%)] shadow-[0_24px_60px_rgba(58,76,112,0.09),0_0_0_1px_rgba(255,255,255,0.85)_inset,0_1px_0_rgba(255,255,255,0.6)_inset]'
                 : 'border border-white/[0.07] bg-[linear-gradient(165deg,rgba(26,34,54,0.72)_0%,rgba(14,18,30,0.55)_38%,rgba(12,26,42,0.62)_100%)] shadow-[0_28px_70px_rgba(2,8,22,0.55),0_0_0_1px_rgba(255,255,255,0.045)_inset,0_0_100px_rgba(45,245,173,0.07)]'
@@ -634,28 +634,40 @@ export function HomePage() {
             />
 
             <p
-              className={`relative mx-auto inline-block rounded-full px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.32em] sm:text-[11px] ${
+              className={`relative mx-auto inline-flex max-w-[min(100%,20rem)] items-center justify-center rounded-full px-5 py-2 text-[0.6875rem] font-semibold uppercase tracking-[0.22em] sm:max-w-none sm:text-[11px] sm:tracking-[0.26em] ${
                 isLightMode
-                  ? 'bg-white/70 text-[#5c6d82] ring-1 ring-[rgba(120,148,178,0.18)] shadow-sm'
-                  : 'bg-white/[0.06] text-[#9fb3c8] ring-1 ring-white/[0.08]'
+                  ? 'bg-white/80 text-[#4a5a6c] ring-1 ring-[rgba(100,128,156,0.2)] shadow-[0_1px_2px_rgba(15,40,60,0.04)]'
+                  : 'bg-white/[0.06] text-[#b8c7d8] ring-1 ring-white/[0.1]'
               }`}
             >
-              Join thousands giving with clarity
+              Proof-forward giving
             </p>
 
             <h2
-              className={`relative mx-auto mt-7 max-w-[22rem] text-balance font-serif text-[1.75rem] font-medium leading-[1.14] tracking-[-0.02em] sm:mt-8 sm:max-w-2xl sm:text-[2.35rem] sm:leading-[1.1] ${
-                isLightMode ? 'text-[#121a2e]' : 'text-[#f8fafc]'
+              className={`relative mx-auto mt-6 max-w-[19rem] text-balance font-serif text-[1.875rem] font-medium leading-[1.12] tracking-[-0.035em] sm:mt-10 sm:max-w-3xl sm:text-[2.5rem] sm:leading-[1.08] lg:text-[2.75rem] lg:leading-[1.06] ${
+                isLightMode ? 'text-[#101827]' : 'text-[#f8fafc]'
               }`}
             >
-              Stand behind{' '}
-              <span className={isLightMode ? 'text-[#0d6f5c]' : 'text-[#6ef5d8]'}>every gift</span> you make—nothing hidden.
+              <span className="block sm:inline">Your generosity,</span>{' '}
+              <span className="block sm:inline">
+                <span className={isLightMode ? 'text-[#0d6f5c]' : 'text-[#6ef5d8]'}>visible end to end</span>.
+              </span>
             </h2>
 
-            <p className="relative mx-auto mt-6 max-w-lg text-pretty font-light leading-relaxed text-[var(--text-muted-1)] sm:mt-7 sm:text-lg sm:leading-[1.65]">
-              Open your Vault in minutes: wallet-ready donations, immutable receipts, and a live ledger anyone can audit.
-              Quiet confidence—for you and everyone you support.
-            </p>
+            <div
+              className={`relative mx-auto mt-7 flex max-w-[32rem] flex-col gap-2.5 text-pretty text-center sm:mt-9 ${
+                isLightMode
+                  ? 'text-[15px] leading-[1.72] text-neutral-600 sm:text-[17px] sm:leading-[1.68]'
+                  : 'font-light text-[var(--text-muted-1)] sm:text-lg sm:leading-[1.68]'
+              }`}
+            >
+              <p>
+                Connect in minutes, give from your wallet, and keep receipts that cannot be rewritten.
+              </p>
+              <p className={isLightMode ? 'text-[14px] text-neutral-600/88 sm:text-[16px]' : 'opacity-[0.92]'}>
+                Follow the live ledger—confidence for you, accountability for every cause you champion.
+              </p>
+            </div>
 
             <ul className="relative mx-auto mt-11 grid max-w-3xl gap-6 sm:mt-12 sm:grid-cols-3 sm:gap-7">
               {VAULT_JOIN_BENEFITS.map((item) => {
