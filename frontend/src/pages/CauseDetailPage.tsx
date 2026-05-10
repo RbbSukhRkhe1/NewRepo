@@ -445,7 +445,7 @@ export function CauseDetailPage() {
               </span>
             </div>
             <p className="mt-1 max-w-prose text-xs text-[var(--text-muted-1)]">
-              Planned split across this campaign’s goal — hover the chart or list to preview what your donation helps cover.
+              Planned split across this campaign’s goal. The highlighted slice shows the full line item below; the impact table mirrors your selection without repeating it.
             </p>
             <div className="mt-6 grid min-w-0 gap-6 md:grid-cols-[minmax(0,220px)_minmax(0,1fr)] md:items-start md:gap-8">
               <div className="mx-auto flex w-full max-w-[220px] shrink-0 justify-center md:mx-0 md:justify-start">
@@ -539,53 +539,22 @@ export function CauseDetailPage() {
               <p
                 className={`mt-0.5 text-[10px] leading-snug ${isLightMode ? 'text-[var(--text-muted-1)]' : 'text-cyan-100/55'}`}
               >
-                Allocation, outcomes snapshot, and live updates
+                Goal-based ETH allocations, impact metrics, and activity — percentages stay on the chart at left.
               </p>
-            </div>
-
-            <div className="mt-2 shrink-0">
-              <p
-                className={`text-[9px] font-semibold uppercase tracking-[0.14em] ${
-                  isLightMode ? 'text-[var(--text-muted-2)]' : 'text-cyan-200/40'
-                }`}
-              >
-                Categories
-              </p>
-              <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1.5">
-                {allocationRows.map((row, i) => (
-                  <button
-                    key={`dash-legend-${row.label}`}
-                    type="button"
-                    onMouseEnter={() => setActiveSlice(i)}
-                    onFocus={() => setActiveSlice(i)}
-                    onMouseLeave={() => setActiveSlice(null)}
-                    onBlur={() => setActiveSlice(null)}
-                    className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-1 text-[10px] font-medium transition ${
-                      activeSlice === i
-                        ? isLightMode
-                          ? 'border-[var(--border-chrome-4)] bg-[var(--overlay-surface-soft)] text-[var(--text-high-3)]'
-                          : 'border-cyan-400/35 bg-cyan-400/10 text-cyan-100'
-                        : isLightMode
-                          ? 'border-transparent bg-transparent text-[var(--text-muted-1)] hover:border-[var(--border-chrome-2)] hover:bg-[var(--surface-panel-overlay)]'
-                          : 'border-transparent bg-transparent text-cyan-100/80 hover:border-cyan-400/20 hover:bg-cyan-400/[0.06]'
-                    }`}
-                  >
-                    <span
-                      className="h-2 w-2 shrink-0 rounded-full ring-1 ring-black/10 dark:ring-white/15"
-                      style={{ backgroundColor: slicePalette[i % slicePalette.length] }}
-                      aria-hidden
-                    />
-                    {toSpendTitle(row.label)}
-                  </button>
-                ))}
-              </div>
             </div>
 
             <div
-              className={`mt-2.5 shrink-0 overflow-x-auto rounded-lg border ${
+              className={`mt-2 shrink-0 overflow-x-auto rounded-lg border ${
                 isLightMode ? 'border-[var(--border-chrome-2)] bg-[var(--surface-panel-overlay)]' : 'border-cyan-400/10 bg-cyan-400/[0.03]'
               }`}
             >
+              <p
+                className={`border-b px-2 py-1.5 text-[9px] leading-snug ${
+                  isLightMode ? 'border-[var(--border-chrome-2)] text-[var(--text-muted-2)]' : 'border-cyan-400/12 text-cyan-200/50'
+                }`}
+              >
+                Full line-item wording stays under the chart on the left. This grid is ETH + outcomes only.
+              </p>
               <table className="w-full min-w-[300px] border-collapse text-left text-[10px]">
                 <thead>
                   <tr
@@ -593,9 +562,8 @@ export function CauseDetailPage() {
                       isLightMode ? 'border-[var(--border-chrome-2)] text-[var(--text-muted-2)]' : 'border-cyan-400/12 text-cyan-200/45'
                     }`}
                   >
-                    <th className="px-2 py-1.5 font-semibold">Allocation vs impact</th>
-                    <th className="px-2 py-1.5 text-right font-semibold">%</th>
-                    <th className="px-2 py-1.5 text-right font-semibold">ETH</th>
+                    <th className="px-2 py-1.5 font-semibold">Category</th>
+                    <th className="px-2 py-1.5 text-right font-semibold">ETH (goal)</th>
                     <th className="hidden min-w-[7rem] px-2 py-1.5 font-semibold sm:table-cell">Metric</th>
                   </tr>
                 </thead>
@@ -603,6 +571,7 @@ export function CauseDetailPage() {
                   {dashboardRows.map((row, i) => (
                     <tr
                       key={`alloc-row-${row.label}`}
+                      aria-label={`${row.title}, ${row.pct}% of goal, ${row.allocationEth.toFixed(2)} ETH toward goal`}
                       onMouseEnter={() => setActiveSlice(i)}
                       onMouseLeave={() => setActiveSlice(null)}
                       className={`cursor-pointer border-b transition-colors last:border-0 ${
@@ -617,37 +586,19 @@ export function CauseDetailPage() {
                             : 'hover:bg-white/[0.03]'
                       }`}
                     >
-                      <td className="max-w-none px-2 py-1.5 align-top sm:max-w-[14rem]">
-                        <span className="flex items-start gap-1.5">
+                      <td className="min-w-[7.5rem] max-w-[12rem] px-2 py-1.5 align-middle">
+                        <span className="flex items-center gap-1.5">
                           <span
-                            className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full"
+                            className="h-1.5 w-1.5 shrink-0 rounded-full"
                             style={{ backgroundColor: slicePalette[i % slicePalette.length] }}
                             aria-hidden
                           />
-                          <span className="min-w-0 leading-snug">
-                            <span
-                              className={`font-semibold ${isLightMode ? 'text-[var(--text-high-3)]' : 'text-white'}`}
-                            >
-                              {row.title}
-                            </span>
-                            <span
-                              className={`mt-0.5 block font-normal text-[9px] ${
-                                isLightMode ? 'text-[var(--text-muted-2)]' : 'text-cyan-100/55'
-                              }`}
-                            >
-                              {activeSlice === i || row.label.length <= 64
-                                ? row.label
-                                : `${row.label.slice(0, 61)}…`}
-                            </span>
+                          <span
+                            className={`font-semibold leading-tight ${isLightMode ? 'text-[var(--text-high-3)]' : 'text-white'}`}
+                          >
+                            {row.title}
                           </span>
                         </span>
-                      </td>
-                      <td
-                        className={`whitespace-nowrap px-2 py-1.5 text-right font-mono tabular-nums ${
-                          isLightMode ? 'text-[var(--text-high-3)]' : 'text-cyan-100/90'
-                        }`}
-                      >
-                        {row.pct}%
                       </td>
                       <td
                         className={`whitespace-nowrap px-2 py-1.5 text-right font-mono tabular-nums ${
