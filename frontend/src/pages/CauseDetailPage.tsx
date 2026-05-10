@@ -62,23 +62,6 @@ function pieSlicePath(cx: number, cy: number, r: number, startDeg: number, endDe
   return `M ${cx} ${cy} L ${start.x} ${start.y} A ${r} ${r} 0 ${largeArc} 1 ${end.x} ${end.y} Z`;
 }
 
-function milestoneProgress(index: number): number {
-  if (index === 0) return 72;
-  if (index === 1) return 38;
-  return 14;
-}
-
-function categoryIconGlyph(title: string): string {
-  const t = title.toLowerCase();
-  if (t.includes('housing')) return '⌂';
-  if (t.includes('counselling')) return '◉';
-  if (t.includes('legal')) return '⚖';
-  if (t.includes('essential')) return '✦';
-  if (t.includes('medical')) return '+';
-  if (t.includes('transport')) return '➜';
-  return '◆';
-}
-
 const DETAIL_COPY_BY_TITLE: Record<string, CauseDetailCopy> = {
   LGBTQs: {
     about:
@@ -193,8 +176,7 @@ export function CauseDetailPage() {
   const [amount, setAmount] = useState('0.1');
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [activeSlice, setActiveSlice] = useState<number | null>(0);
-  const [activeImpactCard, setActiveImpactCard] = useState(0);
+  const [activeSlice, setActiveSlice] = useState<number | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -264,7 +246,6 @@ export function CauseDetailPage() {
     pct: chartWeights[idx] ?? 10,
   }));
   const slicePalette = ['#22c55e', '#06b6d4', '#14b8a6', '#84cc16'];
-  const trendPaths = ['M2,17 L10,15 L18,14 L26,11 L34,8', 'M2,17 L10,16 L18,14 L26,13 L34,10', 'M2,17 L10,16 L18,15 L26,14 L34,13', 'M2,17 L10,17 L18,16 L26,15 L34,14'];
   const dashboardRows = allocationRows.map((item, i) => {
     const title = toSpendTitle(item.label);
     const allocationEth = (cause.goal_eth * item.pct) / 100;
@@ -276,27 +257,37 @@ export function CauseDetailPage() {
           : i === 2
             ? `${Math.max(12, Math.round(allocationEth * 45))} cases covered`
             : `${Math.max(60, Math.round(allocationEth * 140))} kits delivered`;
-    const impactShort = impactMetric
-      .replace(' families supported', ' fam')
-      .replace(' sessions funded', ' sessions')
-      .replace(' cases covered', ' cases')
-      .replace(' kits delivered', ' kits');
     return {
       ...item,
       title,
       allocationEth,
       impactMetric,
-      impactShort,
-      icon: categoryIconGlyph(title),
-      trendPath: trendPaths[i % trendPaths.length],
-      progress: milestoneProgress(i),
     };
   });
-  const liveFeed = dashboardRows.slice(0, 4).map((row, i) => ({
-    text: `${row.allocationEth.toFixed(1)} ETH allocated to ${row.title.toLowerCase()} support`,
-    time: i === 0 ? '2h ago' : i === 1 ? '6h ago' : i === 2 ? '1d ago' : '2d ago',
-    status: i === 0 ? 'confirmed' : i === 1 ? 'in-progress' : 'verified',
-  }));
+  const recentActivity =
+    detailCopy != null
+      ? dashboardRows.map((row, i) => {
+          const bucketEth = (cause.raised_eth * row.pct) / 100;
+          const ethNum =
+            cause.raised_eth > 0
+              ? Math.max(0.3, bucketEth * 0.35 + i * 0.08)
+              : Math.max(0.5, (cause.goal_eth * row.pct) / 100 * 0.06);
+          const ethDisplay = ethNum.toFixed(1);
+          const times = ['2h ago', '6h ago', '12h ago', '1d ago'] as const;
+          const statuses = ['Confirmed', 'In Progress', 'Confirmed', 'Verified'] as const;
+          return {
+            ethDisplay,
+            title: row.title,
+            time: times[i] ?? 'recently',
+            status: statuses[i] ?? 'Confirmed',
+          };
+        })
+      : [];
+
+  const pieHoleCategory =
+    activeSlice != null ? toSpendTitle(allocationRows[activeSlice]?.label ?? '') : '';
+  const pieHoleSubtitle =
+    activeSlice == null ? 'Pick a slice' : pieHoleCategory.length > 16 ? `${pieHoleCategory.slice(0, 14)}…` : pieHoleCategory;
 
   return (
     <div className="vtx-page max-w-6xl">
@@ -439,34 +430,36 @@ export function CauseDetailPage() {
       </div>
 
       {detailCopy ? (
-        <div className="mt-6 grid items-start gap-5 lg:grid-cols-[1.14fr_0.86fr]">
-          <SurfaceCard>
-            <div className="flex items-center justify-between gap-3">
+        <div className="mt-6 grid min-w-0 items-start gap-6 lg:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)] lg:gap-8 xl:gap-10">
+          <SurfaceCard className="min-w-0 overflow-hidden">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-lg font-semibold text-[var(--text-high-3)]">Where funds go</h2>
               <span
-                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${
                   isLightMode
                     ? 'border border-emerald-600/35 bg-emerald-600/10 text-emerald-800'
                     : 'border border-[var(--border-chrome-3)] bg-[var(--surface-panel-overlay)] text-[var(--text-high-2)]'
                 }`}
               >
-                Donor POV
+                Donor view
               </span>
             </div>
-            <p className="mt-1 text-xs text-[var(--text-muted-1)]">Estimated allocation mix so donors can decide faster.</p>
-            <div className="mt-5 grid gap-4 sm:grid-cols-[210px_1fr] sm:items-center">
-              <div className="mx-auto">
-                <svg viewBox="0 0 200 200" className="h-44 w-44 sm:h-48 sm:w-48" aria-label="Fund allocation pie chart">
+            <p className="mt-1 max-w-prose text-xs text-[var(--text-muted-1)]">
+              Planned split across this campaign’s goal — hover the chart or list to preview what your donation helps cover.
+            </p>
+            <div className="mt-6 grid min-w-0 gap-6 md:grid-cols-[minmax(0,220px)_minmax(0,1fr)] md:items-start md:gap-8">
+              <div className="mx-auto flex w-full max-w-[220px] shrink-0 justify-center md:mx-0 md:justify-start">
+                <svg viewBox="0 0 200 200" className="h-44 w-full max-w-[200px] sm:h-48 sm:max-w-[220px]" aria-label="Fund allocation pie chart">
                   {allocationRows.map((item, i) => {
                     const start = -90 + allocationRows.slice(0, i).reduce((sum, row) => sum + row.pct, 0) * 3.6;
                     const end = start + item.pct * 3.6;
                     const mid = (start + end) / 2;
-                    const exploded = activeSlice === i ? 7 : 0;
+                    const exploded = activeSlice === i ? 6 : 0;
                     const offset = polarToCartesian(0, 0, exploded, mid);
                     return (
                       <path
                         key={`slice-${item.label}`}
-                        d={pieSlicePath(100, 100, 78, start, end)}
+                        d={pieSlicePath(100, 100, 76, start, end)}
                         transform={`translate(${offset.x}, ${offset.y})`}
                         fill={slicePalette[i % slicePalette.length]}
                         className="cursor-pointer transition-transform duration-150 ease-out"
@@ -480,16 +473,16 @@ export function CauseDetailPage() {
                       />
                     );
                   })}
-                  <circle cx="100" cy="100" r="36" fill="var(--surface-panel-overlay)" />
-                  <text x="100" y="98" textAnchor="middle" className="fill-[var(--text-high-3)] text-[0.8rem] font-semibold">
-                    {activeSlice != null ? `${allocationRows[activeSlice]?.pct}%` : 'Hover'}
+                  <circle cx="100" cy="100" r="38" fill="var(--surface-panel-overlay)" />
+                  <text x="100" y="94" textAnchor="middle" className="fill-[var(--text-high-3)] text-[0.72rem] font-semibold">
+                    {activeSlice != null ? `${allocationRows[activeSlice]?.pct}%` : '—'}
                   </text>
-                  <text x="100" y="114" textAnchor="middle" className="fill-[var(--text-muted-1)] text-[0.5rem]">
-                    {activeSlice != null ? toSpendTitle(allocationRows[activeSlice]?.label ?? '') : 'slice'}
+                  <text x="100" y="110" textAnchor="middle" className="fill-[var(--text-muted-1)] text-[0.45rem]">
+                    {pieHoleSubtitle}
                   </text>
                 </svg>
               </div>
-              <div className="space-y-2">
+              <div className="min-w-0 space-y-2">
                 {allocationRows.map((item, i) => (
                   <button
                     key={`legend-${item.label}`}
@@ -498,163 +491,237 @@ export function CauseDetailPage() {
                     onFocus={() => setActiveSlice(i)}
                     onMouseLeave={() => setActiveSlice(null)}
                     onBlur={() => setActiveSlice(null)}
-                    className={`flex w-full items-center justify-between rounded-lg border px-3 py-2 text-left text-xs transition ${
+                    className={`flex w-full min-w-0 items-center justify-between gap-3 rounded-lg border px-3 py-2.5 text-left text-xs transition ${
                       activeSlice === i
                         ? 'border-[var(--border-chrome-4)] bg-[var(--overlay-surface-soft)]'
                         : 'border-[var(--border-chrome-2)] bg-[var(--surface-panel-overlay)]'
                     }`}
                   >
-                    <span className="flex items-center gap-2 text-[var(--text-muted-1)]">
-                      <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: slicePalette[i % slicePalette.length] }} />
-                      {toSpendTitle(item.label)}
+                    <span className="flex min-w-0 items-center gap-2 text-[var(--text-muted-1)]">
+                      <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: slicePalette[i % slicePalette.length] }} />
+                      <span className="truncate">{toSpendTitle(item.label)}</span>
                     </span>
-                    <span className="font-mono text-[var(--text-high-3)]">{item.pct}%</span>
+                    <span className="shrink-0 font-mono text-[var(--text-high-3)]">{item.pct}%</span>
                   </button>
                 ))}
               </div>
             </div>
-            <div className="mt-3 rounded-lg border border-[var(--border-chrome-2)] bg-[var(--surface-panel-overlay)] px-3 py-2.5 text-xs">
+            <div className="mt-4 rounded-lg border border-[var(--border-chrome-2)] bg-[var(--surface-panel-overlay)] px-3 py-2.5 text-xs leading-relaxed">
               {activeSlice != null ? (
                 <p className="text-[var(--text-muted-1)]">
-                  <span className="font-semibold text-[var(--text-high-3)]">{toSpendTitle(allocationRows[activeSlice]?.label ?? '')}</span>
-                  {` · ${allocationRows[activeSlice]?.pct}% · `}
+                  <span className="font-semibold text-[var(--text-high-3)]">
+                    {toSpendTitle(allocationRows[activeSlice]?.label ?? '')}
+                  </span>
+                  {' — '}
                   {allocationRows[activeSlice]?.label}
                 </p>
               ) : (
-                <p className="text-[var(--text-muted-1)]">Hover a slice to view allocation details.</p>
+                <p className="text-[var(--text-muted-1)]">Hover or focus a slice to read the full line item.</p>
               )}
             </div>
           </SurfaceCard>
 
-          <div className="rounded-2xl border border-cyan-400/20 bg-[radial-gradient(120%_120%_at_0%_0%,rgba(16,185,129,0.16),rgba(10,20,35,0.96)_46%),linear-gradient(180deg,rgba(8,23,38,0.95),rgba(5,14,30,0.96))] p-4 shadow-[0_0_0_1px_rgba(34,211,238,0.12)_inset,0_14px_32px_rgba(0,0,0,0.3)] sm:p-5 lg:max-w-[560px] lg:justify-self-end">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <h2 className="text-xl font-semibold tracking-[-0.01em] text-white">Your Impact Dashboard</h2>
-                <p className="mt-1 text-sm text-cyan-100/70">Real outcomes powered by your support</p>
-              </div>
-              <div className="grid grid-cols-2 gap-1 text-[10px]">
-                {dashboardRows.map((row, i) => (
+          <div
+            className={`min-w-0 flex flex-col rounded-2xl border p-2.5 sm:p-3 ${
+              isLightMode
+                ? 'border-emerald-300/35 bg-gradient-to-b from-white via-white to-emerald-50/40 shadow-[0_4px_20px_rgba(16,185,129,0.07)]'
+                : 'border-cyan-400/20 bg-[radial-gradient(120%_120%_at_0%_0%,rgba(16,185,129,0.16),rgba(10,20,35,0.96)_46%),linear-gradient(180deg,rgba(8,23,38,0.95),rgba(5,14,30,0.96))] shadow-[0_0_0_1px_rgba(34,211,238,0.12)_inset]'
+            }`}
+          >
+            <div className={`shrink-0 border-b pb-2 ${isLightMode ? 'border-emerald-200/60' : 'border-cyan-400/10'}`}>
+              <h2
+                className={`text-sm font-semibold tracking-[-0.01em] sm:text-base ${
+                  isLightMode ? 'text-[var(--text-high-3)]' : 'text-white'
+                }`}
+              >
+                Your Impact Dashboard
+              </h2>
+              <p
+                className={`mt-0.5 text-[10px] leading-snug ${isLightMode ? 'text-[var(--text-muted-1)]' : 'text-cyan-100/55'}`}
+              >
+                Allocation, outcomes snapshot, and live updates
+              </p>
+            </div>
+
+            <div className="mt-2 shrink-0">
+              <p
+                className={`text-[9px] font-semibold uppercase tracking-[0.14em] ${
+                  isLightMode ? 'text-[var(--text-muted-2)]' : 'text-cyan-200/40'
+                }`}
+              >
+                Categories
+              </p>
+              <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1.5">
+                {allocationRows.map((row, i) => (
                   <button
-                    key={`legend-chip-${row.title}`}
+                    key={`dash-legend-${row.label}`}
                     type="button"
                     onMouseEnter={() => setActiveSlice(i)}
                     onFocus={() => setActiveSlice(i)}
-                    onMouseLeave={() => setActiveSlice(activeImpactCard)}
-                    onBlur={() => setActiveSlice(activeImpactCard)}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-cyan-300/20 bg-cyan-400/5 px-2 py-0.5 text-cyan-100/80 transition hover:border-cyan-300/45 hover:text-cyan-50"
+                    onMouseLeave={() => setActiveSlice(null)}
+                    onBlur={() => setActiveSlice(null)}
+                    className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-1 text-[10px] font-medium transition ${
+                      activeSlice === i
+                        ? isLightMode
+                          ? 'border-[var(--border-chrome-4)] bg-[var(--overlay-surface-soft)] text-[var(--text-high-3)]'
+                          : 'border-cyan-400/35 bg-cyan-400/10 text-cyan-100'
+                        : isLightMode
+                          ? 'border-transparent bg-transparent text-[var(--text-muted-1)] hover:border-[var(--border-chrome-2)] hover:bg-[var(--surface-panel-overlay)]'
+                          : 'border-transparent bg-transparent text-cyan-100/80 hover:border-cyan-400/20 hover:bg-cyan-400/[0.06]'
+                    }`}
                   >
-                    <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: slicePalette[i % slicePalette.length] }} />
-                    {row.title}
+                    <span
+                      className="h-2 w-2 shrink-0 rounded-full ring-1 ring-black/10 dark:ring-white/15"
+                      style={{ backgroundColor: slicePalette[i % slicePalette.length] }}
+                      aria-hidden
+                    />
+                    {toSpendTitle(row.label)}
                   </button>
                 ))}
               </div>
             </div>
 
-            <div className="mt-4 grid gap-2 sm:grid-cols-2">
-              {dashboardRows.map((row, i) => (
-                <button
-                  key={`impact-card-${row.title}`}
-                  type="button"
-                  onClick={() => {
-                    setActiveImpactCard(i);
-                    setActiveSlice(i);
-                  }}
-                  onMouseEnter={() => setActiveSlice(i)}
-                  onFocus={() => setActiveSlice(i)}
-                  onMouseLeave={() => setActiveSlice(activeImpactCard)}
-                  onBlur={() => setActiveSlice(activeImpactCard)}
-                  className={`rounded-xl border p-2.5 text-left transition-all duration-200 ${
-                    activeImpactCard === i
-                      ? 'border-emerald-300/60 bg-emerald-400/10 shadow-[0_0_0_1px_rgba(16,185,129,0.3)_inset,0_0_18px_rgba(16,185,129,0.2)]'
-                      : 'border-cyan-300/15 bg-cyan-300/[0.04] hover:border-cyan-300/35 hover:shadow-[0_0_14px_rgba(6,182,212,0.14)]'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs font-medium uppercase tracking-wide text-cyan-100/70">{row.title}</p>
-                    <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-cyan-300/15 text-sm text-cyan-100">
-                      {row.icon}
-                    </span>
-                  </div>
-                  <div className="mt-1.5 flex items-end justify-between gap-2">
-                    <p className="text-lg font-bold text-white">{row.pct}%</p>
-                    <p className="text-[11px] text-cyan-100/65">{row.allocationEth.toFixed(1)} ETH</p>
-                  </div>
-                  <svg viewBox="0 0 36 20" className="mt-1 h-4.5 w-full">
-                    <path d={row.trendPath} fill="none" stroke={slicePalette[i % slicePalette.length]} strokeWidth="1.8" strokeLinecap="round" />
-                  </svg>
-                  <div className="mt-1 h-1.5 rounded-full bg-cyan-300/15">
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-cyan-300"
-                      style={{ width: `${row.progress}%` }}
-                    />
-                  </div>
-                </button>
-              ))}
-            </div>
-
-            <div className="mt-3.5 rounded-xl border border-cyan-300/20 bg-cyan-400/[0.03] p-2.5">
-              <h3 className="text-sm font-semibold text-cyan-50">Allocation vs Impact Overview</h3>
-              <div className="mt-2 overflow-hidden rounded-lg border border-cyan-300/15">
-                <table className="w-full table-fixed border-collapse text-left text-[11px]">
-                  <thead className="bg-cyan-400/[0.06] text-cyan-100/80">
-                    <tr>
-                      <th className="w-[34%] px-2 py-1.5 font-medium">Category</th>
-                      <th className="w-[22%] px-2 py-1.5 font-medium">ETH</th>
-                      <th className="w-[14%] px-2 py-1.5 font-medium">%</th>
-                      <th className="w-[30%] px-2 py-1.5 font-medium">Metric</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {dashboardRows.map((row, i) => (
-                      <tr
-                        key={`overview-${row.title}`}
-                        onMouseEnter={() => setActiveSlice(i)}
-                        onMouseLeave={() => setActiveSlice(activeImpactCard)}
-                        className={`border-t border-cyan-300/10 transition ${
-                          activeSlice === i ? 'bg-emerald-400/[0.09]' : 'hover:bg-cyan-400/[0.05]'
-                        }`}
-                      >
-                        <td className="px-2 py-1.5 text-cyan-50">
-                          <span className="flex items-center gap-1.5">
-                            <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-cyan-300/20 text-[9px]">
-                              {row.icon}
+            <div
+              className={`mt-2.5 shrink-0 overflow-x-auto rounded-lg border ${
+                isLightMode ? 'border-[var(--border-chrome-2)] bg-[var(--surface-panel-overlay)]' : 'border-cyan-400/10 bg-cyan-400/[0.03]'
+              }`}
+            >
+              <table className="w-full min-w-[300px] border-collapse text-left text-[10px]">
+                <thead>
+                  <tr
+                    className={`border-b text-[9px] font-semibold uppercase tracking-[0.1em] ${
+                      isLightMode ? 'border-[var(--border-chrome-2)] text-[var(--text-muted-2)]' : 'border-cyan-400/12 text-cyan-200/45'
+                    }`}
+                  >
+                    <th className="px-2 py-1.5 font-semibold">Allocation vs impact</th>
+                    <th className="px-2 py-1.5 text-right font-semibold">%</th>
+                    <th className="px-2 py-1.5 text-right font-semibold">ETH</th>
+                    <th className="hidden min-w-[7rem] px-2 py-1.5 font-semibold sm:table-cell">Metric</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {dashboardRows.map((row, i) => (
+                    <tr
+                      key={`alloc-row-${row.label}`}
+                      onMouseEnter={() => setActiveSlice(i)}
+                      onMouseLeave={() => setActiveSlice(null)}
+                      className={`cursor-pointer border-b transition-colors last:border-0 ${
+                        isLightMode ? 'border-[var(--border-chrome-2)]/80' : 'border-cyan-400/8'
+                      } ${
+                        activeSlice === i
+                          ? isLightMode
+                            ? 'bg-[var(--overlay-surface-soft)] ring-1 ring-inset ring-[var(--border-chrome-4)]'
+                            : 'bg-cyan-400/[0.08] ring-1 ring-inset ring-cyan-400/25'
+                          : isLightMode
+                            ? 'hover:bg-black/[0.02]'
+                            : 'hover:bg-white/[0.03]'
+                      }`}
+                    >
+                      <td className="max-w-none px-2 py-1.5 align-top sm:max-w-[14rem]">
+                        <span className="flex items-start gap-1.5">
+                          <span
+                            className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full"
+                            style={{ backgroundColor: slicePalette[i % slicePalette.length] }}
+                            aria-hidden
+                          />
+                          <span className="min-w-0 leading-snug">
+                            <span
+                              className={`font-semibold ${isLightMode ? 'text-[var(--text-high-3)]' : 'text-white'}`}
+                            >
+                              {row.title}
                             </span>
-                            {row.title}
+                            <span
+                              className={`mt-0.5 block font-normal text-[9px] ${
+                                isLightMode ? 'text-[var(--text-muted-2)]' : 'text-cyan-100/55'
+                              }`}
+                            >
+                              {activeSlice === i || row.label.length <= 64
+                                ? row.label
+                                : `${row.label.slice(0, 61)}…`}
+                            </span>
                           </span>
-                        </td>
-                        <td className="px-2 py-1.5 font-mono text-cyan-100/85">{row.allocationEth.toFixed(1)}</td>
-                        <td className="px-2 py-1.5 font-mono text-cyan-100/85">{row.pct}%</td>
-                        <td className="px-2 py-1.5 text-cyan-100/70">{row.impactShort}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <div className="mt-2.5 rounded-xl border border-cyan-300/20 bg-cyan-400/[0.03] p-2.5">
-              <h3 className="text-sm font-semibold text-cyan-50">Live Activity Feed</h3>
-              <div className="mt-2 space-y-1.5">
-                {liveFeed.slice(0, 2).map((entry) => (
-                  <div key={`${entry.text}-${entry.time}`} className="rounded-md border border-cyan-300/15 bg-cyan-400/[0.03] px-2.5 py-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-[11px] text-cyan-100/75">{entry.time}</p>
-                      <span
-                        className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide ${
-                          entry.status === 'confirmed'
-                            ? 'bg-emerald-400/15 text-emerald-300 shadow-[0_0_8px_rgba(16,185,129,0.3)]'
-                            : entry.status === 'in-progress'
-                              ? 'bg-cyan-400/15 text-cyan-300 shadow-[0_0_8px_rgba(6,182,212,0.3)]'
-                              : 'bg-violet-400/15 text-violet-300 shadow-[0_0_8px_rgba(167,139,250,0.3)]'
+                        </span>
+                      </td>
+                      <td
+                        className={`whitespace-nowrap px-2 py-1.5 text-right font-mono tabular-nums ${
+                          isLightMode ? 'text-[var(--text-high-3)]' : 'text-cyan-100/90'
                         }`}
                       >
-                        {entry.status}
+                        {row.pct}%
+                      </td>
+                      <td
+                        className={`whitespace-nowrap px-2 py-1.5 text-right font-mono tabular-nums ${
+                          isLightMode ? 'text-[var(--text-muted-1)]' : 'text-cyan-200/75'
+                        }`}
+                      >
+                        {row.allocationEth.toFixed(2)}
+                      </td>
+                      <td
+                        className={`hidden px-2 py-1.5 align-top text-[9px] leading-snug sm:table-cell ${
+                          isLightMode ? 'text-[var(--text-muted-1)]' : 'text-cyan-100/70'
+                        }`}
+                      >
+                        {row.impactMetric}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div
+              className={`mt-2.5 shrink-0 border-t pt-2 ${isLightMode ? 'border-[var(--border-chrome-2)]' : 'border-cyan-400/10'}`}
+            >
+              <h3
+                className={`text-[9px] font-semibold uppercase tracking-[0.12em] ${
+                  isLightMode ? 'text-[var(--text-muted-2)]' : 'text-cyan-200/45'
+                }`}
+              >
+                Live activity feed
+              </h3>
+              <ul className="mt-1 space-y-1">
+                {recentActivity.map((item) => (
+                  <li
+                    key={`${item.title}-${item.time}-${item.ethDisplay}`}
+                    className={`flex items-start justify-between gap-2 rounded-md border px-2 py-1 ${
+                      isLightMode
+                        ? 'border-[var(--border-chrome-2)] bg-[var(--surface-panel-overlay)]'
+                        : 'border-cyan-400/8 bg-cyan-400/[0.025]'
+                    }`}
+                  >
+                    <span
+                      className={`min-w-0 flex-1 text-[9px] leading-snug ${
+                        isLightMode ? 'text-[var(--text-muted-1)]' : 'text-cyan-100/75'
+                      }`}
+                    >
+                      <span className={isLightMode ? 'text-emerald-600/90' : 'text-cyan-400/60'} aria-hidden>
+                        ·{' '}
                       </span>
-                    </div>
-                    <p className="mt-1 text-xs leading-relaxed text-cyan-100/75">{entry.text}</p>
-                  </div>
+                      <span className="font-mono font-semibold">{item.ethDisplay} ETH</span> allocated to {item.title}{' '}
+                      <span className={isLightMode ? 'text-[var(--text-muted-2)]' : 'text-cyan-400/35'}>
+                        · {item.time}
+                      </span>
+                    </span>
+                    <span
+                      className={`shrink-0 rounded px-1 py-0.5 text-[7px] font-semibold uppercase tracking-wide ${
+                        item.status === 'In Progress'
+                          ? isLightMode
+                            ? 'bg-amber-500/15 text-amber-900 ring-1 ring-amber-400/25'
+                            : 'bg-amber-400/15 text-amber-100 ring-1 ring-amber-400/25'
+                          : item.status === 'Verified'
+                            ? isLightMode
+                              ? 'bg-cyan-500/15 text-cyan-900 ring-1 ring-cyan-400/25'
+                              : 'bg-cyan-400/15 text-cyan-100 ring-1 ring-cyan-400/25'
+                            : isLightMode
+                              ? 'bg-emerald-500/15 text-emerald-900 ring-1 ring-emerald-400/25'
+                              : 'bg-emerald-400/15 text-emerald-100 ring-1 ring-emerald-400/25'
+                      }`}
+                    >
+                      {item.status}
+                    </span>
+                  </li>
                 ))}
-              </div>
+              </ul>
             </div>
           </div>
         </div>

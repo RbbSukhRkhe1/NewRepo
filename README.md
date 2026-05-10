@@ -20,7 +20,7 @@ Monorepo with separate folders for the **web app**, **API**, and **smart contrac
 
 ## Install
 
-From the **repository root** (`NewRepo/`):
+From the **repository root**:
 
 ```bash
 npm install

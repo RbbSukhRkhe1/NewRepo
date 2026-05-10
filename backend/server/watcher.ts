@@ -3,6 +3,25 @@ import { db } from './db.js';
 import { SUPER_RICH_INDEX, anvilAddress } from './anvil.js';
 import { buildAddressBook, labelForAddress } from './resolve.js';
 
+async function rpcReachable(rpcUrl: string): Promise<boolean> {
+  try {
+    const res = await fetch(rpcUrl, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'eth_chainId',
+        params: [],
+      }),
+      signal: AbortSignal.timeout(1500),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 function trackedAddresses(): Set<string> {
   const set = new Set<string>();
   set.add(anvilAddress(SUPER_RICH_INDEX).toLowerCase());
@@ -17,6 +36,10 @@ function trackedAddresses(): Set<string> {
 
 export function startChainWatcher(wsUrl: string): () => void {
   const provider = new ethers.WebSocketProvider(wsUrl);
+
+  provider.on('error', (err: Error) => {
+    console.warn('[chain] provider error:', err.message);
+  });
 
   const insert = db.prepare(`
     INSERT OR IGNORE INTO ledger_entries (
@@ -84,9 +107,18 @@ export function startChainWatcher(wsUrl: string): () => void {
   };
 }
 
-export function startChainWatcherSafe(): () => void {
+export async function startChainWatcherSafe(): Promise<() => void> {
   const http = process.env.ANVIL_RPC_URL ?? 'http://127.0.0.1:8545';
   const ws = process.env.ANVIL_WS_URL ?? http.replace(/^http/i, 'ws');
+
+  if (!(await rpcReachable(http))) {
+    console.warn(
+      '[chain] RPC not reachable — watcher not started (optional: Anvil at',
+      http + ')'
+    );
+    return () => {};
+  }
+
   try {
     return startChainWatcher(ws);
   } catch (e) {
