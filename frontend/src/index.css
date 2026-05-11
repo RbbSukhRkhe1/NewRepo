@@ -35,6 +35,19 @@
   --fx-glow-accent-high: rgba(43, 244, 163, 0.95);
   --fx-atmo-emerald-soft: rgba(34, 197, 94, 0.12);
   --fx-atmo-warm-soft: rgba(251, 191, 36, 0.06);
+
+  /* F-017 — restrained glass surfaces (see frontend/README.md) */
+  --glass-blur: 14px;
+  --glass-bg: rgba(13, 21, 32, 0.78);
+  --glass-bg-fallback: var(--surface-panel-primary);
+  --glass-border: rgba(148, 163, 184, 0.12);
+  --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+
+  --elevation-0: none;
+  --elevation-1: var(--glass-highlight), 0 4px 16px rgba(0, 0, 0, 0.28);
+  --elevation-2: var(--glass-highlight), 0 10px 28px rgba(0, 0, 0, 0.38);
+  --elevation-3: var(--glass-highlight), 0 16px 40px rgba(0, 0, 0, 0.48);
+
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -102,6 +115,17 @@
   --overlay-surface-soft: rgba(16, 46, 84, 0.06);
   --fx-atmo-emerald-soft: rgba(34, 197, 94, 0.1);
   --fx-atmo-warm-soft: rgba(251, 191, 36, 0.08);
+
+  --glass-blur: 12px;
+  --glass-bg: rgba(248, 252, 255, 0.82);
+  --glass-bg-fallback: var(--surface-panel-primary);
+  --glass-border: rgba(148, 176, 210, 0.45);
+  --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+
+  --elevation-1: var(--glass-highlight), 0 4px 14px rgba(46, 88, 130, 0.1);
+  --elevation-2: var(--glass-highlight), 0 8px 22px rgba(46, 88, 130, 0.12);
+  --elevation-3: var(--glass-highlight), 0 14px 32px rgba(46, 88, 130, 0.14);
+
   --code-bg: #f4f3ec;
 }
 
@@ -202,9 +226,37 @@ code {
 }
 
 .vtx-surface {
-  border: 1px solid var(--border-chrome-1);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
-  background: linear-gradient(180deg, var(--overlay-surface-soft), transparent), var(--surface-panel-primary);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  box-shadow: var(--elevation-1);
+}
+
+/** Sticky chrome: slightly stronger frost + elevation */
+.vtx-glass-header {
+  background: var(--glass-bg);
+  border-bottom: 1px solid var(--glass-border);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  box-shadow: var(--elevation-1);
+}
+
+.vtx-glass-popover {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  box-shadow: var(--elevation-2);
+}
+
+/** Inline ledger / list rows — flat tint, no multi-stop gradients */
+.vtx-glass-inset {
+  background: var(--overlay-surface-soft);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
 }
 
 .vtx-input {
@@ -247,6 +299,16 @@ code {
     transform: none;
     transition: opacity var(--motion-fast) linear;
   }
+
+  /* No animated blur “shimmer”; keep opaque-readable panels for WCAG comfort */
+  .vtx-surface,
+  .vtx-glass-header,
+  .vtx-glass-popover {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: var(--glass-bg-fallback);
+  }
+
   *,
   *::before,
   *::after {

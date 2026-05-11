@@ -45,7 +45,7 @@ export function Layout() {
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--bg-depth-2)] text-[var(--text-high-1)]">
-      <header className="sticky top-0 z-50 border-b border-[var(--border-chrome-1)] bg-[var(--surface-panel-overlay)] backdrop-blur-md">
+      <header className="vtx-glass-header sticky top-0 z-50">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-4">
           <Link to="/" className="text-lg font-bold tracking-tight text-[var(--text-high-3)]">
             <span className="text-[var(--accent-bright-2)]">Vaultex</span>
@@ -63,7 +63,7 @@ export function Layout() {
                 >
                   Admin
                 </summary>
-                <div className="absolute right-0 top-[calc(100%+8px)] z-20 min-w-44 rounded-xl border border-[var(--border-chrome-2)] bg-[var(--surface-panel-overlay)] p-2 shadow-xl">
+                <div className="vtx-glass-popover absolute right-0 top-[calc(100%+8px)] z-20 min-w-44 p-2">
                   <NavPill to="/admin/users" label="Users" active={loc.pathname === '/admin/users'} />
                   <NavPill
                     to="/admin/causes/new"
@@ -102,7 +102,7 @@ export function Layout() {
       <main className="flex min-h-0 flex-1 flex-col">
         <Outlet />
       </main>
-      <footer className="border-t border-[var(--border-chrome-1)] py-6 text-center text-xs text-[var(--text-muted-2)]">
+      <footer className="border-t border-[var(--glass-border)] bg-[var(--glass-bg-fallback)] py-6 text-center text-xs text-[var(--text-muted-2)]">
         Trusted donation platform · Secure giving with on-chain transparency · Verified causes and impact
         tracking ·{' '}
         <a href="#" className="text-[var(--text-high-1)]">
