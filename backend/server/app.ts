@@ -17,6 +17,33 @@ function rpcProvider() {
   return new ethers.JsonRpcProvider(process.env.ANVIL_RPC_URL ?? 'http://127.0.0.1:8545');
 }
 
+function parseOptionalImageUrl(
+  raw: unknown,
+): { ok: true; value: string | null } | { ok: false; error: string } {
+  if (raw == null) return { ok: true, value: null };
+  const s = String(raw).trim();
+  if (!s) return { ok: true, value: null };
+  if (s.startsWith('/')) {
+    if (s.length > 512 || s.includes('..') || /[\s<>"'`]/.test(s)) {
+      return { ok: false, error: 'Invalid image path' };
+    }
+    if (!/^\/[\w./-]+\.[A-Za-z0-9]+$/.test(s)) {
+      return { ok: false, error: 'image path must look like /folder/file.svg' };
+    }
+    return { ok: true, value: s };
+  }
+  let u: URL;
+  try {
+    u = new URL(s);
+  } catch {
+    return { ok: false, error: 'Invalid imageUrl' };
+  }
+  if (u.protocol !== 'http:' && u.protocol !== 'https:') {
+    return { ok: false, error: 'imageUrl must use http or https, or a path starting with /' };
+  }
+  return { ok: true, value: u.href };
+}
+
 type UserRow = {
   id: number;
   name: string;
@@ -298,6 +325,7 @@ export function createApp() {
           description: string;
           goal_eth: number;
           raised_eth: number;
+          image_url: string | null;
           created_at: string;
         }
       | undefined;
@@ -314,25 +342,29 @@ export function createApp() {
       description: string;
       goal_eth: number;
       raised_eth: number;
+      image_url: string | null;
       created_at: string;
     }[];
     res.json(rows);
   });
 
   api.post('/causes', requireAuth, requireAdmin, (req, res) => {
-    const { title, description, goalEth } = req.body as {
+    const { title, description, goalEth, imageUrl } = req.body as {
       title?: string;
       description?: string;
       goalEth?: number;
+      imageUrl?: string | null;
     };
     if (!title?.trim() || !description?.trim() || goalEth == null || goalEth <= 0) {
       return res.status(400).json({ error: 'title, description, goalEth (>0) required' });
     }
+    const img = parseOptionalImageUrl(imageUrl);
+    if (!img.ok) return res.status(400).json({ error: img.error });
     const r = db
       .prepare(
-        `INSERT INTO causes (title, description, goal_eth, raised_eth, active) VALUES (?,?,?,?,1)`
+        `INSERT INTO causes (title, description, goal_eth, raised_eth, image_url, active) VALUES (?,?,?,?,?,1)`
       )
-      .run(title.trim(), description.trim(), goalEth, 0);
+      .run(title.trim(), description.trim(), goalEth, 0, img.value);
     res.status(201).json({ id: Number(r.lastInsertRowid) });
   });
 

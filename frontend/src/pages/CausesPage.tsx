@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { apiJson } from '../lib/api';
+import { CauseFundingDonut } from '../components/CauseFundingDonut';
+
+const SAMPLE_HERO_PLACEHOLDER = '/samples/placeholder.svg';
 
 type ShowcaseCause = {
   /** Must equal `causes.title` in the DB so View Details resolves the correct `/causes/:id` */
@@ -132,12 +135,33 @@ function CauseCard({
   cause,
   isLightMode,
   detailCauseId,
+  imageUrl,
+  raisedEth,
+  goalEth,
 }: {
   cause: ShowcaseCause;
   isLightMode: boolean;
   /** Backend cause id — links to Cause detail when present; otherwise buttons fall back to /donate */
   detailCauseId?: number;
+  imageUrl?: string | null;
+  raisedEth?: number;
+  goalEth?: number;
 }) {
+  const [heroFailed, setHeroFailed] = useState(false);
+  useEffect(() => {
+    setHeroFailed(false);
+  }, [imageUrl]);
+
+  const hasLiveStats = raisedEth != null && goalEth != null && goalEth > 0;
+  const livePct = hasLiveStats ? Math.min(100, ((raisedEth as number) / (goalEth as number)) * 100) : null;
+  const progressPct = livePct ?? cause.progressPct;
+  const progressLabel =
+    livePct != null ? `${livePct.toFixed(0)}%` : cause.progressLabel;
+  const amountLabel =
+    hasLiveStats
+      ? `${(raisedEth as number).toFixed(2)} ETH raised of ${(goalEth as number).toFixed(2)} ETH goal`
+      : cause.amountLabel;
+
   const accentText =
     cause.accent === 'orange'
       ? isLightMode
@@ -148,6 +172,7 @@ function CauseCard({
         : 'text-emerald-300';
 
   const detailHref = detailCauseId != null ? `/causes/${detailCauseId}` : '/causes';
+  const showHero = Boolean(imageUrl) && !heroFailed;
 
   return (
     <article
@@ -166,7 +191,28 @@ function CauseCard({
         ) : null}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-[230px_1fr] md:gap-6">
+      <div className="grid gap-4 md:grid-cols-[minmax(0,11rem)_minmax(0,230px)_1fr] md:gap-6">
+        <div
+          className={`relative aspect-[4/3] w-full overflow-hidden rounded-2xl border md:aspect-auto md:min-h-[11rem] ${
+            isLightMode ? 'border-slate-200/80 bg-slate-100' : 'border-white/10 bg-slate-950/60'
+          }`}
+        >
+          {showHero ? (
+            <img
+              src={imageUrl!}
+              alt=""
+              className="h-full w-full object-cover"
+              onError={() => setHeroFailed(true)}
+            />
+          ) : (
+            <img
+              src={SAMPLE_HERO_PLACEHOLDER}
+              alt=""
+              className="h-full w-full object-cover"
+            />
+          )}
+        </div>
+
         <div className={`rounded-2xl border p-5 ${tagStyle(cause.accent, 'story', isLightMode)}`}>
           <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--text-muted-1)]">Impact story</p>
           <h3 className="mt-2 text-xl font-semibold leading-tight text-[var(--text-high-3)]">{cause.storyTitle}</h3>
@@ -216,15 +262,26 @@ function CauseCard({
           </div>
 
           <div className="mt-5 flex items-center justify-between gap-3 text-sm">
-            <p className={`font-semibold ${accentText}`}>{cause.progressLabel}</p>
-            <p className="text-xs uppercase tracking-wider text-[var(--text-muted-2)]">{cause.amountLabel}</p>
+            <p className={`font-semibold ${accentText}`}>{progressLabel}</p>
+            <p className="text-xs uppercase tracking-wider text-[var(--text-muted-2)]">{amountLabel}</p>
           </div>
           <div className={`mt-2 h-2 rounded-full ${isLightMode ? 'bg-slate-200' : 'bg-black/40'}`}>
             <div
               className={`h-full rounded-full bg-gradient-to-r ${tagStyle(cause.accent, 'progress', isLightMode)}`}
-              style={{ width: `${cause.progressPct}%` }}
+              style={{ width: `${progressPct}%` }}
             />
           </div>
+
+          {hasLiveStats ? (
+            <div className="mt-4 max-w-[14rem]">
+              <CauseFundingDonut
+                raisedEth={raisedEth as number}
+                goalEth={goalEth as number}
+                isLightMode={isLightMode}
+                compact
+              />
+            </div>
+          ) : null}
 
           <div className="mt-5 flex flex-wrap items-center gap-3">
             <Link
@@ -290,13 +347,19 @@ function AddCauseCard({ isLightMode }: { isLightMode: boolean }) {
   );
 }
 
-type ApiCauseRow = { id: number; title: string };
+type ApiCauseRow = {
+  id: number;
+  title: string;
+  goal_eth: number;
+  raised_eth: number;
+  image_url: string | null;
+};
 
 export function CausesPage() {
   const [isLightMode, setIsLightMode] = useState(
     () => typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'light',
   );
-  const [apiCauseIds, setApiCauseIds] = useState<number[]>([]);
+  const [apiCauses, setApiCauses] = useState<ApiCauseRow[]>([]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -312,11 +375,10 @@ export function CausesPage() {
     apiJson<ApiCauseRow[]>('/causes')
       .then((rows) => {
         if (cancelled) return;
-        const ids = [...rows].sort((a, b) => a.id - b.id).map((r) => r.id);
-        setApiCauseIds(ids);
+        setApiCauses(rows);
       })
       .catch(() => {
-        if (!cancelled) setApiCauseIds([]);
+        if (!cancelled) setApiCauses([]);
       });
     return () => {
       cancelled = true;
@@ -354,14 +416,20 @@ export function CausesPage() {
       </div>
 
       <div className="mt-8 space-y-6">
-        {causes.map((cause, idx) => (
+        {causes.map((cause) => {
+          const match = apiCauses.find((r) => r.title === cause.apiTitle);
+          return (
           <CauseCard
             key={`${cause.section}-${cause.apiTitle}`}
             cause={cause}
             isLightMode={isLightMode}
-            detailCauseId={apiCauseIds[idx]}
+            detailCauseId={match?.id}
+            imageUrl={match?.image_url}
+            raisedEth={match?.raised_eth}
+            goalEth={match?.goal_eth}
           />
-        ))}
+          );
+        })}
         <AddCauseCard isLightMode={isLightMode} />
       </div>
     </div>
