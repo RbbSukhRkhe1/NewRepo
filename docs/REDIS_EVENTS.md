@@ -14,12 +14,15 @@ See `backend/.env.example`.
 
 ## Start Redis (Docker)
 
-From the **repository root**:
+The root **`docker-compose.yml`** runs **Redis as part of the full stack** (`docker compose up --build` — see the root **README**). Inside that stack the API should use **`REDIS_URL=redis://redis:6379`** (the compose default).
+
+**Redis only** (API on the host):
 
 ```bash
-docker compose up -d redis
+docker run -d --name vaultex-redis -p 6379:6379 redis:7-alpine redis-server --save "" --appendonly no
 ```
 
+Then set **`REDIS_URL=redis://127.0.0.1:6379`** in `backend/.env`.
 ## Event envelope (wire schema)
 
 Every message on `vaultex:events` (or `REDIS_EVENTS_CHANNEL`) is JSON:
