@@ -16,7 +16,7 @@ COPY package.json package-lock.json ./
 COPY backend/package.json ./backend/
 COPY frontend/package.json ./frontend/
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/backend/node_modules ./backend/node_modules
+# Workspace deps are hoisted to /app/node_modules — backend/node_modules may not exist after npm ci -w backend.
 COPY backend/server ./backend/server
 WORKDIR /app
 EXPOSE 3847

@@ -134,6 +134,8 @@ The root **`docker-compose.yml`** runs the **full stack** with health checks and
 docker compose up --build
 ```
 
+Detached (background): `docker compose up -d --build` (put **`-d`** after **`up`**, not `docker compose -d up`).
+
 Open **http://localhost:8080** (change the host port with **`WEB_HOST_PORT`** in a root **`.env`**).
 
 **Environment:** copy **`.env.example`** → **`.env`** next to `docker-compose.yml`. Compose reads it for `${VAR}` substitution. Set a strong **`SESSION_SECRET`** for anything beyond a throwaway local VM.
@@ -159,6 +161,7 @@ Open **http://localhost:8080** (change the host port with **`WEB_HOST_PORT`** in
 
 | Symptom | What to try |
 |---------|-------------|
+| **Backend logs `RPC not reachable` for `http://anvil:8545`** | The Foundry image uses a `sh -c` entrypoint; compose overrides **`entrypoint`** so Anvil binds **`0.0.0.0`**. Recreate: `docker compose up --build` (or `docker compose down` then `up`). |
 | **Services stuck “starting”** | `docker compose ps` and `docker compose logs <service>` — first pull of the Foundry image can take several minutes. |
 | **Backend unhealthy** | Confirm **redis** and **anvil** are healthy first. The API **`healthcheck`** calls **`GET /ready`** (SQLite + RPC); read **`docker compose logs backend`**. For API-only demos set **`READY_SKIP_RPC=1`** in root `.env`. |
 | **`better-sqlite3` native errors** | Build with the repo **`backend/Dockerfile`** (deps stage installs compilers). |
