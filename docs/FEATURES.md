@@ -16,7 +16,8 @@ This document reflects the **monolith** in `frontend/` + `backend/server/` as of
 | Public ledger | `GET /ledger` (up to 500 rows, masked + display names) |
 | User history | `GET /me/history` — entries involving user address + summary |
 | Balance | `GET /balance/:anvilIndex` (0–9) |
-| Health | `GET /health` (root app, not under `/api`) |
+| Health | `GET /health` (root app, not under `/api`) — liveness |
+| Readiness | `GET /ready` (root) — SQLite `quick_check` + optional `eth_chainId` to `ANVIL_RPC_URL` (1.5s); `rpc` is `skipped` if `READY_SKIP_RPC` or if DB check failed first; use for Docker/Kubernetes readiness |
 | Chain watcher | Optional WebSocket ingest → `chain_sync` ledger rows when Anvil up |
 | Seeding | First-run users + `seedCausesUpsert` for five marketing causes |
 | Redis pub/sub | After successful donate/disburse, publishes `donation.created` / `disbursement.created` (see `server/lib/redis.ts`, `docs/REDIS_EVENTS.md`; disable with `REDIS_DISABLED=1`) |

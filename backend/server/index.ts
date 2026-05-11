@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import { createApp } from './app.js';
+import { getReadiness } from './health.js';
 import { seedIfEmpty } from './seed.js';
 import { startChainWatcherSafe } from './watcher.js';
 import { closeRedis } from './lib/redis.js';
@@ -12,6 +13,21 @@ async function main() {
 
   const app = createApp();
   app.get('/health', (_req, res) => res.json({ ok: true }));
+
+  app.get('/ready', async (_req, res) => {
+    try {
+      const body = await getReadiness();
+      res.status(body.status === 'ok' ? 200 : 503).json(body);
+    } catch (e) {
+      console.error('[ready] unexpected error:', e);
+      res.status(503).json({
+        status: 'fail',
+        db: 'fail',
+        rpc: 'skipped',
+        timestamp: new Date().toISOString(),
+      });
+    }
+  });
 
   const port = parseInt(process.env.PORT || '3847', 10);
   app.listen(port, '0.0.0.0', () => {

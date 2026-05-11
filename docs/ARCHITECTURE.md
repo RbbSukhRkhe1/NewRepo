@@ -217,6 +217,7 @@ When RPC/WS to Anvil is up, `watcher.ts` ingests blocks and writes `chain_sync` 
 | Masking | `backend/server/resolve.ts` |
 | Anvil keys | `backend/server/anvil.ts` |
 | Entry + shutdown | `backend/server/index.ts` |
+| Readiness (`GET /ready`) | `backend/server/health.ts` |
 | Redis | `backend/server/lib/redis.ts` |
 | SPA routes | `frontend/src/App.tsx` |
 | API client | `frontend/src/lib/api.ts` |

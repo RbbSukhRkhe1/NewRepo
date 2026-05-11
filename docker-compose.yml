@@ -53,6 +53,7 @@ services:
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
       REDIS_EVENTS_CHANNEL: ${REDIS_EVENTS_CHANNEL:-vaultex:events}
       REDIS_DISABLED: ${REDIS_DISABLED:-}
+      READY_SKIP_RPC: ${READY_SKIP_RPC:-}
       ANVIL_RPC_URL: ${ANVIL_RPC_URL:-http://anvil:8545}
       ANVIL_WS_URL: ${ANVIL_WS_URL:-ws://anvil:8545}
       SESSION_SECRET: ${SESSION_SECRET:-vaultex-local-docker-secret-replace-for-any-shared-deploy}
@@ -70,12 +71,12 @@ services:
           "CMD",
           "node",
           "-e",
-          "fetch('http://127.0.0.1:3847/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+          "fetch('http://127.0.0.1:3847/ready').then(async (r)=>{const j=await r.json();process.exit(r.ok&&j.status==='ok'?0:1)}).catch(()=>process.exit(1))",
         ]
       interval: 10s
-      timeout: 5s
-      retries: 6
-      start_period: 35s
+      timeout: 8s
+      retries: 10
+      start_period: 60s
     restart: unless-stopped
 
   frontend:

@@ -147,6 +147,7 @@ Open **http://localhost:8080** (change the host port with **`WEB_HOST_PORT`** in
 | `REDIS_URL` | `redis://redis:6379` | In-cluster broker |
 | `REDIS_DISABLED` | empty | `1` skips pub/sub |
 | `ANVIL_RPC_URL` / `ANVIL_WS_URL` | `http://anvil:8545` / `ws://anvil:8545` | Chain + watcher |
+| `READY_SKIP_RPC` | empty | Set to `1` so **`GET /ready`** skips RPC (API-only / CI) |
 
 **Volumes:** **`vaultex_sqlite_data`** holds **`/data/sqlite/donate.db`**; **`vaultex_redis_data`** holds Redis AOF. Remove with `docker compose down -v`.
 
@@ -157,7 +158,7 @@ Open **http://localhost:8080** (change the host port with **`WEB_HOST_PORT`** in
 | Symptom | What to try |
 |---------|-------------|
 | **Services stuck “starting”** | `docker compose ps` and `docker compose logs <service>` — first pull of the Foundry image can take several minutes. |
-| **Backend unhealthy** | Confirm **redis** and **anvil** are healthy first; read **`docker compose logs backend`**. |
+| **Backend unhealthy** | Confirm **redis** and **anvil** are healthy first. The API **`healthcheck`** calls **`GET /ready`** (SQLite + RPC); read **`docker compose logs backend`**. For API-only demos set **`READY_SKIP_RPC=1`** in root `.env`. |
 | **`better-sqlite3` native errors** | Build with the repo **`backend/Dockerfile`** (deps stage installs compilers). |
 | **Login or `/api` errors in the browser** | Use **http://localhost:8080** (nginx), not only port 3847, so paths and session cookies stay same-origin. |
 | **Redis pub/sub off** | Set **`REDIS_DISABLED=1`** in root `.env` (or `backend/.env` when running the API outside Docker). Event schema: **[docs/REDIS_EVENTS.md](docs/REDIS_EVENTS.md)**. |
@@ -196,9 +197,16 @@ Create **`backend/.env`** if you need overrides (loaded via `dotenv` from `backe
 | `REDIS_URL` | Redis for pub/sub events | `redis://localhost:6379` |
 | `REDIS_EVENTS_CHANNEL` | Channel name for `publishEvent` | `vaultex:events` |
 | `REDIS_DISABLED` | Skip Redis (no-op publish) | unset |
+| `READY_SKIP_RPC` | If `1` or `true`, `GET /ready` skips the Anvil JSON-RPC ping (`rpc: "skipped"`) | unset |
 | `SESSION_SECRET` | Session cookie signing | dev fallback in code (set in production) |
 
----
+### Root health endpoints (not under `/api`)
+
+| Route | HTTP | Purpose |
+|-------|------|--------|
+| **`GET /health`** | 200 | **Liveness** — process is up (no DB or chain checks). Use for the cheapest probe. |
+| **`GET /ready`** | 200 or 503 | **Readiness** — `PRAGMA quick_check` on SQLite; optional **`eth_chainId`** POST to **`ANVIL_RPC_URL`** (1.5s timeout). Response body: `{ status, db, rpc, timestamp }` where `rpc` is `ok`, `skipped` (**`READY_SKIP_RPC`**, or **RPC not checked when `db` is not `ok`**), or `fail`. **Docker Compose** uses **`/ready`** for the backend **`healthcheck`** so the container is marked healthy only when the DB and (by default) Anvil respond. If probes flap on a slow laptop, increase **`start_period`** / **`retries`** in **`docker-compose.yml`** or set **`READY_SKIP_RPC=1`** only when you intentionally run without JSON-RPC. |
+
 
 ## Documentation
 

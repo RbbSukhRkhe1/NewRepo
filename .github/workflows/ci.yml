@@ -1,0 +1,162 @@
+# Vaultex — continuous integration
+# Validates installs, lint, optional tests, TypeScript, and frontend production build on every PR and push to main.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: "Quality — install & lint"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        node-version: [20]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node-version }} (npm cache)
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install (npm ci)
+        run: npm ci
+
+      - name: Lint (frontend ESLint)
+        run: npm run lint
+
+      - name: Summary — lint
+        if: success()
+        run: |
+          {
+            echo "## Quality — lint"
+            echo ""
+            echo "Node **${{ matrix.node-version }}** · workspace install with **npm ci** · **ESLint** on \`frontend/\` passed."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  test:
+    name: "Quality — workspace tests (when defined)"
+    runs-on: ubuntu-latest
+    needs: [lint]
+    strategy:
+      fail-fast: true
+      matrix:
+        node-version: [20]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node-version }} (npm cache)
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install (npm ci)
+        run: npm ci
+
+      - name: Run workspace tests (if \`test\` script exists)
+        shell: bash
+        run: |
+          set -euo pipefail
+          ran_any=false
+          for dir in frontend backend; do
+            if node -e "const p=require('./${dir}/package.json'); process.exit(p.scripts&&p.scripts.test?0:1)"; then
+              echo "Running npm run test -w ${dir}"
+              npm run test -w "${dir}"
+              ran_any=true
+            fi
+          done
+          if [[ "$ran_any" == "false" ]]; then
+            echo "::notice title=Tests::No workspace test script yet — skipped (add test to frontend or backend package.json when ready)."
+            {
+              echo "## Quality — tests"
+              echo ""
+              echo "_Skipped:_ no \`scripts.test\` in \`frontend/\` or \`backend/\` yet."
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            {
+              echo "## Quality — tests"
+              echo ""
+              echo "All configured workspace test scripts completed successfully."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  build:
+    name: "Build — frontend bundle & backend typecheck"
+    runs-on: ubuntu-latest
+    needs: [test]
+    strategy:
+      fail-fast: true
+      matrix:
+        node-version: [20]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node-version }} (npm cache)
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install (npm ci)
+        run: npm ci
+
+      - name: Build frontend (Vite production)
+        run: npm run build
+
+      - name: Typecheck backend (tsc, noEmit)
+        run: npx tsc -p backend/tsconfig.json
+
+      - name: Summary — build
+        if: success()
+        run: |
+          {
+            echo "## Build"
+            echo ""
+            echo "| Artifact | Command |"
+            echo "|----------|---------|"
+            echo "| Frontend | \`npm run build\` → \`frontend/dist\` |"
+            echo "| Backend | \`npx tsc -p backend/tsconfig.json\` (typecheck) |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  docker:
+    name: "Docker — compose build (main pushes only)"
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build stack images (backend + frontend)
+        run: docker compose build
+
+      - name: Summary — Docker
+        if: success()
+        run: |
+          {
+            echo "## Docker"
+            echo ""
+            echo "Built **frontend** and **backend** images via \`docker compose build\` (Redis + Anvil use published images)."
+            echo "Runs only on **push** to \`main\` after the build job succeeds."
+          } >> "$GITHUB_STEP_SUMMARY"
