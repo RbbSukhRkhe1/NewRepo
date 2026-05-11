@@ -8,6 +8,8 @@ const dataDir = path.join(__dirname, 'data');
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 
 const dbPath = process.env.SQLITE_PATH ?? path.join(dataDir, 'donate.db');
+const dbDir = path.dirname(dbPath);
+if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
 
 export const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
@@ -29,6 +31,7 @@ CREATE TABLE IF NOT EXISTS causes (
   description TEXT NOT NULL,
   goal_eth REAL NOT NULL,
   raised_eth REAL NOT NULL DEFAULT 0,
+  image_url TEXT,
   active INTEGER NOT NULL DEFAULT 1,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -52,6 +55,12 @@ CREATE TABLE IF NOT EXISTS ledger_entries (
 CREATE INDEX IF NOT EXISTS idx_ledger_recorded ON ledger_entries(recorded_at DESC);
 CREATE INDEX IF NOT EXISTS idx_users_anvil ON users(anvil_index);
 `);
+
+const causesColumns = db.prepare(`PRAGMA table_info(causes)`).all() as { name: string }[];
+if (!causesColumns.some((c) => c.name === 'image_url')) {
+  db.exec(`ALTER TABLE causes ADD COLUMN image_url TEXT`);
+  console.log('[db] added causes.image_url');
+}
 
 // One-time migration for dev DBs created with role 'hospital'.
 // We cannot UPDATE role to 'beneficiary' while the CHECK only allows 'hospital',

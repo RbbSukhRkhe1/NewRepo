@@ -1,68 +1,58 @@
 import { useEffect, useState, type ReactElement } from 'react';
 import { Link } from 'react-router-dom';
+import { PrimaryLinkButton, SecondaryLinkButton } from '../components/ui';
 
 type HeroSlide = {
   title: string;
   description: string;
   accent: string;
   glow: string;
-  background: string;
-  lightBackground: string;
-  icon: ReactElement;
 };
+
+const carouselPanelBg = {
+  dark: 'rgba(12, 26, 42, 0.82)',
+  light: 'rgba(248, 252, 255, 0.94)',
+} as const;
 
 const heroSlides: HeroSlide[] = [
   {
-    title: 'Full Transparency',
-    description: 'Every transaction is on-chain and publicly verifiable forever',
+    title: 'Transparent records',
+    description:
+      'Donations and disbursements show up in the app ledger—addresses are masked where the API provides masked fields (see docs/PRIVACY.md).',
     accent: '#5ef6de',
     glow: 'rgba(74, 241, 212, 0.42)',
-    background: 'linear-gradient(145deg, rgba(18,66,79,0.9), rgba(9,26,43,0.85) 58%, rgba(9,18,30,0.95))',
-    lightBackground: 'linear-gradient(145deg, rgba(217,248,245,0.98), rgba(204,236,246,0.95) 58%, rgba(218,231,246,0.97))',
-    icon: (
-      <svg viewBox="0 0 24 24" aria-hidden="true" className="h-14 w-14 fill-current">
-        <path d="M12 4C6.5 4 2.08 7.38 1 12c1.08 4.62 5.5 8 11 8s9.92-3.38 11-8c-1.08-4.62-5.5-8-11-8zm0 13a5 5 0 110-10 5 5 0 010 10zm0-8.2A3.2 3.2 0 1015.2 12 3.2 3.2 0 0012 8.8z" />
-      </svg>
-    ),
   },
   {
-    title: 'Direct from Wallet to Cause',
-    description: 'No middleman. Your donation reaches the project instantly',
+    title: 'Honest capstone scope',
+    description:
+      'Vaultex demos on local Anvil: anyone who can reach that RPC sees the dev chain—not public-internet secrecy. Pair that honesty with docs/DEMO.md when you walk markers through the UI.',
     accent: '#ca90ff',
     glow: 'rgba(194, 118, 255, 0.4)',
-    background: 'linear-gradient(145deg, rgba(66,29,99,0.9), rgba(32,17,58,0.85) 58%, rgba(16,10,34,0.95))',
-    lightBackground: 'linear-gradient(145deg, rgba(238,226,255,0.98), rgba(229,220,249,0.95) 58%, rgba(222,232,247,0.97))',
-    icon: (
-      <svg viewBox="0 0 24 24" aria-hidden="true" className="h-14 w-14 fill-current">
-        <path d="M3 7.5A2.5 2.5 0 015.5 5h8A2.5 2.5 0 0116 7.5v1h2.5A2.5 2.5 0 0121 11v6.5A2.5 2.5 0 0118.5 20h-8A2.5 2.5 0 018 17.5v-1H5.5A2.5 2.5 0 013 14V7.5zm2 0V14h3v-2.5A2.5 2.5 0 0110.5 9H14V7.5a.5.5 0 00-.5-.5h-8a.5.5 0 00-.5.5zm13.5 3h-8a.5.5 0 00-.5.5v6.5a.5.5 0 00.5.5h8a.5.5 0 00.5-.5V11a.5.5 0 00-.5-.5z" />
-      </svg>
-    ),
   },
   {
-    title: 'Watch Everything Live',
-    description: 'Real-time donations and payouts visible to everyone',
+    title: 'Stories without inflated metrics',
+    description:
+      'We highlight causes, receipts, and ledger history instead of fabricated dashboards—your trust narrative comes from reproducible clicks, not made-up KPIs.',
     accent: '#bcff57',
     glow: 'rgba(188, 255, 87, 0.42)',
-    background: 'linear-gradient(145deg, rgba(56,91,18,0.92), rgba(24,40,11,0.87) 56%, rgba(13,24,7,0.95))',
-    lightBackground: 'linear-gradient(145deg, rgba(238,249,212,0.98), rgba(228,242,211,0.95) 56%, rgba(222,236,243,0.97))',
-    icon: (
-      <svg viewBox="0 0 24 24" aria-hidden="true" className="h-14 w-14 fill-current">
-        <path d="M3 4h18v2H3V4zm1 4h16v12H4V8zm4 8h2v-4H8v4zm3 0h2v-7h-2v7zm3 0h2v-2h-2v2z" />
-      </svg>
-    ),
+  },
+];
+
+const HOW_IT_WORKS: { step: string; title: string; body: string }[] = [
+  {
+    step: '1 · Donate',
+    title: 'Pick a cause, send ETH',
+    body: 'Logged-in donors use assigned dev wallets to fund causes; the ledger stores each gift with recognizable labels where available.',
   },
   {
-    title: 'Only Verified Causes',
-    description: 'Projects with clear goals, budgets, and measurable impact',
-    accent: '#ffbe72',
-    glow: 'rgba(255, 190, 114, 0.38)',
-    background: 'linear-gradient(145deg, rgba(94,55,18,0.9), rgba(46,29,12,0.85) 58%, rgba(29,18,9,0.95))',
-    lightBackground: 'linear-gradient(145deg, rgba(255,239,216,0.98), rgba(250,228,202,0.95) 58%, rgba(236,228,218,0.97))',
-    icon: (
-      <svg viewBox="0 0 24 24" aria-hidden="true" className="h-14 w-14 fill-current">
-        <path d="M12 2l2.4 2.2 3.2-.5 1.1 3 2.9 1.5-1.3 3 1.3 3-2.9 1.5-1.1 3-3.2-.5L12 22l-2.4-2.2-3.2.5-1.1-3-2.9-1.5 1.3-3-1.3-3 2.9-1.5 1.1-3 3.2.5L12 2zm-1.1 13.8l6-6-1.4-1.4-4.6 4.6-2.4-2.4-1.4 1.4 3.8 3.8z" />
-      </svg>
-    ),
+    step: '2 · Vault',
+    title: 'Route through Vaultex',
+    body: 'The demo vault pools activity so disbursements remain explainable—a teaching stand-in for transparent treasury routing.',
+  },
+  {
+    step: '3 · Disburse',
+    title: 'Release to beneficiaries',
+    body: 'Admins allocate per course rules while the public ledger keeps classmates and reviewers aligned on what moved when.',
   },
 ];
 
@@ -162,20 +152,20 @@ const VAULT_JOIN_BENEFITS: {
 }[] = [
   {
     tone: 'teal',
-    title: 'On-chain proof',
-    blurb: 'Every donation leaves a receipt you can verify forever.',
+    title: 'Ledger receipts',
+    blurb: 'Each gift shows up with a hash row you can line up against the cause you picked.',
     icon: <path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z" />,
   },
   {
     tone: 'violet',
-    title: 'Live transparency',
-    blurb: 'Follow funds in real time—no black boxes.',
+    title: 'Explainable flow',
+    blurb: 'Causes, ledger, and accounts share one narrative for markers—no mystery funnel.',
     icon: <path d="M4 18h3V8H4v10zm5 0h3V4H9v14zm5 0h3v-7h-3v7zm5 0h3V9h-3v9z" />,
   },
   {
     tone: 'lime',
-    title: 'Free to join',
-    blurb: 'No signup fees—your support goes where it matters.',
+    title: 'Classroom-safe',
+    blurb: 'Seeded logins and SQLite data keep the story reproducible on any laptop.',
     icon: (
       <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 6 4 4 6.5 4c1.74 0 3.41 1.01 4.22 2.09C11.59 5.01 13.26 4 15 4 17.5 4 19.5 6 19.5 8.5c0 3.78-3.4 6.86-8.55 11.53L12 21.35z" />
     ),
@@ -213,9 +203,8 @@ export function HomePage() {
     <div className="relative w-full overflow-x-hidden bg-[var(--bg-base)]">
       <div className="absolute inset-0 z-0 min-h-full bg-[var(--bg-base)]" />
       <div className="pointer-events-none absolute inset-0 z-0 bg-[linear-gradient(rgba(126,149,182,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(126,149,182,0.08)_1px,transparent_1px)] bg-[size:68px_68px] [mask-image:radial-gradient(ellipse_at_center,black_26%,transparent_78%)] opacity-35" />
-      <div className="pointer-events-none absolute -left-24 top-8 z-0 h-80 w-80 animate-[pulse_8s_ease-in-out_infinite] rounded-full bg-teal-400/15 blur-3xl" />
-      <div className="pointer-events-none absolute -right-20 top-20 z-0 h-96 w-96 animate-[pulse_10s_ease-in-out_infinite] rounded-full bg-violet-500/15 blur-3xl" />
-      <div className="pointer-events-none absolute bottom-10 left-1/3 z-0 h-72 w-72 animate-[pulse_11s_ease-in-out_infinite] rounded-full bg-lime-400/12 blur-3xl" />
+      <div className="pointer-events-none absolute -left-24 top-8 z-0 h-72 w-72 motion-safe:animate-[pulse_9s_ease-in-out_infinite] rounded-full bg-teal-400/10 blur-3xl motion-reduce:animate-none" />
+      <div className="pointer-events-none absolute -right-20 top-24 z-0 h-80 w-80 motion-safe:animate-[pulse_11s_ease-in-out_infinite] rounded-full bg-violet-500/10 blur-3xl motion-reduce:animate-none" />
 
       <div className="relative z-10 mx-auto w-full max-w-5xl px-4 pb-8 pt-3 text-center sm:pb-10 sm:pt-4 md:pt-5">
         <div className="pointer-events-none absolute left-1/2 top-[90px] h-64 w-[560px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(45,245,173,0.24),rgba(45,245,173,0.03)_48%,transparent_70%)] blur-2xl" />
@@ -228,38 +217,58 @@ export function HomePage() {
               : 'border border-white/[0.08] bg-[linear-gradient(155deg,rgba(15,24,41,0.74),rgba(8,13,24,0.58))] shadow-[0_18px_42px_rgba(0,0,0,0.36),0_0_40px_rgba(45,245,173,0.1)]'
           }`}
         >
-          <p className="text-[11px] font-semibold uppercase tracking-[0.34em] text-[#d9bb78]">Trusted Web3 Giving</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--text-muted-2)]">
+            Vaultex · transparent giving prototype
+          </p>
           <h1
-            className="mt-3 text-balance text-4xl font-extrabold leading-[1.02] tracking-[-0.03em] sm:text-5xl"
-            style={{
-              backgroundImage: isLightMode
-                ? 'linear-gradient(96deg, #10304d 3%, #1e7664 42%, #458439 72%, #1f5876 100%)'
-                : 'linear-gradient(96deg, #e6f8ff 3%, #bafee0 38%, #c5ff7d 68%, #8bf9ff 100%)',
-              WebkitBackgroundClip: 'text',
-              backgroundClip: 'text',
-              color: 'transparent',
-              textShadow: isLightMode ? '0 0 12px rgba(120,176,235,0.16)' : '0 0 28px rgba(97,252,186,0.16)',
-            }}
+            className={`mt-3 text-balance text-4xl font-bold leading-[1.08] tracking-[-0.035em] sm:text-[2.75rem] sm:leading-[1.06] ${
+              isLightMode ? 'text-[#0f172a]' : 'text-[var(--text-high-3)]'
+            }`}
           >
-            Donate on Chain
-            <br />
-            Track with Trust
+            Charitable giving with a public receipt trail
           </h1>
           <div className="mx-auto mt-4 flex w-full max-w-3xl flex-col items-center px-2 text-center sm:px-3">
             <p
-              className={`mx-auto max-w-[min(100%,40rem)] text-balance text-center text-base font-semibold leading-relaxed tracking-[0.012em] sm:text-lg ${
-                isLightMode ? 'text-[#223c57]' : 'text-[var(--text-high-2)]'
+              className={`mx-auto max-w-[min(100%,38rem)] text-balance text-base font-medium leading-relaxed sm:text-lg ${
+                isLightMode ? 'text-[#1e293b]' : 'text-[var(--text-high-2)]'
               }`}
-              style={{ textShadow: isLightMode ? 'none' : '0 0 16px rgba(122,255,171,0.1)' }}
             >
-              What feels small to you could become life-changing for someone else.
+              Vaultex is a capstone web app: causes, donations, and ledger lines you can show in class without inventing vanity metrics.
             </p>
             <p
-              className={`mx-auto mt-2 w-full max-w-[min(100%,42rem)] text-balance text-center text-sm leading-relaxed tracking-[0.01em] sm:text-base ${
-                isLightMode ? 'text-[#38526f]' : 'text-[var(--text-muted-1)]'
+              className={`mx-auto mt-2 w-full max-w-[min(100%,40rem)] text-balance text-sm leading-relaxed sm:text-[0.9375rem] ${
+                isLightMode ? 'text-slate-600' : 'text-[var(--text-muted-1)]'
               }`}
             >
-              Every act of kindness has the power to leave a lasting impact.
+              Roles, masking, and what “public” means live in{' '}
+              <code className="rounded bg-black/[0.06] px-1.5 py-0.5 font-mono text-[0.8rem] text-[var(--text-high-2)] dark:bg-white/10">
+                docs/PRIVACY.md
+              </code>
+              .
+            </p>
+            <aside
+              className={`mt-4 w-full max-w-xl rounded-2xl border px-4 py-3 text-left text-sm leading-snug ${
+                isLightMode
+                  ? 'border-amber-800/15 bg-amber-50/90 text-amber-950/90'
+                  : 'border-amber-400/25 bg-amber-500/10 text-amber-100/95'
+              }`}
+            >
+              <p className="font-semibold uppercase tracking-wide text-[0.65rem] opacity-90">Demo honesty</p>
+              <p className="mt-1.5 text-[0.8125rem] leading-relaxed opacity-95">
+                Runs against local Anvil by default—great for pedagogy, not a claim of mainnet privacy or production compliance.
+              </p>
+            </aside>
+            <div className="mx-auto mt-6 flex w-full max-w-md flex-col items-stretch justify-center gap-3 sm:max-w-none sm:flex-row sm:flex-wrap sm:gap-4">
+              <PrimaryLinkButton to="/causes" className="justify-center px-8 py-3 text-base">
+                Browse causes
+              </PrimaryLinkButton>
+              <SecondaryLinkButton to="/ledger" className="justify-center px-8 py-3 text-base">
+                View public ledger
+              </SecondaryLinkButton>
+            </div>
+            <p className="mt-3 text-[0.8125rem] text-[var(--text-muted-2)]">
+              Need the walkthrough? Mirror the pace in{' '}
+              <span className="font-medium text-[var(--text-muted-1)]">docs/DEMO.md</span>.
             </p>
           </div>
 
@@ -271,17 +280,17 @@ export function HomePage() {
             <div
               className={`relative min-h-[278px] overflow-hidden rounded-[26px] sm:min-h-[308px] ${
                 isLightMode
-                  ? 'border border-[rgba(165,185,211,0.36)] bg-[rgba(248,252,255,0.86)] shadow-[0_14px_28px_rgba(76,103,136,0.14)] backdrop-blur-2xl'
-                  : 'border border-cyan-400/20 bg-[rgba(8,18,32,0.52)] shadow-[0_20px_50px_rgba(0,0,0,0.45),0_0_0_1px_rgba(94,246,222,0.14)_inset,0_0_70px_rgba(45,245,215,0.28),0_0_110px_rgba(45,220,230,0.12)] backdrop-blur-[44px]'
+                  ? 'border border-[rgba(165,185,211,0.42)] bg-white/70 shadow-[0_14px_28px_rgba(76,103,136,0.12)] backdrop-blur-md'
+                  : 'border border-white/10 bg-slate-950/40 shadow-[0_18px_40px_rgba(0,0,0,0.42)] backdrop-blur-md'
               }`}
             >
-              {isLightMode ? (
-                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(255,255,255,0.08),transparent_36%)]" />
+              {!isLightMode ? (
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0 opacity-40 bg-[radial-gradient(ellipse_85%_70%_at_50%_35%,rgba(94,246,222,0.14),transparent_62%)]"
+                />
               ) : (
-                <>
-                  <div className="pointer-events-none absolute inset-0 opacity-100 bg-[radial-gradient(ellipse_120%_100%_at_50%_50%,rgba(80,246,229,0.38)_0%,rgba(45,218,235,0.18)_42%,rgba(30,170,185,0.08)_62%,transparent_85%)]" />
-                  <div className="pointer-events-none absolute inset-0 opacity-90 mix-blend-screen bg-[radial-gradient(circle_at_50%_50%,rgba(180,255,248,0.22)_0%,transparent_55%)]" />
-                </>
+                <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_8%,rgba(94,246,222,0.06),transparent_42%)]" />
               )}
 
               <div className="relative min-h-[278px] overflow-x-hidden sm:min-h-[308px]">
@@ -292,77 +301,42 @@ export function HomePage() {
                     idx === activeSlide ? 'translate-x-0 opacity-100' : 'translate-x-8 opacity-0'
                   }`}
                   style={{
-                    background: isLightMode ? slide.lightBackground : slide.background,
+                    background: isLightMode ? carouselPanelBg.light : carouselPanelBg.dark,
                   }}
                   aria-hidden={idx !== activeSlide}
                 >
-                  {!isLightMode ? (
-                    <>
-                      <div
-                        aria-hidden
-                        className="pointer-events-none absolute inset-0 [background:radial-gradient(ellipse_100%_90%_at_50%_50%,rgba(72,251,229,0.34)_0%,rgba(52,218,238,0.16)_48%,rgba(30,240,216,0.06)_72%,transparent_100%)]"
-                      />
-                      <div
-                        aria-hidden
-                        className="pointer-events-none absolute inset-0 backdrop-blur-[2px] [mask-image:radial-gradient(ellipse_95%_90%_at_50%_50%,black_20%,transparent_75%)] [background:rgba(45,245,220,0.08)]"
-                      />
-                    </>
-                  ) : null}
-
-                  <div
-                    className={`relative z-10 mx-auto flex h-[3.25rem] w-[3.25rem] shrink-0 items-center justify-center rounded-xl border backdrop-blur-sm sm:h-14 sm:w-14 [&>svg]:!h-11 [&>svg]:!w-11 sm:[&>svg]:!h-[3.05rem] sm:[&>svg]:!w-[3.05rem] ${
-                      isLightMode
-                        ? 'border-[rgba(145,174,206,0.65)] bg-white/88 text-[var(--text-high-1)] shadow-[0_10px_24px_rgba(79,111,145,0.14),inset_0_1px_0_rgba(255,255,255,0.9)]'
-                        : 'border-white/[0.16] bg-white/[0.08] text-white'
-                    }`}
-                    style={{
-                      color: slide.accent,
-                      boxShadow: isLightMode
-                        ? undefined
-                        : `0 2px 8px rgba(0,28,36,0.5), inset 0 0 0 1px rgba(184,253,246,0.14), inset 0 2px 4px rgba(94,246,222,0.06), 0 0 18px rgba(94,246,222,0.5), 0 0 28px rgba(45,235,218,0.22)`,
-                      animation: 'vtx-float-carousel 7s ease-in-out infinite',
-                    }}
-                  >
-                    {slide.icon}
-                  </div>
-
                   <div className="relative z-10 mx-auto flex max-w-2xl flex-col items-center text-center">
                     <p
                       className={`text-[11px] font-semibold uppercase tracking-[0.24em] ${
-                        isLightMode ? 'text-[#355271]' : ''
+                        isLightMode ? 'text-slate-600' : ''
                       }`}
-                      style={isLightMode ? undefined : { color: slide.accent, textShadow: `0 0 24px ${slide.glow}` }}
+                      style={isLightMode ? undefined : { color: slide.accent }}
                     >
-                      Premium trust signal
+                      Trust model · slide {idx + 1}
                     </p>
                     <h3
-                      className={`mt-2 text-2xl font-black leading-tight tracking-[-0.02em] sm:text-3xl ${
-                        isLightMode ? 'text-[#132b46]' : 'text-white [text-shadow:0_0_32px_rgba(94,246,222,0.35)]'
+                      className={`mt-2 text-2xl font-bold leading-tight tracking-[-0.02em] sm:text-3xl ${
+                        isLightMode ? 'text-[#0f172a]' : 'text-white'
                       }`}
                     >
                       {slide.title}
                     </h3>
                     <p
                       className={`mt-3 max-w-xl text-sm leading-relaxed sm:text-[0.9375rem] ${
-                        isLightMode ? 'text-[#2f4868]' : 'text-white/82 [text-shadow:0_1px_20px_rgba(45,240,216,0.12)]'
+                        isLightMode ? 'text-slate-700' : 'text-slate-200/90'
                       }`}
                     >
                       {slide.description}
                     </p>
                   </div>
 
-                  <div className="relative z-10 mt-1 flex w-full shrink-0 justify-center px-2">
+                  <div className="relative z-10 mt-2 flex w-full shrink-0 justify-center px-2">
                     <span
-                      className={`text-center text-xs font-medium uppercase tracking-[0.18em] sm:text-sm ${
-                        isLightMode ? 'text-[#304e6e]' : 'text-white/75'
+                      className={`text-center text-[11px] font-semibold uppercase tracking-[0.16em] sm:text-xs ${
+                        isLightMode ? 'text-slate-500' : 'text-slate-400'
                       }`}
-                      style={
-                        isLightMode
-                          ? undefined
-                          : { textShadow: `0 0 22px rgba(94,246,222,0.55), 0 0 40px ${slide.glow}` }
-                      }
                     >
-                      Vaultex vision
+                      Pause on hover · motion-safe auto-advance
                     </span>
                   </div>
                 </article>
@@ -430,29 +404,59 @@ export function HomePage() {
           </div>
         </section>
 
+        <section
+          className={`mx-auto mt-12 max-w-5xl rounded-[28px] border px-5 py-8 sm:px-10 sm:py-10 ${
+            isLightMode
+              ? 'border-slate-200/80 bg-white/75 shadow-[0_14px_40px_rgba(30,58,95,0.08)]'
+              : 'border-white/10 bg-[var(--surface-panel-overlay)]/80 shadow-[0_18px_48px_rgba(0,8,22,0.42)]'
+          }`}
+          aria-labelledby="how-it-works-heading"
+        >
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-[var(--text-muted-2)]">
+              Flow
+            </p>
+            <h2 id="how-it-works-heading" className="mt-2 text-2xl font-bold tracking-tight text-[var(--text-high-3)] sm:text-3xl">
+              How it works
+            </h2>
+            <p className={`mt-2 text-sm leading-relaxed sm:text-base ${isLightMode ? 'text-slate-600' : 'text-[var(--text-muted-1)]'}`}>
+              Three beats we repeat in UI and in docs: donate, pool in the demo vault, disburse with ledger proof.
+            </p>
+          </div>
+          <ol className="mt-8 grid list-none gap-4 p-0 sm:grid-cols-3 sm:gap-5">
+            {HOW_IT_WORKS.map((row) => (
+              <li
+                key={row.title}
+                className={`rounded-2xl border px-4 py-5 text-left ${
+                  isLightMode
+                    ? 'border-slate-200 bg-slate-50/90'
+                    : 'border-white/[0.08] bg-black/25'
+                }`}
+              >
+                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--accent-bright-2)]">{row.step}</p>
+                <p className="mt-2 text-lg font-semibold text-[var(--text-high-3)]">{row.title}</p>
+                <p className={`mt-2 text-sm leading-relaxed ${isLightMode ? 'text-slate-600' : 'text-[var(--text-muted-1)]'}`}>
+                  {row.body}
+                </p>
+              </li>
+            ))}
+          </ol>
+        </section>
+
         <section className="mt-12">
-          <h2 className="text-center text-3xl font-bold tracking-[-0.02em] text-[var(--text-high-3)] sm:text-4xl">Wallet to Impact</h2>
+          <h2 className="text-center text-3xl font-bold tracking-[-0.02em] text-[var(--text-high-3)] sm:text-4xl">
+            Go deeper in the app
+          </h2>
           <div className="mx-auto mt-4 max-w-3xl text-center">
-            <p
-              className={`text-balance text-base font-semibold leading-relaxed tracking-[0.012em] sm:text-lg ${
-                isLightMode ? 'text-[#1f3a58]' : ''
-              }`}
-              style={{
-                backgroundImage: isLightMode ? undefined : 'linear-gradient(96deg, #dcf1ff 8%, #c7ffe8 48%, #d8f8ff 92%)',
-                WebkitBackgroundClip: isLightMode ? undefined : 'text',
-                backgroundClip: isLightMode ? undefined : 'text',
-                color: isLightMode ? '#1f3a58' : 'transparent',
-                textShadow: isLightMode ? 'none' : '0 0 16px rgba(130,214,255,0.1)',
-              }}
-            >
-              Behind every verified transaction is a life being helped.
+            <p className={`text-balance text-base font-medium leading-relaxed sm:text-lg ${isLightMode ? 'text-[#1f2937]' : 'text-[var(--text-high-2)]'}`}>
+              Jump from here into the same screens we reference in the demo script.
             </p>
             <p
-              className={`mx-auto mt-2 max-w-2xl text-balance text-sm leading-relaxed tracking-[0.01em] sm:text-base ${
-                isLightMode ? 'text-[#38526f]' : 'text-[var(--text-muted-1)]'
+              className={`mx-auto mt-2 max-w-2xl text-balance text-sm leading-relaxed sm:text-base ${
+                isLightMode ? 'text-slate-600' : 'text-[var(--text-muted-1)]'
               }`}
             >
-              See how your generosity turns into meaningful change.
+              Prefer the giving flow? Hit Donate after you have looked at causes and the ledger.
             </p>
           </div>
           <div className="mt-8 grid gap-5 text-left md:grid-cols-3">

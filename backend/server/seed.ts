@@ -11,7 +11,14 @@ import {
 /** Shared demo password for every seeded account (capstone only). */
 export const DEMO_PASSWORD = 'demo123';
 
-type SeedCause = { title: string; description: string; goalEth: number; raisedEth: number };
+type SeedCause = {
+  title: string;
+  description: string;
+  goalEth: number;
+  raisedEth: number;
+  /** Hero: site path (under frontend/public) or https URL */
+  imageUrl?: string | null;
+};
 
 const SEEDED_CAUSES: SeedCause[] = [
   {
@@ -20,30 +27,35 @@ const SEEDED_CAUSES: SeedCause[] = [
       'Safe housing, counselling, and mutual aid for queer and trans communities—transparent, verifiable fund flow.',
     goalEth: 25,
     raisedEth: 0,
+    imageUrl: '/samples/cause-lgbtqs.svg',
   },
   {
     title: 'War',
     description: 'Emergency relief, medical supplies, and resettlement support for families affected by conflict.',
     goalEth: 50,
     raisedEth: 0,
+    imageUrl: '/samples/cause-war.svg',
   },
   {
     title: 'Disaster',
     description: 'Rapid response shelters, food, and infrastructure repair after climate and natural disasters.',
     goalEth: 40,
     raisedEth: 0,
+    imageUrl: '/samples/cause-disaster.svg',
   },
   {
     title: 'Hospital',
     description: 'Medical equipment, staff support, and patient care funds for public hospital networks.',
     goalEth: 75,
     raisedEth: 75,
+    imageUrl: '/samples/cause-hospital.svg',
   },
   {
     title: 'Education',
     description: 'Scholarships, supplies, and digital access for underserved students.',
     goalEth: 30,
     raisedEth: 9,
+    imageUrl: '/samples/cause-education.svg',
   },
 ];
 
@@ -90,20 +102,27 @@ export function seedCausesUpsert(): void {
   const missing = SEEDED_CAUSES.filter((c) => !existingDesired.has(c.title));
 
   const update = db.prepare(
-    `UPDATE causes SET title = ?, description = ?, goal_eth = ?, raised_eth = ?, active = 1 WHERE id = ?`
+    `UPDATE causes SET title = ?, description = ?, goal_eth = ?, raised_eth = ?, image_url = ?, active = 1 WHERE id = ?`
   );
   let reused = 0;
   for (let i = 0; i < Math.min(reusable.length, missing.length); i++) {
     const row = reusable[i]!;
     const m = missing[i]!;
-    update.run(m.title, m.description, m.goalEth, m.raisedEth, row.id);
+    update.run(m.title, m.description, m.goalEth, m.raisedEth, m.imageUrl ?? null, row.id);
     reused++;
   }
 
   // Insert any remaining missing causes.
-  const insert = db.prepare(`INSERT INTO causes (title, description, goal_eth, raised_eth, active) VALUES (?,?,?,?,1)`);
+  const insert = db.prepare(
+    `INSERT INTO causes (title, description, goal_eth, raised_eth, image_url, active) VALUES (?,?,?,?,?,1)`
+  );
   for (const m of missing.slice(reused)) {
-    insert.run(m.title, m.description, m.goalEth, m.raisedEth);
+    insert.run(m.title, m.description, m.goalEth, m.raisedEth, m.imageUrl ?? null);
+  }
+
+  const pushSeedHeroes = db.prepare(`UPDATE causes SET image_url = ? WHERE title = ?`);
+  for (const c of SEEDED_CAUSES) {
+    if (c.imageUrl) pushSeedHeroes.run(c.imageUrl, c.title);
   }
 }
 

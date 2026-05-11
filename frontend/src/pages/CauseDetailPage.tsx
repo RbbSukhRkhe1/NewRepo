@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { apiJson } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { PrimaryButton, SectionHeader, SurfaceCard } from '../components/ui';
+import { CauseFundingDonut } from '../components/CauseFundingDonut';
 
 type Cause = {
   id: number;
@@ -10,6 +11,7 @@ type Cause = {
   description: string;
   goal_eth: number;
   raised_eth: number;
+  image_url?: string | null;
 };
 
 type CauseDetailCopy = {
@@ -252,6 +254,7 @@ export function CauseDetailPage() {
   const [busy, setBusy] = useState(false);
   const [activeSlice, setActiveSlice] = useState<number | null>(null);
   const dashboardHoverLeaveRef = useRef<ReturnType<typeof window.setTimeout> | null>(null);
+  const [heroFailed, setHeroFailed] = useState(false);
 
   function cancelImpactSliceDeferClear() {
     if (dashboardHoverLeaveRef.current != null) {
@@ -290,6 +293,10 @@ export function CauseDetailPage() {
       .then(setCause)
       .catch((e: Error) => setErr(e.message));
   }, [id]);
+
+  useEffect(() => {
+    setHeroFailed(false);
+  }, [cause?.id, cause?.image_url]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -413,6 +420,37 @@ export function CauseDetailPage() {
       >
         <SectionHeader title={cause.title} />
       </div>
+
+      <div
+        className={`relative z-[1] mt-4 overflow-hidden rounded-2xl border sm:mt-5 ${
+          isLightMode ? 'border-emerald-400/35 bg-slate-100' : 'border-cyan-500/20 bg-slate-950/70'
+        } aspect-[2.2/1] max-h-[min(42vh,24rem)] min-h-[11rem] w-full`}
+      >
+        {cause.image_url && !heroFailed ? (
+          <img
+            src={cause.image_url}
+            alt=""
+            className="h-full w-full object-cover"
+            onError={() => setHeroFailed(true)}
+          />
+        ) : (
+          <>
+            <img
+              src="/samples/placeholder.svg"
+              alt=""
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+            <div className="absolute inset-x-0 bottom-0 z-[1] border-t border-white/10 bg-black/55 px-4 py-3 backdrop-blur-sm">
+              <p className="mx-auto max-w-lg text-center text-sm text-slate-200">
+                {heroFailed
+                  ? 'Image could not be loaded. Edit the cause hero URL or try another link.'
+                  : 'No hero image for this cause yet. Admins can set an image URL when creating a cause.'}
+              </p>
+            </div>
+          </>
+        )}
+      </div>
+      <p className="sr-only">Funding goal visuals and donation actions for {cause.title}</p>
 
       {detailCopy ? (
         <div
@@ -1097,6 +1135,12 @@ export function CauseDetailPage() {
                 className={`h-full rounded-full bg-gradient-to-r from-[var(--accent-deep-1)] to-[var(--accent-bright-2)] ${isLightMode ? 'shadow-[0_0_20px_rgba(16,185,129,0.55)]' : 'shadow-[0_0_18px_rgba(34,211,238,0.55)]'}`}
                 style={{ width: `${pct}%` }}
               />
+            </div>
+            <div className="relative z-[1] mt-4 w-full max-w-[17rem] sm:max-w-none">
+              <p className={`mb-1 text-[10px] font-semibold uppercase tracking-[0.14em] ${isLightMode ? 'text-emerald-950/65' : 'text-cyan-200/72'}`}>
+                Raised vs goal
+              </p>
+              <CauseFundingDonut raisedEth={cause.raised_eth} goalEth={cause.goal_eth} isLightMode={isLightMode} />
             </div>
             <p className={`relative z-[1] mt-2 text-[12px] ${isLightMode ? 'text-[var(--text-muted-1)]' : 'text-[var(--text-muted-1)]'}`}>
               Goal: {cause.goal_eth.toFixed(4)} ETH

@@ -187,7 +187,7 @@ export function LedgerPage() {
 
       <div className="mt-5 grid gap-4 lg:grid-cols-[1.35fr_1fr]">
         <SurfaceCard className="rounded-2xl p-0 overflow-hidden">
-          <div className="border-b border-white/10 px-4 py-3 sm:px-5">
+          <div className="border-b border-[var(--glass-border)] px-4 py-3 sm:px-5">
             <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-[var(--text-muted-2)]">Cause allocation</h2>
           </div>
           <div className="max-h-[260px] overflow-auto px-4 py-3 sm:px-5">
@@ -198,7 +198,7 @@ export function LedgerPage() {
                 {causeAllocations.map((c) => {
                   const pct = c.donated > 0 ? Math.min(100, (c.disbursed / c.donated) * 100) : 0;
                   return (
-                    <li key={c.causeName} className="rounded-xl border border-[var(--border-chrome-2)] bg-[var(--surface-panel-overlay)] px-3 py-2.5">
+                    <li key={c.causeName} className="vtx-glass-inset px-3 py-2.5">
                       <div className="flex items-center justify-between gap-2">
                         <p className="truncate text-sm font-semibold text-[var(--text-high-3)]">{c.causeName}</p>
                         <span className="text-xs text-[var(--text-muted-2)]">{c.events} events</span>
@@ -208,8 +208,11 @@ export function LedgerPage() {
                         <span className="text-[var(--text-muted-1)]">Disbursed: <span className="font-mono">{c.disbursed.toFixed(4)} ETH</span></span>
                         <span className="text-[var(--text-muted-1)]">Reserved: <span className="font-mono">{c.reserved.toFixed(4)} ETH</span></span>
                       </div>
-                      <div className="mt-2 h-1.5 rounded-full bg-[var(--bg-depth-1)]">
-                        <div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400" style={{ width: `${pct}%` }} />
+                      <div className="mt-2 h-1.5 rounded-full bg-[var(--bg-depth-1)] ring-1 ring-[var(--glass-border)]">
+                        <div
+                          className="h-full rounded-full bg-[var(--accent-core)] opacity-90"
+                          style={{ width: `${pct}%` }}
+                        />
                       </div>
                     </li>
                   );
@@ -247,7 +250,7 @@ export function LedgerPage() {
       </div>
 
       <SurfaceCard className="mt-6 overflow-hidden rounded-2xl p-0">
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 px-4 py-4 sm:px-6">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[var(--glass-border)] px-4 py-4 sm:px-6">
           <div>
             <h2 className="text-lg font-semibold text-[var(--text-high-3)]">Recent activity feed</h2>
             <p className="mt-0.5 inline-flex items-center gap-2 text-xs text-[var(--text-muted-1)]">
@@ -277,7 +280,7 @@ export function LedgerPage() {
             ))}
           </nav>
         </div>
-        <div className="border-b border-white/[0.08] px-4 py-3 sm:px-6">
+        <div className="border-b border-[var(--glass-border)] px-4 py-3 sm:px-6">
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -305,7 +308,9 @@ export function LedgerPage() {
                     }`}
                   >
                     <div className="group flex gap-4">
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border text-sm font-bold" style={{ borderColor: 'var(--border-accent-soft)', background: 'linear-gradient(145deg, rgba(34,197,94,0.2), rgba(59,130,246,0.12))', color: 'var(--accent-bright-2)' }}>
+                      <div
+                        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[var(--border-accent-soft)] bg-[var(--overlay-surface-soft)] text-sm font-bold text-[var(--accent-bright-2)]"
+                      >
                         {initials(entry.fromDisplayName)}
                       </div>
                       <div className="min-w-0 flex-1">

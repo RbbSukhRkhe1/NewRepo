@@ -19,6 +19,7 @@ This document reflects the **monolith** in `frontend/` + `backend/server/` as of
 | Health | `GET /health` (root app, not under `/api`) |
 | Chain watcher | Optional WebSocket ingest → `chain_sync` ledger rows when Anvil up |
 | Seeding | First-run users + `seedCausesUpsert` for five marketing causes |
+| Redis pub/sub | After successful donate/disburse, publishes `donation.created` / `disbursement.created` (see `server/lib/redis.ts`, `docs/REDIS_EVENTS.md`; disable with `REDIS_DISABLED=1`) |
 
 ## Shipped — frontend (React Router)
 
@@ -39,6 +40,15 @@ This document reflects the **monolith** in `frontend/` + `backend/server/` as of
 
 `users`, `causes`, `ledger_entries` — see `backend/server/db.ts`.
 
+## Smart contracts (Foundry, repo root)
+
+- **`foundry.toml`** + **`remappings.txt`** at monorepo root; sources under **`blockchain/src/`** (e.g. `VaultexVault.sol`), deploy **`blockchain/script/Deploy.s.sol`**, tests **`blockchain/test/`**, libs **`blockchain/lib/`**.
+- Run **`forge build`** / **`forge test`** from the **repository root**. Build outputs under `blockchain/out/` (gitignored until you compile).
+
 ## Not shipped (see `CAPSTONE_TASK_TRACKER.csv`)
 
-Examples: journey-by-tx API, strict public masking audit, PDF receipts, WS live ledger, microservices split, CI/CD, E2E tests, MetaMask testnet toggle, NFT receipts, etc.
+Examples: journey-by-tx API, strict public masking audit, PDF receipts, WS live ledger, microservices split, CI/CD, E2E tests, MetaMask testnet toggle, NFT receipts, backend wiring to `VAULTEX_VAULT_ADDRESS`, etc.
+
+## Architecture and contracts
+
+For **how pieces fit today** versus the **gateway + services** target, see [ARCHITECTURE.md](./ARCHITECTURE.md). Decisions (strangler ordering, cookies vs JWT at the gateway) live under [ADR/](./ADR/). Placeholder **OpenAPI** contracts for the target split are in [openapi/](./openapi/).

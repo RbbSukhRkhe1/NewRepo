@@ -35,6 +35,30 @@
   --fx-glow-accent-high: rgba(43, 244, 163, 0.95);
   --fx-atmo-emerald-soft: rgba(34, 197, 94, 0.12);
   --fx-atmo-warm-soft: rgba(251, 191, 36, 0.06);
+
+  /* F-017 glass — Frosted surfaces (tokens + readme). Stronger perceptual “glass”: blur stack, saturation lift, rims. */
+  --glass-blur: 22px;
+  --glass-blur-strong: 28px;
+  --glass-saturate: 1.32;
+  --glass-brightness: 1.05;
+  --glass-bg: rgba(11, 18, 30, 0.62);
+  --glass-bg-fallback: var(--surface-panel-primary);
+  --glass-border: rgba(186, 198, 220, 0.16);
+  --glass-border-outer: rgba(255, 255, 255, 0.05);
+  --glass-rim-top: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  --glass-rim-bot: inset 0 -1px 0 rgba(0, 0, 0, 0.35);
+
+  --elevation-0: none;
+  --elevation-1:
+    var(--glass-rim-top), var(--glass-rim-bot), 0 0 0 1px var(--glass-border-outer), 0 8px 28px rgba(0, 0, 0, 0.36),
+    0 2px 8px rgba(0, 0, 0, 0.2);
+  --elevation-2:
+    var(--glass-rim-top), var(--glass-rim-bot), 0 0 0 1px var(--glass-border-outer), 0 14px 38px rgba(0, 0, 0, 0.44),
+    0 4px 12px rgba(0, 0, 0, 0.22);
+  --elevation-3:
+    var(--glass-rim-top), var(--glass-rim-bot), 0 0 0 1px var(--glass-border-outer), 0 20px 52px rgba(0, 0, 0, 0.5),
+    0 6px 16px rgba(0, 0, 0, 0.24);
+
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -102,6 +126,28 @@
   --overlay-surface-soft: rgba(16, 46, 84, 0.06);
   --fx-atmo-emerald-soft: rgba(34, 197, 94, 0.1);
   --fx-atmo-warm-soft: rgba(251, 191, 36, 0.08);
+
+  --glass-blur: 18px;
+  --glass-blur-strong: 24px;
+  --glass-saturate: 1.4;
+  --glass-brightness: 1.03;
+  --glass-bg: rgba(255, 255, 255, 0.68);
+  --glass-bg-fallback: var(--surface-panel-primary);
+  --glass-border: rgba(120, 150, 188, 0.42);
+  --glass-border-outer: rgba(255, 255, 255, 0.65);
+  --glass-rim-top: inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  --glass-rim-bot: inset 0 -1px 0 rgba(148, 176, 210, 0.28);
+
+  --elevation-1:
+    var(--glass-rim-top), var(--glass-rim-bot), 0 0 0 1px var(--glass-border-outer), 0 6px 20px rgba(46, 88, 130, 0.11),
+    0 2px 8px rgba(46, 88, 130, 0.06);
+  --elevation-2:
+    var(--glass-rim-top), var(--glass-rim-bot), 0 0 0 1px var(--glass-border-outer), 0 12px 32px rgba(46, 88, 130, 0.14),
+    0 4px 12px rgba(46, 88, 130, 0.08);
+  --elevation-3:
+    var(--glass-rim-top), var(--glass-rim-bot), 0 0 0 1px var(--glass-border-outer), 0 18px 44px rgba(46, 88, 130, 0.16),
+    0 6px 14px rgba(46, 88, 130, 0.09);
+
   --code-bg: #f4f3ec;
 }
 
@@ -202,9 +248,60 @@ code {
 }
 
 .vtx-surface {
-  border: 1px solid var(--border-chrome-1);
+  position: relative;
+  isolation: isolate;
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
-  background: linear-gradient(180deg, var(--overlay-surface-soft), transparent), var(--surface-panel-primary);
+  background-color: var(--glass-bg);
+  background-image: linear-gradient(
+    165deg,
+    rgba(255, 255, 255, 0.07) 0%,
+    transparent 40%,
+    transparent 62%,
+    rgba(255, 255, 255, 0.025) 100%
+  );
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate)) brightness(var(--glass-brightness));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate)) brightness(var(--glass-brightness));
+  box-shadow: var(--elevation-1);
+}
+
+/** Sticky chrome — extra frost reads through scrolling content behind */
+.vtx-glass-header {
+  position: relative;
+  isolation: isolate;
+  background-color: var(--glass-bg);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.085) 0%, transparent 58%);
+  border-bottom: 1px solid var(--glass-border);
+  backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate)) brightness(var(--glass-brightness));
+  -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate))
+    brightness(var(--glass-brightness));
+  box-shadow: var(--elevation-2);
+}
+
+.vtx-glass-popover {
+  position: relative;
+  isolation: isolate;
+  background-color: var(--glass-bg);
+  background-image: linear-gradient(
+    200deg,
+    rgba(255, 255, 255, 0.09) 0%,
+    transparent 46%,
+    rgba(255, 255, 255, 0.035) 100%
+  );
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate)) brightness(var(--glass-brightness));
+  -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate))
+    brightness(var(--glass-brightness));
+  box-shadow: var(--elevation-3);
+}
+
+/** Nested chips — no backdrop blur (ledger lists); etched rim only */
+.vtx-glass-inset {
+  background: var(--overlay-surface-soft);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--glass-rim-top), var(--glass-rim-bot);
 }
 
 .vtx-input {
@@ -247,6 +344,17 @@ code {
     transform: none;
     transition: opacity var(--motion-fast) linear;
   }
+
+  /* No animated blur “shimmer”; keep opaque-readable panels for WCAG comfort */
+  .vtx-surface,
+  .vtx-glass-header,
+  .vtx-glass-popover {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background-image: none;
+    background-color: var(--glass-bg-fallback);
+  }
+
   *,
   *::before,
   *::after {

@@ -1,0 +1,22 @@
+openapi: 3.0.3
+info:
+  title: Vaultex Users Service (stub)
+  version: 0.0.0
+  description: Target bounded context — profiles, roles, anvil_index, admin user listing.
+servers:
+  - url: http://127.0.0.1:3002
+    description: Internal (placeholder)
+paths:
+  /health:
+    get:
+      summary: Service health
+      responses:
+        '200':
+          description: OK
+  /v1/users:
+    get:
+      summary: List users (admin) — stub
+      responses:
+        '200':
+          description: OK
+components: {}

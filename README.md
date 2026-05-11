@@ -11,9 +11,9 @@ The codebase name in `package.json` is `live-tx-ledger`; product name in the UI 
 | Area | Stack |
 |------|--------|
 | **Frontend** | React 19, TypeScript, Vite 8, Tailwind CSS 4, React Router |
-| **Backend** | Express 5, `better-sqlite3`, cookie sessions, bcrypt, ethers v6 |
+| **Backend** | Express 5, `better-sqlite3`, cookie sessions, bcrypt, ethers v6, **ioredis** (optional pub/sub) |
 | **Chain (local dev)** | [Anvil](https://book.getfoundry.sh/reference/anvil/) — JSON-RPC + WebSocket for the block watcher |
-| **Contracts** | Foundry-style layout under `blockchain/` (see note below) |
+| **Contracts** | Foundry at **repo root** (`foundry.toml`) — sources in `blockchain/src/`, libs in `blockchain/lib/` |
 
 ---
 
@@ -23,9 +23,46 @@ The codebase name in `package.json` is `live-tx-ledger`; product name in the UI 
 |------|------|
 | `frontend/` | SPA: causes, donate flow, ledger, account, admin |
 | `backend/server/` | REST API, SQLite schema, seeding, chain watcher |
-| `blockchain/` | Forge artifacts, `lib/` (OpenZeppelin, forge-std), `broadcast/`, `cache/`, `out/` |
+| `blockchain/` | Solidity contracts (`src/`), deploy scripts (`script/`), tests (`test/`), vendored **`lib/`** (forge-std, OpenZeppelin) |
+| `foundry.toml` | Foundry project config (paths point into `blockchain/`) |
+| `frontend/Dockerfile`, `frontend/nginx.docker.conf` | Production SPA image (Vite build + nginx `/api` proxy) |
+| `backend/Dockerfile` | Production API image (workspace install, `tsx` runtime) |
+| `.env.example` | Template for Compose-time variables (copy to `.env` at repo root) |
+| `docker-compose.yml` | Full stack: frontend, backend, Redis, Anvil (healthchecks + volumes) |
 
-**Note:** The repo currently has **build/deploy outputs** under `blockchain/` but no top-level `foundry.toml` / `src/` in this snapshot. To compile from source you may need to restore or add contract sources and a root Foundry config; `forge build` in `blockchain/` may not succeed until that exists.
+**Build outputs** (`blockchain/out/`, `blockchain/cache/`) and **deployment receipts** (`broadcast/` at repo root after `forge script --broadcast`) are **gitignored** — run `forge build` / deploy locally to regenerate.
+
+### Smart contracts (Foundry)
+
+[Install Foundry](https://book.getfoundry.sh/getting-started/installation) so `forge` and `anvil` are on your `PATH`.
+
+From the **repository root**:
+
+```bash
+forge build          # compile blockchain/src + script + test
+forge test           # run Solidity tests
+```
+
+**Deploy `VaultexVault` to local Anvil** (start `anvil` in another terminal first):
+
+```bash
+forge script blockchain/script/Deploy.s.sol:Deploy \
+  --rpc-url http://127.0.0.1:8545 \
+  --broadcast
+```
+
+By default the script uses **Anvil account #0**’s well-known dev private key (override with `PRIVATE_KEY` in the environment). The console prints **`VaultexVault: 0x…`** and **`Owner: 0x…`**.
+
+**Contract address → backend env (optional, future wiring):**
+
+1. Copy the **`VaultexVault:`** line from the terminal, **or** open  
+   `broadcast/Deploy.s.sol/<chainId>/run-latest.json`  
+   (created at the **repository root** next to `foundry.toml` after `--broadcast`; gitignored until you deploy).
+2. Add to `backend/.env` (see `backend/.env.example`):
+
+   `VAULTEX_VAULT_ADDRESS=0xYourDeployedAddress`
+
+The current app still routes donations to the **Anvil EOA vault** (`SUPER_RICH_INDEX` in `backend/server/anvil.ts`); linking the API to this contract would be a separate integration task.
 
 ---
 
@@ -45,7 +82,8 @@ API routes are mounted under **`/api`** (see `backend/server/app.ts`).
 ## Prerequisites
 
 - **Node.js** 20+ and **npm**
-- **Optional:** [Foundry](https://book.getfoundry.sh/getting-started/installation) + **Anvil** on `http://127.0.0.1:8545` for chain-linked features and the watcher (without it the API still runs; the watcher may skip or log connection issues).
+- **Foundry** (`forge`, `cast`, optional `anvil`) — [installation](https://book.getfoundry.sh/getting-started/installation)
+- **Optional:** run **`anvil`** on `http://127.0.0.1:8545` for chain-linked features and the watcher (without it the API still runs; the watcher may skip or log connection issues).
 
 ---
 
@@ -79,6 +117,56 @@ npm run dev
 
 ---
 
+## Docker (full stack)
+
+The root **`docker-compose.yml`** runs the **full stack** with health checks and persistent **dev** volumes:
+
+| Service | Image / build | Role |
+|---------|----------------|------|
+| **frontend** | `frontend/Dockerfile` (Vite build + **nginx**) | SPA on port **8080** (default); proxies **`/api`** to the backend (same-origin cookies). |
+| **backend** | `backend/Dockerfile` (Node 20 monolith) | Express API on **3847**; SQLite on a named volume; Redis and Anvil via Compose service DNS. |
+| **redis** | `redis:7-alpine` | AOF persistence on volume **`vaultex_redis_data`**. |
+| **anvil** | `ghcr.io/foundry-rs/foundry:latest` | `anvil --host 0.0.0.0` on **8545** (published for `cast` / tooling). |
+
+**One command** (from the **repository root**):
+
+```bash
+docker compose up --build
+```
+
+Open **http://localhost:8080** (change the host port with **`WEB_HOST_PORT`** in a root **`.env`**).
+
+**Environment:** copy **`.env.example`** → **`.env`** next to `docker-compose.yml`. Compose reads it for `${VAR}` substitution. Set a strong **`SESSION_SECRET`** for anything beyond a throwaway local VM.
+
+| Variable (root `.env`) | Default in compose | Purpose |
+|------------------------|-------------------|---------|
+| `WEB_HOST_PORT` | `8080` | Published nginx port |
+| `API_HOST_PORT` | `3847` | Published API (debugging) |
+| `ANVIL_HOST_PORT` | `8545` | Published JSON-RPC |
+| `SESSION_SECRET` | dev-only default in compose | **Override** on shared hosts |
+| `REDIS_URL` | `redis://redis:6379` | In-cluster broker |
+| `REDIS_DISABLED` | empty | `1` skips pub/sub |
+| `ANVIL_RPC_URL` / `ANVIL_WS_URL` | `http://anvil:8545` / `ws://anvil:8545` | Chain + watcher |
+
+**Volumes:** **`vaultex_sqlite_data`** holds **`/data/sqlite/donate.db`**; **`vaultex_redis_data`** holds Redis AOF. Remove with `docker compose down -v`.
+
+**Future extraction (gateway, auth, …):** commented stubs are at the bottom of **`docker-compose.yml`**; see **[docs/ADR/0001-microservices-strangler-fig.md](docs/ADR/0001-microservices-strangler-fig.md)**. After a gateway exists, point nginx **`proxy_pass`** at it instead of the monolith.
+
+### Docker troubleshooting
+
+| Symptom | What to try |
+|---------|-------------|
+| **Services stuck “starting”** | `docker compose ps` and `docker compose logs <service>` — first pull of the Foundry image can take several minutes. |
+| **Backend unhealthy** | Confirm **redis** and **anvil** are healthy first; read **`docker compose logs backend`**. |
+| **`better-sqlite3` native errors** | Build with the repo **`backend/Dockerfile`** (deps stage installs compilers). |
+| **Login or `/api` errors in the browser** | Use **http://localhost:8080** (nginx), not only port 3847, so paths and session cookies stay same-origin. |
+| **Redis pub/sub off** | Set **`REDIS_DISABLED=1`** in root `.env` (or `backend/.env` when running the API outside Docker). Event schema: **[docs/REDIS_EVENTS.md](docs/REDIS_EVENTS.md)**. |
+| **Wipe data** | `docker compose down -v` |
+
+**API on the host + Redis in Docker:** `docker run -d --name vaultex-redis -p 6379:6379 redis:7-alpine redis-server --save '' --appendonly no` then set **`REDIS_URL=redis://127.0.0.1:6379`** in **`backend/.env`**.
+
+---
+
 ## Demo / seeded accounts
 
 On first run with an **empty** database, the API seeds demo users and causes. **Every seeded account uses the same password:**
@@ -105,6 +193,9 @@ Create **`backend/.env`** if you need overrides (loaded via `dotenv` from `backe
 | `SQLITE_PATH` | SQLite file | `backend/server/data/donate.db` (under `server/data/`) |
 | `ANVIL_RPC_URL` | HTTP JSON-RPC | `http://127.0.0.1:8545` |
 | `ANVIL_WS_URL` | WebSocket for logs | Derived from `ANVIL_RPC_URL` (`http` → `ws`) |
+| `REDIS_URL` | Redis for pub/sub events | `redis://localhost:6379` |
+| `REDIS_EVENTS_CHANNEL` | Channel name for `publishEvent` | `vaultex:events` |
+| `REDIS_DISABLED` | Skip Redis (no-op publish) | unset |
 | `SESSION_SECRET` | Session cookie signing | dev fallback in code (set in production) |
 
 ---
@@ -114,6 +205,7 @@ Create **`backend/.env`** if you need overrides (loaded via `dotenv` from `backe
 | Doc | Description |
 |-----|---------------|
 | [docs/README.md](docs/README.md) | Index of all docs |
+| [blockchain/README.md](blockchain/README.md) | Solidity / Foundry layout inside `blockchain/` |
 | [docs/FEATURES.md](docs/FEATURES.md) | Shipped features vs backlog (audit) |
 | [docs/DEMO.md](docs/DEMO.md) | ~7 min demo script + slide outline |
 | [docs/PRIVACY.md](docs/PRIVACY.md) | Masking, roles, data handling |
@@ -121,6 +213,7 @@ Create **`backend/.env`** if you need overrides (loaded via `dotenv` from `backe
 | [docs/COMPARATIVE.md](docs/COMPARATIVE.md) | Positioning vs other approaches |
 | [docs/USER_TESTING.md](docs/USER_TESTING.md) | Usability session template + results table |
 | [docs/ANVIL_STATE.md](docs/ANVIL_STATE.md) | Saving / restoring local Anvil state |
+| [docs/REDIS_EVENTS.md](docs/REDIS_EVENTS.md) | Redis pub/sub envelope schema and dev commands |
 
 ---
 
@@ -146,7 +239,9 @@ Team task breakdown lives in **`CAPSTONE_TASK_TRACKER.csv`** (open in Excel). Ea
 |-------|-------------|
 | **`better-sqlite3` fails to install** | Use Node 20 LTS; on Windows install **Desktop development with C++** build tools if prebuilds miss. |
 | **Browser `/api` errors** | Confirm backend is on **3847** or change `PORT` and Vite `proxy.target` together. |
+| **`forge` / `forge build` not found** | Install [Foundry](https://book.getfoundry.sh/getting-started/installation) and ensure `forge` is on your `PATH`, then run commands from the **repo root**. |
 | **Chain watcher warnings** | Start **Anvil**; check `ANVIL_RPC_URL` / firewall. The HTTP API can still work for many flows. |
+| **Docker stack** | See **Docker troubleshooting** under [Docker (full stack)](#docker-full-stack). |
 
 ---
 

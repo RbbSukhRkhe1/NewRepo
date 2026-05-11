@@ -101,6 +101,7 @@ export function NavPill({
   );
 }
 
+/** Card shell — uses `.vtx-surface` (glass tokens in `src/index.css`; see `frontend/README.md`). */
 export function SurfaceCard({
   children,
   className,

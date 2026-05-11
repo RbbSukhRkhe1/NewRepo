@@ -11,6 +11,8 @@ node_modules
 dist
 dist-ssr
 *.local
+.env
+backend/.env
 backend/server/data/*.db
 backend/server/data/*.db-*
 
@@ -24,3 +26,8 @@ backend/server/data/*.db-*
 *.njsproj
 *.sln
 *.sw?
+
+# Foundry (regenerable; keep repo clean — remove these lines if you want to commit deployment receipts)
+blockchain/cache/
+blockchain/out/
+broadcast/

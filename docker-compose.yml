@@ -1,0 +1,117 @@
+# Vaultex full stack — monolith + Redis + Anvil + nginx-hosted SPA.
+# One command: `docker compose up --build`
+#
+# Future: add `gateway`, `auth`, `users`, etc. behind the same network; switch nginx
+# `proxy_pass` to the gateway when the strangler cutover is ready (see docs/ADR/0001).
+
+name: vaultex
+
+services:
+  redis:
+    image: redis:7-alpine
+    command: >
+      redis-server
+      --appendonly yes
+      --dir /data
+    volumes:
+      - vaultex_redis_data:/data
+    networks: [vaultex]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+
+  anvil:
+    image: ghcr.io/foundry-rs/foundry:latest
+    command: ["anvil", "--host", "0.0.0.0", "--port", "8545"]
+    networks: [vaultex]
+    ports:
+      - "${ANVIL_HOST_PORT:-8545}:8545"
+    healthcheck:
+      test: ["CMD", "cast", "block-number", "--rpc-url", "http://127.0.0.1:8545"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    image: vaultex-backend:local
+    networks: [vaultex]
+    ports:
+      - "${API_HOST_PORT:-3847}:3847"
+    environment:
+      NODE_ENV: production
+      PORT: "3847"
+      SQLITE_PATH: /data/sqlite/donate.db
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      REDIS_EVENTS_CHANNEL: ${REDIS_EVENTS_CHANNEL:-vaultex:events}
+      REDIS_DISABLED: ${REDIS_DISABLED:-}
+      ANVIL_RPC_URL: ${ANVIL_RPC_URL:-http://anvil:8545}
+      ANVIL_WS_URL: ${ANVIL_WS_URL:-ws://anvil:8545}
+      SESSION_SECRET: ${SESSION_SECRET:-vaultex-local-docker-secret-replace-for-any-shared-deploy}
+      VAULTEX_VAULT_ADDRESS: ${VAULTEX_VAULT_ADDRESS:-}
+    volumes:
+      - vaultex_sqlite_data:/data/sqlite
+    depends_on:
+      redis:
+        condition: service_healthy
+      anvil:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3847/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 35s
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    image: vaultex-frontend:local
+    networks: [vaultex]
+    ports:
+      - "${WEB_HOST_PORT:-8080}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/"]
+      interval: 15s
+      timeout: 3s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+
+  # --- Placeholders for strangler extraction (enable when services exist) ---
+  # gateway:
+  #   image: traefik:v3.2
+  #   networks: [vaultex]
+  #   depends_on: { backend: { condition: service_healthy } }
+  # auth:
+  #   build: { context: ./services/auth }
+  #   networks: [vaultex]
+
+networks:
+  vaultex:
+    driver: bridge
+
+volumes:
+  vaultex_sqlite_data:
+    name: vaultex_sqlite_data
+  vaultex_redis_data:
+    name: vaultex_redis_data

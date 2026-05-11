@@ -1,0 +1,27 @@
+# Git and IDE
+.git
+.gitignore
+.cursor
+
+# Dependencies and build outputs
+node_modules
+**/node_modules
+frontend/dist
+**/dist
+**/.vite
+
+# Blockchain artifacts
+blockchain/out
+blockchain/cache
+blockchain/broadcast
+broadcast
+
+# Tests and docs (not needed in API image)
+**/test
+**/tests
+docs
+*.csv
+
+# Env (never bake secrets)
+.env
+**/.env

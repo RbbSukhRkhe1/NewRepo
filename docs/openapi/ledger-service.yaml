@@ -1,0 +1,22 @@
+openapi: 3.0.3
+info:
+  title: Vaultex Ledger Service (stub)
+  version: 0.0.0
+  description: Target bounded context — ledger reads, exports, journey-by-tx, Redis consumers.
+servers:
+  - url: http://127.0.0.1:3004
+    description: Internal (placeholder)
+paths:
+  /health:
+    get:
+      summary: Service health
+      responses:
+        '200':
+          description: OK
+  /v1/ledger:
+    get:
+      summary: Public ledger — stub
+      responses:
+        '200':
+          description: OK
+components: {}

@@ -1,0 +1,51 @@
+openapi: 3.0.3
+info:
+  title: Vaultex API Gateway (stub)
+  version: 0.0.0
+  description: >
+    Target-state public HTTP entry. Routes are proxied to the monolith today,
+    then cut over strangler-style to internal services (see docs/ADR/0001).
+servers:
+  - url: https://api.vaultex.example
+    description: Production (placeholder)
+  - url: http://127.0.0.1:8080
+    description: Local gateway (placeholder port)
+tags:
+  - name: Forwarding
+    description: Routes not yet migrated — default to monolith BFF
+paths:
+  /health:
+    get:
+      summary: Liveness (gateway or upstream aggregate)
+      tags: [Forwarding]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+  /api/{path}:
+    parameters:
+      - name: path
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Catch-all path segment forwarded to monolith or service mesh
+    get:
+      summary: Proxied GET (stub)
+      tags: [Forwarding]
+      responses:
+        '502':
+          description: Upstream not configured
+    post:
+      summary: Proxied POST (stub)
+      tags: [Forwarding]
+      responses:
+        '502':
+          description: Upstream not configured
+components: {}

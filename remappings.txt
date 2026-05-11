@@ -1,0 +1,2 @@
+forge-std/=blockchain/lib/forge-std/src/
+@openzeppelin/contracts/=blockchain/lib/openzeppelin-contracts/contracts/
