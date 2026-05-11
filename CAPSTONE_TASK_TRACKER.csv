@@ -1,0 +1,37 @@
+ID,Epic,Task,Owner,Status,Priority,Notes / Dependencies
+1,Homepage & story,Hero + vision copy + primary CTAs,Haha,Not started,P0,Portfolio-style layout; link to stories + causes
+2,Homepage & story,How it works section + trust principles strip,Haha,Not started,P0,Short; avoid fake metrics unless labeled demo
+3,Homepage & story,Featured beneficiary stories block (cards + link),Haha,Not started,P1,Feeds from stories API when ready
+4,UI system,Glass morphism system (tokens: blur/border/elevation); reduce gradients,Haha,Not started,P0,Apply across shell + ledger + journey
+5,UI system,Responsive polish + motion (prefers-reduced-motion),Haha,Not started,P1,
+6,UI / a11y,Ledger table usability: sticky header + filters UI,Haha,Not started,P1,May pair with Tasin on query params
+7,Journey,Global or ledger search bar for transaction hash,Haha,Not started,P0,UX validation + error states
+8,Journey,"Life journey" page: timeline UI (donor to Vaultex to hospital / held),Haha,Not started,P0,Deep link /journey/:txHash; uses Tasin API
+9,Privacy UI,Consistent masked display + tooltips / glossary,Haha,Not started,P0,Match backend masking rules
+10,Beneficiary stories,Public list + detail pages (read-only for donors),Haha,Not started,P1,Beneficiary edit flows separate
+11,Beneficiary stories,Beneficiary create/edit story UI + proof attachments (URL or upload),Haha,Not started,P1,Depends on Tasin CRUD + Sukhan storage policy
+12,Cross-FE,Empty states + onboarding microcopy,Haha,Not started,P2,
+13,API / journey,Tx hash resolution + normalized timeline payload,Tasin,Not started,P0,Merge DB ledger + RPC where needed
+14,API / journey,Public search endpoint: validate hash + rate limit,Tasin,Not started,P0,Haha consumes
+15,Ledger API,Ensure all ledger list responses use masking helper,Tasin,Not started,P0,No raw addresses to anon
+16,Ledger API,Optional ledger filters (date range / cause / kind) query support,Tasin,Not started,P2,If FE adds filters
+17,Stories backend,DB schema + migrations for stories + proofs,Tasin,Not started,P1,beneficiary-owned rows
+18,Stories backend,REST: GET public; POST/PATCH beneficiary; optional admin moderation,Tasin,Not started,P1,Auth checks
+19,Stories backend,"Proof" validation (URL SSRF/size; or upload handshake),Tasin,Not started,P2,Sukhan decides upload vs URL-only MVP
+20,Auth / security,Harden cookies/sessions for prod config notes,Tasin,Not started,P1,Coordinate with Sukhan deployment
+21,Auth / security,Throttle login/register + consistent error payloads,Tasin,Not started,P2,
+22,Ops,Structured logging + readiness (DB optional RPC ping),Tasin,Not started,P2,Docker/demo stability
+23,Tests,API tests: journey permission + masking + story CRUD roles,Tasin,Not started,P2,
+24,Blockchain,foundry.toml + src layout + deployment script to Anvil,Sukhan,Not started,P0,Addresses -> env template
+25,Blockchain,Persist / reproduce Anvil: state snapshot + documented reset flow,Sukhan,Not started,P0,Evaluator replay
+26,Blockchain,Wire backend to deployed contract addresses (env + README),Sukhan,Not started,P1,Pairs with Tasin RPC usage
+27,Blockchain,Optional: anchor story hash / daily summary on-chain,Sukhan,Not started,P3,Nice HD sparkle if time
+28,Data / privacy,Written privacy & masking policy (README or one-pager),Sukhan,Not started,P0,Align FE+BE behavior
+29,Product / narrative,7-minute demo script + slide outline,Sukhan,Not started,P0,Assign handoffs to Haha/Tasin
+30,Evaluation,User testing mini-study (5+ sessions) + findings table,Sukhan,Not started,P1,HD backbone
+31,Evaluation,Comparative analysis (2-3 platforms/papers) + citations,Sukhan,Not started,P2,
+32,Documentation,Architecture diagram + sequence: donate / disburse / watch,Sukhan,Not started,P1,
+33,Documentation,README: setup + env + demo troubleshooting,Sukhan,Not started,P1,
+34,DevOps,Docker Compose (optional): web + api + anvil + seed state,Sukhan,Not started,P2,If course allows
+35,QA / release,Playwright smoke: login + journey + story view,Sukhan,Not started,P2,Can split with Tasin
+36,Coordination,Weekly sync: unblock dependencies + update this sheet,Sukhan,Not started,P0,Mark Status column in Excel
