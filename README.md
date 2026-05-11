@@ -97,7 +97,7 @@ If the database already exists, seed users are **not** re-inserted. Delete `back
 
 ## Environment variables (backend)
 
-Create **`backend/.env`** if you need overrides (loaded via `dotenv` from `backend/server`).
+Create **`backend/.env`** if you need overrides (loaded via `dotenv` from `backend/server`). Copy **`backend/.env.example`** to `backend/.env` and edit values there (never commit real secrets).
 
 | Variable | Purpose | Default |
 |----------|---------|---------|
@@ -106,6 +106,20 @@ Create **`backend/.env`** if you need overrides (loaded via `dotenv` from `backe
 | `ANVIL_RPC_URL` | HTTP JSON-RPC | `http://127.0.0.1:8545` |
 | `ANVIL_WS_URL` | WebSocket for logs | Derived from `ANVIL_RPC_URL` (`http` → `ws`) |
 | `SESSION_SECRET` | Session cookie signing | dev fallback in code (set in production) |
+
+---
+
+## Documentation
+
+| Doc | Description |
+|-----|---------------|
+| [docs/README.md](docs/README.md) | Index of all docs |
+| [docs/DEMO.md](docs/DEMO.md) | ~7 min demo script + slide outline |
+| [docs/PRIVACY.md](docs/PRIVACY.md) | Masking, roles, data handling |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Context + Mermaid sequences |
+| [docs/COMPARATIVE.md](docs/COMPARATIVE.md) | Positioning vs other approaches |
+| [docs/USER_TESTING.md](docs/USER_TESTING.md) | Usability session template + results table |
+| [docs/ANVIL_STATE.md](docs/ANVIL_STATE.md) | Saving / restoring local Anvil state |
 
 ---
 
