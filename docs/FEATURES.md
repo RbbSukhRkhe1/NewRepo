@@ -6,7 +6,7 @@ This document reflects the **monolith** in `frontend/` + `backend/server/` as of
 
 | Feature | Routes / behavior |
 |---------|-------------------|
-| Public config | `GET /config` — vault address + masked |
+| Public config | `GET /config` — vault address + masked + **`network`** + **`chainId`** |
 | Overview stats | `GET /overview` — cause aggregates, ledger sums, optional vault balance |
 | Auth | `POST /auth/login`, `POST /auth/logout`, `POST /auth/register`, `GET /auth/me` |
 | Users (admin) | `GET /users` |

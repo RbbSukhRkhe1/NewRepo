@@ -1,6 +1,7 @@
 import { ethers } from 'ethers';
 import { db } from './db.js';
 import { SUPER_RICH_INDEX, anvilAddress } from './anvil.js';
+import { getRpcHttpUrl, getRpcWsUrl } from './config.js';
 import { buildAddressBook, labelForAddress } from './resolve.js';
 
 async function rpcReachable(rpcUrl: string): Promise<boolean> {
@@ -98,7 +99,7 @@ export function startChainWatcher(wsUrl: string): () => void {
 
   provider.getNetwork().then(
     () => console.log('[chain] Watching', wsUrl),
-    (e) => console.error('[chain] connect failed — is Anvil running?', e)
+    (e) => console.error('[chain] connect failed — is the RPC endpoint up?', e)
   );
 
   return () => {
@@ -108,14 +109,11 @@ export function startChainWatcher(wsUrl: string): () => void {
 }
 
 export async function startChainWatcherSafe(): Promise<() => void> {
-  const http = process.env.ANVIL_RPC_URL ?? 'http://127.0.0.1:8545';
-  const ws = process.env.ANVIL_WS_URL ?? http.replace(/^http/i, 'ws');
+  const http = getRpcHttpUrl();
+  const ws = getRpcWsUrl();
 
   if (!(await rpcReachable(http))) {
-    console.warn(
-      '[chain] RPC not reachable — watcher not started (optional: Anvil at',
-      http + ')'
-    );
+    console.warn('[chain] RPC not reachable — watcher not started. URL:', http);
     return () => {};
   }
 

@@ -146,7 +146,9 @@ Open **http://localhost:8080** (change the host port with **`WEB_HOST_PORT`** in
 | `SESSION_SECRET` | dev-only default in compose | **Override** on shared hosts |
 | `REDIS_URL` | `redis://redis:6379` | In-cluster broker |
 | `REDIS_DISABLED` | empty | `1` skips pub/sub |
-| `ANVIL_RPC_URL` / `ANVIL_WS_URL` | `http://anvil:8545` / `ws://anvil:8545` | Chain + watcher |
+| `ANVIL_RPC_URL` / `ANVIL_WS_URL` | `http://anvil:8545` / `ws://anvil:8545` | Used when **`NETWORK=anvil`** |
+| `NETWORK` | `anvil` | Set **`sepolia`** to point RPC at Sepolia vars below (compose still starts Anvil for optional tooling) |
+| `SEPOLIA_RPC_URL` / `SEPOLIA_WS_URL` | empty | When **`NETWORK=sepolia`**, set reliable endpoints |
 | `READY_SKIP_RPC` | empty | Set to `1` so **`GET /ready`** skips RPC (API-only / CI) |
 
 **Volumes:** **`vaultex_sqlite_data`** holds **`/data/sqlite/donate.db`**; **`vaultex_redis_data`** holds Redis AOF. Remove with `docker compose down -v`.
@@ -192,20 +194,32 @@ Create **`backend/.env`** if you need overrides (loaded via `dotenv` from `backe
 |----------|---------|---------|
 | `PORT` | API listen port | `3847` |
 | `SQLITE_PATH` | SQLite file | `backend/server/data/donate.db` (under `server/data/`) |
-| `ANVIL_RPC_URL` | HTTP JSON-RPC | `http://127.0.0.1:8545` |
-| `ANVIL_WS_URL` | WebSocket for logs | Derived from `ANVIL_RPC_URL` (`http` → `ws`) |
+| `NETWORK` | Logical chain: **`anvil`** (default) or **`sepolia`** — selects RPC defaults in `server/config.ts` | `anvil` |
+| `ANVIL_RPC_URL` | HTTP JSON-RPC when **`NETWORK=anvil`** | `http://127.0.0.1:8545` |
+| `ANVIL_WS_URL` | WebSocket for watcher when **`NETWORK=anvil`** | Derived from `ANVIL_RPC_URL` (`http` → `ws`) |
+| `SEPOLIA_RPC_URL` | HTTP JSON-RPC when **`NETWORK=sepolia`** | Public Sepolia RPC fallback in code (rate-limited) if unset |
+| `SEPOLIA_WS_URL` | WebSocket when **`NETWORK=sepolia`** | Derived from HTTP URL if unset (`https` → `wss`) |
 | `REDIS_URL` | Redis for pub/sub events | `redis://localhost:6379` |
 | `REDIS_EVENTS_CHANNEL` | Channel name for `publishEvent` | `vaultex:events` |
 | `REDIS_DISABLED` | Skip Redis (no-op publish) | unset |
-| `READY_SKIP_RPC` | If `1` or `true`, `GET /ready` skips the Anvil JSON-RPC ping (`rpc: "skipped"`) | unset |
+| `READY_SKIP_RPC` | If `1` or `true`, `GET /ready` skips the JSON-RPC ping (`rpc: "skipped"`) | unset |
 | `SESSION_SECRET` | Session cookie signing | dev fallback in code (set in production) |
+
+### Target network (`NETWORK`)
+
+- **`NETWORK=anvil`** (default): **`ANVIL_RPC_URL`** / **`ANVIL_WS_URL`** drive the JSON-RPC provider, block watcher, and **`GET /ready`** RPC probe. Matches local **Anvil** / Foundry demos.
+- **`NETWORK=sepolia`**: use **`SEPOLIA_RPC_URL`** (and optional **`SEPOLIA_WS_URL`**) for read/watch paths. Implementation lives in **`backend/server/config.ts`** (also re-exported from **`anvil.ts`** for convenience).
+
+**Donate / demo safety:** **`POST /donate`** and **`POST /disburse`** still **sign on the server** with the well-known dev **HD mnemonic** in **`anvil.ts`**. That flow is **Anvil-first** for capstone safety (deterministic funded accounts). Switching **`NETWORK`** alone does **not** turn on browser **MetaMask** signing — that is a **separate frontend** track (see **`CAPSTONE_TASK_TRACKER.csv`** **F-010**). For Sepolia experiments you must fund the derived signer addresses or expect chain transactions to fail.
+
+**`GET /api/config`** includes **`network`** and **`chainId`** (`31337` for Anvil, `11155111` for Sepolia) for future UI wiring.
 
 ### Root health endpoints (not under `/api`)
 
 | Route | HTTP | Purpose |
 |-------|------|--------|
 | **`GET /health`** | 200 | **Liveness** — process is up (no DB or chain checks). Use for the cheapest probe. |
-| **`GET /ready`** | 200 or 503 | **Readiness** — `PRAGMA quick_check` on SQLite; optional **`eth_chainId`** POST to **`ANVIL_RPC_URL`** (1.5s timeout). Response body: `{ status, db, rpc, timestamp }` where `rpc` is `ok`, `skipped` (**`READY_SKIP_RPC`**, or **RPC not checked when `db` is not `ok`**), or `fail`. **Docker Compose** uses **`/ready`** for the backend **`healthcheck`** so the container is marked healthy only when the DB and (by default) Anvil respond. If probes flap on a slow laptop, increase **`start_period`** / **`retries`** in **`docker-compose.yml`** or set **`READY_SKIP_RPC=1`** only when you intentionally run without JSON-RPC. |
+| **`GET /ready`** | 200 or 503 | **Readiness** — `PRAGMA quick_check` on SQLite; optional **`eth_chainId`** POST to the **configured HTTP RPC** (Anvil or Sepolia per **`NETWORK`**; 1.5s timeout). Response: `{ status, db, rpc, timestamp }`. **Docker Compose** uses **`/ready`** for the backend **`healthcheck`**. Tune **`start_period`** / **`retries`** or **`READY_SKIP_RPC`** as documented above. |
 
 
 ## Documentation
@@ -248,7 +262,7 @@ Team task breakdown lives in **`CAPSTONE_TASK_TRACKER.csv`** (open in Excel). Ea
 | **`better-sqlite3` fails to install** | Use Node 20 LTS; on Windows install **Desktop development with C++** build tools if prebuilds miss. |
 | **Browser `/api` errors** | Confirm backend is on **3847** or change `PORT` and Vite `proxy.target` together. |
 | **`forge` / `forge build` not found** | Install [Foundry](https://book.getfoundry.sh/getting-started/installation) and ensure `forge` is on your `PATH`, then run commands from the **repo root**. |
-| **Chain watcher warnings** | Start **Anvil**; check `ANVIL_RPC_URL` / firewall. The HTTP API can still work for many flows. |
+| **Chain watcher warnings** | Check **`NETWORK`** and RPC env vars (`ANVIL_*` vs `SEPOLIA_*`); ensure the HTTP endpoint is up. The HTTP API can still work for many flows. |
 | **Docker stack** | See **Docker troubleshooting** under [Docker (full stack)](#docker-full-stack). |
 
 ---

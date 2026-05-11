@@ -212,6 +212,7 @@ When RPC/WS to Anvil is up, `watcher.ts` ingests blocks and writes `chain_sync` 
 | Area | Path |
 |------|------|
 | Routes + handlers | `backend/server/app.ts` |
+| Network + RPC resolution | `backend/server/config.ts` |
 | DB schema | `backend/server/db.ts` |
 | Seed | `backend/server/seed.ts` |
 | Masking | `backend/server/resolve.ts` |

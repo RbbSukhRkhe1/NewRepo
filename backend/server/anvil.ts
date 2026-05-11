@@ -1,4 +1,23 @@
 import { ethers, HDNodeWallet } from 'ethers';
+import {
+  chainId,
+  getRpcHttpUrl,
+  getRpcWsUrl,
+  isAnvilDemoNetwork,
+  network,
+} from './config.js';
+import type { VaultexNetwork } from './config.js';
+
+export type { VaultexNetwork };
+export { network, chainId, getRpcHttpUrl, getRpcWsUrl, isAnvilDemoNetwork };
+
+if (network === 'sepolia') {
+  console.warn(
+    '[vaultex] NETWORK=sepolia: HTTP/WebSocket RPCs come from config (Sepolia). ' +
+      'Server-side donate/disburse still use the dev HD wallet in this module — keep demos on NETWORK=anvil unless keys are funded on Sepolia. ' +
+      'MetaMask / browser-side signing is a separate frontend milestone.',
+  );
+}
 
 /** Same mnemonic as Anvil / Hardhat default — dev only. */
 const ANVIL_MNEMONIC =

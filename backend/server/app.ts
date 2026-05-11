@@ -9,13 +9,14 @@ import {
   connectWallet,
   anvilAddress,
 } from './anvil.js';
+import { getRpcHttpUrl, chainId, network } from './config.js';
 import { maskAddr } from './resolve.js';
 import { publishEvent } from './lib/redis.js';
 
 const vaultLower = () => anvilAddress(SUPER_RICH_INDEX).toLowerCase();
 
 function rpcProvider() {
-  return new ethers.JsonRpcProvider(process.env.ANVIL_RPC_URL ?? 'http://127.0.0.1:8545');
+  return new ethers.JsonRpcProvider(getRpcHttpUrl());
 }
 
 function parseOptionalImageUrl(
@@ -138,6 +139,8 @@ export function createApp() {
     res.json({
       superRichAddress: anvilAddress(SUPER_RICH_INDEX),
       superRichMasked: maskAddr(anvilAddress(SUPER_RICH_INDEX)),
+      network,
+      chainId,
     });
   });
 

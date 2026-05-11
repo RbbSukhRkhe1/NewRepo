@@ -1,4 +1,5 @@
 import { db } from './db.js';
+import { getRpcHttpUrl } from './config.js';
 
 export type ReadinessJson = {
   status: 'ok' | 'fail';
@@ -23,7 +24,7 @@ async function checkRpc(): Promise<'ok' | 'skipped' | 'fail'> {
     process.env.READY_SKIP_RPC === '1' || process.env.READY_SKIP_RPC === 'true';
   if (skip) return 'skipped';
 
-  const url = process.env.ANVIL_RPC_URL ?? 'http://127.0.0.1:8545';
+  const url = getRpcHttpUrl();
   try {
     const res = await fetch(url, {
       method: 'POST',
@@ -46,8 +47,8 @@ async function checkRpc(): Promise<'ok' | 'skipped' | 'fail'> {
   }
 }
 
-/** Readiness for orchestrators (DB + optional JSON-RPC). Not for cheap liveness — use GET /health. */
-/** When the DB is unhealthy we do not call RPC (avoids extra latency and misleading rpc: "ok"). */
+/** Readiness for orchestrators (DB + optional JSON-RPC). Not for cheap liveness — use GET /health.
+ * When the DB is unhealthy we do not call RPC (avoids extra latency and misleading rpc: "ok"). */
 export async function getReadiness(): Promise<ReadinessJson> {
   const dbStatus = checkDb();
   const rpcStatus = dbStatus === 'ok' ? await checkRpc() : 'skipped';
