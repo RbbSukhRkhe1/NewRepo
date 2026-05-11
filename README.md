@@ -13,7 +13,7 @@ The codebase name in `package.json` is `live-tx-ledger`; product name in the UI 
 | **Frontend** | React 19, TypeScript, Vite 8, Tailwind CSS 4, React Router |
 | **Backend** | Express 5, `better-sqlite3`, cookie sessions, bcrypt, ethers v6 |
 | **Chain (local dev)** | [Anvil](https://book.getfoundry.sh/reference/anvil/) — JSON-RPC + WebSocket for the block watcher |
-| **Contracts** | Foundry-style layout under `blockchain/` (see note below) |
+| **Contracts** | Foundry at **repo root** (`foundry.toml`) — sources in `blockchain/src/`, libs in `blockchain/lib/` |
 
 ---
 
@@ -23,9 +23,43 @@ The codebase name in `package.json` is `live-tx-ledger`; product name in the UI 
 |------|------|
 | `frontend/` | SPA: causes, donate flow, ledger, account, admin |
 | `backend/server/` | REST API, SQLite schema, seeding, chain watcher |
-| `blockchain/` | Forge artifacts, `lib/` (OpenZeppelin, forge-std), `broadcast/`, `cache/`, `out/` |
+| `blockchain/` | Solidity contracts (`src/`), deploy scripts (`script/`), tests (`test/`), vendored **`lib/`** (forge-std, OpenZeppelin) |
+| `foundry.toml` | Foundry project config (paths point into `blockchain/`) |
+| `remappings.txt` | Import remappings (`forge-std`, `@openzeppelin/contracts`) |
 
-**Note:** The repo currently has **build/deploy outputs** under `blockchain/` but no top-level `foundry.toml` / `src/` in this snapshot. To compile from source you may need to restore or add contract sources and a root Foundry config; `forge build` in `blockchain/` may not succeed until that exists.
+**Build outputs** (`blockchain/out/`, `blockchain/cache/`) and **deployment receipts** (`broadcast/` at repo root after `forge script --broadcast`) are **gitignored** — run `forge build` / deploy locally to regenerate.
+
+### Smart contracts (Foundry)
+
+[Install Foundry](https://book.getfoundry.sh/getting-started/installation) so `forge` and `anvil` are on your `PATH`.
+
+From the **repository root**:
+
+```bash
+forge build          # compile blockchain/src + script + test
+forge test           # run Solidity tests
+```
+
+**Deploy `VaultexVault` to local Anvil** (start `anvil` in another terminal first):
+
+```bash
+forge script blockchain/script/Deploy.s.sol:Deploy \
+  --rpc-url http://127.0.0.1:8545 \
+  --broadcast
+```
+
+By default the script uses **Anvil account #0**’s well-known dev private key (override with `PRIVATE_KEY` in the environment). The console prints **`VaultexVault: 0x…`** and **`Owner: 0x…`**.
+
+**Contract address → backend env (optional, future wiring):**
+
+1. Copy the **`VaultexVault:`** line from the terminal, **or** open  
+   `broadcast/Deploy.s.sol/<chainId>/run-latest.json`  
+   (created at the **repository root** next to `foundry.toml` after `--broadcast`; gitignored until you deploy).
+2. Add to `backend/.env` (see `backend/.env.example`):
+
+   `VAULTEX_VAULT_ADDRESS=0xYourDeployedAddress`
+
+The current app still routes donations to the **Anvil EOA vault** (`SUPER_RICH_INDEX` in `backend/server/anvil.ts`); linking the API to this contract would be a separate integration task.
 
 ---
 
@@ -45,7 +79,8 @@ API routes are mounted under **`/api`** (see `backend/server/app.ts`).
 ## Prerequisites
 
 - **Node.js** 20+ and **npm**
-- **Optional:** [Foundry](https://book.getfoundry.sh/getting-started/installation) + **Anvil** on `http://127.0.0.1:8545` for chain-linked features and the watcher (without it the API still runs; the watcher may skip or log connection issues).
+- **Foundry** (`forge`, `cast`, optional `anvil`) — [installation](https://book.getfoundry.sh/getting-started/installation)
+- **Optional:** run **`anvil`** on `http://127.0.0.1:8545` for chain-linked features and the watcher (without it the API still runs; the watcher may skip or log connection issues).
 
 ---
 
@@ -114,6 +149,7 @@ Create **`backend/.env`** if you need overrides (loaded via `dotenv` from `backe
 | Doc | Description |
 |-----|---------------|
 | [docs/README.md](docs/README.md) | Index of all docs |
+| [blockchain/README.md](blockchain/README.md) | Solidity / Foundry layout inside `blockchain/` |
 | [docs/FEATURES.md](docs/FEATURES.md) | Shipped features vs backlog (audit) |
 | [docs/DEMO.md](docs/DEMO.md) | ~7 min demo script + slide outline |
 | [docs/PRIVACY.md](docs/PRIVACY.md) | Masking, roles, data handling |
@@ -146,6 +182,7 @@ Team task breakdown lives in **`CAPSTONE_TASK_TRACKER.csv`** (open in Excel). Ea
 |-------|-------------|
 | **`better-sqlite3` fails to install** | Use Node 20 LTS; on Windows install **Desktop development with C++** build tools if prebuilds miss. |
 | **Browser `/api` errors** | Confirm backend is on **3847** or change `PORT` and Vite `proxy.target` together. |
+| **`forge` / `forge build` not found** | Install [Foundry](https://book.getfoundry.sh/getting-started/installation) and ensure `forge` is on your `PATH`, then run commands from the **repo root**. |
 | **Chain watcher warnings** | Start **Anvil**; check `ANVIL_RPC_URL` / firewall. The HTTP API can still work for many flows. |
 
 ---

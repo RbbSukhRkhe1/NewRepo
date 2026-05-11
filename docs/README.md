@@ -4,6 +4,7 @@ Task ownership and priorities: **`../CAPSTONE_TASK_TRACKER.csv`** (repo root). C
 
 | Doc | Purpose |
 |-----|---------|
+| [blockchain/README.md](blockchain/README.md) | Short pointer for Solidity layout |
 | [FEATURES.md](./FEATURES.md) | Shipped vs not shipped (API, UI, data model) |
 | [DEMO.md](./DEMO.md) | ~7 minute demo script and slide outline |
 | [PRIVACY.md](./PRIVACY.md) | Masking, roles, data handling (aligns with current backend) |

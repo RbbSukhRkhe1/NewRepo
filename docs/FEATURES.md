@@ -39,6 +39,11 @@ This document reflects the **monolith** in `frontend/` + `backend/server/` as of
 
 `users`, `causes`, `ledger_entries` — see `backend/server/db.ts`.
 
+## Smart contracts (Foundry, repo root)
+
+- **`foundry.toml`** + **`remappings.txt`** at monorepo root; sources under **`blockchain/src/`** (e.g. `VaultexVault.sol`), deploy **`blockchain/script/Deploy.s.sol`**, tests **`blockchain/test/`**, libs **`blockchain/lib/`**.
+- Run **`forge build`** / **`forge test`** from the **repository root**. Build outputs under `blockchain/out/` (gitignored until you compile).
+
 ## Not shipped (see `CAPSTONE_TASK_TRACKER.csv`)
 
-Examples: journey-by-tx API, strict public masking audit, PDF receipts, WS live ledger, microservices split, CI/CD, E2E tests, MetaMask testnet toggle, NFT receipts, etc.
+Examples: journey-by-tx API, strict public masking audit, PDF receipts, WS live ledger, microservices split, CI/CD, E2E tests, MetaMask testnet toggle, NFT receipts, backend wiring to `VAULTEX_VAULT_ADDRESS`, etc.

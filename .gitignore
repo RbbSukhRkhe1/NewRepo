@@ -24,3 +24,8 @@ backend/server/data/*.db-*
 *.njsproj
 *.sln
 *.sw?
+
+# Foundry (regenerable; keep repo clean — remove these lines if you want to commit deployment receipts)
+blockchain/cache/
+blockchain/out/
+broadcast/

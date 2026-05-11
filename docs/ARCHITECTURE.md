@@ -81,3 +81,6 @@ When `ANVIL_WS_URL` / RPC is reachable, the watcher subscribes to new blocks and
 | Entry + watcher start | `backend/server/index.ts` |
 | SPA routes | `frontend/src/App.tsx` |
 | API client | `frontend/src/lib/api.ts` |
+| Foundry config | `foundry.toml`, `remappings.txt` (repo root) |
+| Solidity vault (demo) | `blockchain/src/VaultexVault.sol` |
+| Deploy script | `blockchain/script/Deploy.s.sol` |
