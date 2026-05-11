@@ -1,0 +1,44 @@
+# Vaultex — feature inventory (shipped vs roadmap)
+
+This document reflects the **monolith** in `frontend/` + `backend/server/` as of the last manual audit. Update when major behavior changes.
+
+## Shipped — backend (Express, `/api`)
+
+| Feature | Routes / behavior |
+|---------|-------------------|
+| Public config | `GET /config` — vault address + masked |
+| Overview stats | `GET /overview` — cause aggregates, ledger sums, optional vault balance |
+| Auth | `POST /auth/login`, `POST /auth/logout`, `POST /auth/register`, `GET /auth/me` |
+| Users (admin) | `GET /users` |
+| Causes | `GET /causes`, `GET /causes/:id`, `POST /causes` (admin) |
+| Donate | `POST /donate` (signed-in + Anvil wallet) → chain tx + ledger + cause `raised_eth` |
+| Disburse | `POST /disburse` (admin) → chain tx + ledger |
+| Public ledger | `GET /ledger` (up to 500 rows, masked + display names) |
+| User history | `GET /me/history` — entries involving user address + summary |
+| Balance | `GET /balance/:anvilIndex` (0–9) |
+| Health | `GET /health` (root app, not under `/api`) |
+| Chain watcher | Optional WebSocket ingest → `chain_sync` ledger rows when Anvil up |
+| Seeding | First-run users + `seedCausesUpsert` for five marketing causes |
+
+## Shipped — frontend (React Router)
+
+| Route | Purpose |
+|-------|---------|
+| `/` | Home |
+| `/login`, `/register` | Auth |
+| `/causes`, `/causes/:id` | Browse / detail |
+| `/causes/new`, `/admin/causes/new` | New cause (auth / admin) |
+| `/donate` | Donation flow |
+| `/ledger` | Public ledger UI |
+| `/account` | Account + admin disburse tooling |
+| `/admin/users` | Admin user list |
+
+**UX:** Layout nav, dark/light theme persistence, admin dropdown.
+
+## Data model (SQLite)
+
+`users`, `causes`, `ledger_entries` — see `backend/server/db.ts`.
+
+## Not shipped (see `CAPSTONE_TASK_TRACKER.csv`)
+
+Examples: journey-by-tx API, strict public masking audit, PDF receipts, WS live ledger, microservices split, CI/CD, E2E tests, MetaMask testnet toggle, NFT receipts, etc.

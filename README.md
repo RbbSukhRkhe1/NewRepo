@@ -114,6 +114,7 @@ Create **`backend/.env`** if you need overrides (loaded via `dotenv` from `backe
 | Doc | Description |
 |-----|---------------|
 | [docs/README.md](docs/README.md) | Index of all docs |
+| [docs/FEATURES.md](docs/FEATURES.md) | Shipped features vs backlog (audit) |
 | [docs/DEMO.md](docs/DEMO.md) | ~7 min demo script + slide outline |
 | [docs/PRIVACY.md](docs/PRIVACY.md) | Masking, roles, data handling |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Context + Mermaid sequences |
@@ -135,7 +136,7 @@ Create **`backend/.env`** if you need overrides (loaded via `dotenv` from `backe
 
 ## Capstone planning
 
-Team task breakdown (owners, priorities, descriptions, and copy-paste prompts) lives in **`CAPSTONE_TASK_TRACKER.csv`** — open in Excel or any spreadsheet tool.
+Team task breakdown lives in **`CAPSTONE_TASK_TRACKER.csv`** (open in Excel). Each row includes **Description** (short outcome), **Detailed_Prompt** (handoff for implementers or AI), story points, and assignee.
 
 ---
 
