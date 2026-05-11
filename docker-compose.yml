@@ -1,0 +1,8 @@
+# Local infrastructure (dev). Extend with api, web, anvil, etc. as needed.
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    # No RDB snapshots, no AOF — ephemeral dev cache / pub-sub only
+    command: ["redis-server", "--save", "", "--appendonly", "no"]

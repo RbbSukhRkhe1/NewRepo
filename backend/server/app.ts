@@ -10,6 +10,7 @@ import {
   anvilAddress,
 } from './anvil.js';
 import { maskAddr } from './resolve.js';
+import { publishEvent } from './lib/redis.js';
 
 const vaultLower = () => anvilAddress(SUPER_RICH_INDEX).toLowerCase();
 
@@ -429,6 +430,12 @@ export function createApp() {
         parseFloat(valueEthStr),
         cause.id
       );
+      void publishEvent('donation.created', {
+        txHash: tx.hash,
+        amountEth: valueEthStr,
+        causeId: cause.id,
+        userId: u.id,
+      });
       res.json({ txHash: tx.hash, amountEth: valueEthStr, causeId: cause.id });
     } catch (e: unknown) {
       console.error(e);
@@ -490,6 +497,12 @@ export function createApp() {
         beneficiary.name,
         cn
       );
+      void publishEvent('disbursement.created', {
+        txHash: tx.hash,
+        amountEth: valueEthStr,
+        beneficiaryUserId: beneficiary.id,
+        causeName: cn,
+      });
       res.json({ txHash: tx.hash, amountEth: valueEthStr });
     } catch (e: unknown) {
       console.error(e);

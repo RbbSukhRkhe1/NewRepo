@@ -11,7 +11,7 @@ The codebase name in `package.json` is `live-tx-ledger`; product name in the UI 
 | Area | Stack |
 |------|--------|
 | **Frontend** | React 19, TypeScript, Vite 8, Tailwind CSS 4, React Router |
-| **Backend** | Express 5, `better-sqlite3`, cookie sessions, bcrypt, ethers v6 |
+| **Backend** | Express 5, `better-sqlite3`, cookie sessions, bcrypt, ethers v6, **ioredis** (optional pub/sub) |
 | **Chain (local dev)** | [Anvil](https://book.getfoundry.sh/reference/anvil/) — JSON-RPC + WebSocket for the block watcher |
 | **Contracts** | Foundry at **repo root** (`foundry.toml`) — sources in `blockchain/src/`, libs in `blockchain/lib/` |
 
@@ -114,6 +114,20 @@ npm run dev
 
 ---
 
+## Docker (Redis for dev)
+
+The repo includes a minimal **`docker-compose.yml`** with **Redis** on **`6379`** (no disk persistence — suitable for local pub/sub only).
+
+```bash
+docker compose up -d redis
+```
+
+Set **`REDIS_URL=redis://localhost:6379`** in `backend/.env` (default matches this). The API publishes **`donation.created`** and **`disbursement.created`** events after successful writes; see **[docs/REDIS_EVENTS.md](docs/REDIS_EVENTS.md)** for the envelope schema.
+
+To disable Redis (no broker running), set **`REDIS_DISABLED=1`** in `backend/.env`.
+
+---
+
 ## Demo / seeded accounts
 
 On first run with an **empty** database, the API seeds demo users and causes. **Every seeded account uses the same password:**
@@ -140,6 +154,9 @@ Create **`backend/.env`** if you need overrides (loaded via `dotenv` from `backe
 | `SQLITE_PATH` | SQLite file | `backend/server/data/donate.db` (under `server/data/`) |
 | `ANVIL_RPC_URL` | HTTP JSON-RPC | `http://127.0.0.1:8545` |
 | `ANVIL_WS_URL` | WebSocket for logs | Derived from `ANVIL_RPC_URL` (`http` → `ws`) |
+| `REDIS_URL` | Redis for pub/sub events | `redis://localhost:6379` |
+| `REDIS_EVENTS_CHANNEL` | Channel name for `publishEvent` | `vaultex:events` |
+| `REDIS_DISABLED` | Skip Redis (no-op publish) | unset |
 | `SESSION_SECRET` | Session cookie signing | dev fallback in code (set in production) |
 
 ---
@@ -157,6 +174,7 @@ Create **`backend/.env`** if you need overrides (loaded via `dotenv` from `backe
 | [docs/COMPARATIVE.md](docs/COMPARATIVE.md) | Positioning vs other approaches |
 | [docs/USER_TESTING.md](docs/USER_TESTING.md) | Usability session template + results table |
 | [docs/ANVIL_STATE.md](docs/ANVIL_STATE.md) | Saving / restoring local Anvil state |
+| [docs/REDIS_EVENTS.md](docs/REDIS_EVENTS.md) | Redis pub/sub envelope schema and dev commands |
 
 ---
 

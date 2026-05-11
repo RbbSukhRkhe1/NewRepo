@@ -1,0 +1,22 @@
+openapi: 3.0.3
+info:
+  title: Vaultex Causes Service (stub)
+  version: 0.0.0
+  description: Target bounded context — causes CRUD, raised_eth updates, public catalog.
+servers:
+  - url: http://127.0.0.1:3003
+    description: Internal (placeholder)
+paths:
+  /health:
+    get:
+      summary: Service health
+      responses:
+        '200':
+          description: OK
+  /v1/causes:
+    get:
+      summary: List active causes — stub
+      responses:
+        '200':
+          description: OK
+components: {}

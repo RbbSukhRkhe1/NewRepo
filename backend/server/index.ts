@@ -2,6 +2,7 @@ import 'dotenv/config';
 import { createApp } from './app.js';
 import { seedIfEmpty } from './seed.js';
 import { startChainWatcherSafe } from './watcher.js';
+import { closeRedis } from './lib/redis.js';
 
 let stopWatcher: () => void = () => {};
 
@@ -25,7 +26,7 @@ void main().catch((e) => {
 
 function shutdown() {
   stopWatcher();
-  process.exit(0);
+  void closeRedis().finally(() => process.exit(0));
 }
 process.on('SIGINT', shutdown);
 process.on('SIGTERM', shutdown);

@@ -1,0 +1,22 @@
+openapi: 3.0.3
+info:
+  title: Vaultex Blockchain Service (stub)
+  version: 0.0.0
+  description: Target bounded context — Anvil/Hardhat RPC, block watcher, tx broadcast helpers.
+servers:
+  - url: http://127.0.0.1:3005
+    description: Internal (placeholder)
+paths:
+  /health:
+    get:
+      summary: Service health
+      responses:
+        '200':
+          description: OK
+  /v1/rpc/status:
+    get:
+      summary: RPC reachability — stub
+      responses:
+        '200':
+          description: OK
+components: {}
