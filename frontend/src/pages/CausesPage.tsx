@@ -176,11 +176,7 @@ function CauseCard({
 
   return (
     <article
-      className={`rounded-3xl border p-6 backdrop-blur-xl md:p-7 ${
-        isLightMode
-          ? 'bg-[linear-gradient(165deg,rgba(252,254,255,0.98),rgba(241,247,253,0.92))]'
-          : 'bg-[linear-gradient(165deg,rgba(16,29,48,0.9),rgba(10,20,34,0.88))]'
-      } ${tagStyle(cause.accent, 'frame', isLightMode)}`}
+      className={`vtx-surface rounded-3xl border p-6 md:p-7 ${tagStyle(cause.accent, 'frame', isLightMode)}`}
     >
       <div className="mb-4 flex items-center justify-between">
         <p className={`text-[10px] font-semibold uppercase tracking-[0.25em] ${accentText}`}>{cause.sectionLabel}</p>
@@ -192,11 +188,7 @@ function CauseCard({
       </div>
 
       <div className="grid gap-4 md:grid-cols-[minmax(0,11rem)_minmax(0,230px)_1fr] md:gap-6">
-        <div
-          className={`relative aspect-[4/3] w-full overflow-hidden rounded-2xl border md:aspect-auto md:min-h-[11rem] ${
-            isLightMode ? 'border-slate-200/80 bg-slate-100' : 'border-white/10 bg-slate-950/60'
-          }`}
-        >
+        <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-[var(--glass-border)] bg-[var(--overlay-surface-soft)] md:aspect-auto md:min-h-[11rem]">
           {showHero ? (
             <img
               src={imageUrl!}
@@ -213,7 +205,7 @@ function CauseCard({
           )}
         </div>
 
-        <div className={`rounded-2xl border p-5 ${tagStyle(cause.accent, 'story', isLightMode)}`}>
+        <div className={`vtx-glass-inset p-5 ${tagStyle(cause.accent, 'story', isLightMode)}`}>
           <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--text-muted-1)]">Impact story</p>
           <h3 className="mt-2 text-xl font-semibold leading-tight text-[var(--text-high-3)]">{cause.storyTitle}</h3>
           <p className="mt-2 text-sm leading-7 text-[var(--text-muted-1)]">{cause.storyBody}</p>
@@ -226,8 +218,8 @@ function CauseCard({
             <span
               className={`rounded-full px-2.5 py-1 ${
                 isLightMode
-                  ? 'border border-[rgba(164,184,207,0.42)] bg-white/80 text-[var(--text-muted-1)]'
-                  : 'border border-white/10 bg-white/[0.03] text-[var(--text-muted-2)]'
+                  ? 'border border-[var(--glass-border)] bg-white/60 text-[var(--text-muted-1)]'
+                  : 'border border-[var(--glass-border)] bg-[var(--overlay-surface-soft)] text-[var(--text-muted-2)]'
               }`}
             >
               {cause.donors} donors
@@ -235,8 +227,8 @@ function CauseCard({
             <span
               className={`rounded-full px-2.5 py-1 ${
                 isLightMode
-                  ? 'border border-[rgba(164,184,207,0.42)] bg-white/80 text-[var(--text-muted-1)]'
-                  : 'border border-white/10 bg-white/[0.03] text-[var(--text-muted-2)]'
+                  ? 'border border-[var(--glass-border)] bg-white/60 text-[var(--text-muted-1)]'
+                  : 'border border-[var(--glass-border)] bg-[var(--overlay-surface-soft)] text-[var(--text-muted-2)]'
               }`}
             >
               {cause.daysLeft} days left
@@ -244,8 +236,8 @@ function CauseCard({
             <span
               className={`rounded-full px-2.5 py-1 ${
                 isLightMode
-                  ? 'border border-[rgba(164,184,207,0.42)] bg-white/80 text-[var(--text-muted-1)]'
-                  : 'border border-white/10 bg-white/[0.03] text-[var(--text-muted-2)]'
+                  ? 'border border-[var(--glass-border)] bg-white/60 text-[var(--text-muted-1)]'
+                  : 'border border-[var(--glass-border)] bg-[var(--overlay-surface-soft)] text-[var(--text-muted-2)]'
               }`}
             >
               {cause.locationTag}
@@ -253,8 +245,8 @@ function CauseCard({
             <span
               className={`rounded-full px-2.5 py-1 ${
                 isLightMode
-                  ? 'border border-[rgba(164,184,207,0.42)] bg-white/80 text-[var(--text-muted-1)]'
-                  : 'border border-white/10 bg-white/[0.03] text-[var(--text-muted-2)]'
+                  ? 'border border-[var(--glass-border)] bg-white/60 text-[var(--text-muted-1)]'
+                  : 'border border-[var(--glass-border)] bg-[var(--overlay-surface-soft)] text-[var(--text-muted-2)]'
               }`}
             >
               {cause.categoryTag}

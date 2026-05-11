@@ -125,7 +125,7 @@ export function DonationPage() {
         <SurfaceCard
           className={`mt-3 p-3.5 sm:p-4 ${
             isLightMode
-              ? 'relative isolate overflow-hidden rounded-2xl border-emerald-400/35 bg-[linear-gradient(165deg,#f8fafc_0%,#ecfdf5_42%,#f0fdfa_100%)] shadow-[0_20px_50px_-38px_rgba(6,95,70,0.35),inset_0_1px_0_rgba(255,255,255,0.85)] ring-1 ring-emerald-500/20'
+              ? 'relative isolate overflow-hidden rounded-2xl ring-1 ring-emerald-500/12'
               : ''
           }`}
         >
@@ -157,14 +157,12 @@ export function DonationPage() {
                 key={cause.id}
                 type="button"
                 onClick={() => setSelectedCauseId(cause.id)}
-                className={`rounded-2xl border p-3 text-left transition ${
+                className={`vtx-glass-inset p-3 text-left transition ${
                   active
                     ? isLightMode
-                      ? 'border-emerald-500/45 bg-[linear-gradient(155deg,rgba(236,253,245,0.98)_0%,rgba(209,250,229,0.92)_100%)] shadow-[0_12px_28px_-18px_rgba(5,100,75,0.28)] ring-1 ring-emerald-400/25'
-                      : 'border-[var(--border-accent-soft)] bg-[color:rgb(34_197_94_/_0.14)]'
-                    : isLightMode
-                      ? 'border-slate-200/90 bg-white/75 shadow-[0_8px_26px_-24px_rgba(15,23,42,0.22)] hover:border-emerald-300/55 hover:bg-emerald-50/55 hover:shadow-[0_12px_32px_-22px_rgba(5,100,75,0.18)]'
-                      : 'border-[var(--border-chrome-1)] bg-[var(--overlay-surface-soft)] hover:border-[var(--border-chrome-3)]'
+                      ? 'ring-2 ring-emerald-500/25'
+                      : 'border-[var(--border-accent-soft)] bg-[color:rgb(34_197_94_/_0.12)]'
+                    : 'hover:border-[var(--border-chrome-4)]'
                 }`}
               >
                 <p className="line-clamp-1 font-semibold text-[var(--text-high-3)]">{cause.title}</p>
@@ -174,7 +172,7 @@ export function DonationPage() {
                 </p>
                 <div className="mt-1 h-1.5 rounded-full bg-[var(--bg-depth-1)]">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-[var(--accent-deep-1)] to-[var(--accent-bright-2)]"
+                    className="h-full rounded-full bg-[var(--accent-core)] opacity-90"
                     style={{ width: `${pct}%` }}
                   />
                 </div>
@@ -205,7 +203,7 @@ export function DonationPage() {
         <SurfaceCard
           className={`rounded-3xl p-4 sm:p-5 ${
             isLightMode
-              ? 'relative isolate overflow-hidden border-emerald-400/30 bg-[linear-gradient(168deg,#ffffff_0%,#f1f5f9_38%,#ecfdf5_100%)] shadow-[0_24px_56px_-40px_rgba(15,23,42,0.32),inset_0_1px_0_rgba(255,255,255,0.95)] ring-1 ring-slate-200/70'
+              ? 'relative isolate overflow-hidden ring-1 ring-slate-200/50'
               : ''
           }`}
         >

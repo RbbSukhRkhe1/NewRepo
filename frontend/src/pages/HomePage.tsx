@@ -462,47 +462,31 @@ export function HomePage() {
           <div className="mt-8 grid gap-5 text-left md:grid-cols-3">
             <Link
               to="/causes"
-              className={`group relative isolate flex min-h-[270px] flex-col overflow-hidden rounded-3xl p-8 transition duration-500 ease-out hover:-translate-y-1.5 hover:scale-[1.015] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(42,216,178,0.45)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] ${
-                isLightMode
-                  ? 'border-2 border-teal-600/38 bg-[linear-gradient(168deg,#c8eae4_0%,#aedfd6_46%,#d4f4ee_100%)] shadow-[0_16px_40px_rgba(16,107,96,0.2),inset_0_1px_0_rgba(255,255,255,0.88),inset_0_-1px_0_rgba(15,118,107,0.06)] backdrop-blur-sm hover:border-teal-600/55 hover:shadow-[0_24px_52px_rgba(16,112,101,0.26)]'
-                  : 'before:pointer-events-none before:absolute before:inset-0 before:z-0 before:rounded-[inherit] before:bg-[radial-gradient(ellipse_112%_70%_at_15%_-8%,rgba(56,246,220,0.28),transparent_58%)] before:opacity-[0.85] before:[content:_""] border border-teal-300/35 bg-[linear-gradient(168deg,rgba(16,62,74,0.42),rgba(8,34,54,0.28)_55%,rgba(6,20,42,0.38))] shadow-[0_16px_40px_rgba(0,4,14,0.55),inset_0_1px_0_rgba(255,255,255,0.08),inset_0_0_0_1px_rgba(94,246,222,0.08),0_0_52px_rgba(45,245,205,0.14)] backdrop-blur-[22px] after:pointer-events-none after:absolute after:inset-0 after:z-0 after:rounded-[inherit] after:bg-[radial-gradient(ellipse_85%_45%_at_100%_115%,rgba(45,235,218,0.12),transparent_65%)] after:opacity-90 after:[content:_""] hover:border-teal-200/48 hover:shadow-[0_22px_52px_rgba(0,4,14,0.58),inset_0_1px_0_rgba(255,255,255,0.1),0_0_72px_rgba(45,245,205,0.22)]'
-              }`}
+              className="group relative isolate flex min-h-[270px] flex-col overflow-hidden rounded-3xl p-8 transition duration-300 ease-out hover:-translate-y-1 hover:shadow-[var(--elevation-2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] vtx-surface"
             >
               <span
-                className={`pointer-events-none absolute -right-24 top-24 h-[11rem] w-[11rem] rounded-full blur-3xl ${
-                  isLightMode ? 'bg-teal-500/[0.32]' : 'bg-teal-400/18 opacity-75'
-                }`}
+                className={`pointer-events-none absolute -right-24 top-24 h-[11rem] w-[11rem] rounded-full blur-3xl ${isLightMode ? 'bg-teal-500/[0.18]' : 'bg-teal-400/10 opacity-80'}`}
                 aria-hidden
               />
               <div
-                className={`relative z-[1] mb-6 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border backdrop-blur-sm ${
-                  isLightMode
-                    ? 'border-teal-700/38 bg-gradient-to-br from-white via-teal-50 to-teal-100/98 text-teal-950 shadow-[0_12px_28px_rgba(15,118,107,0.22),inset_0_1px_0_rgba(255,255,255,0.96)] ring-2 ring-teal-500/40'
-                    : 'border-teal-200/28 bg-teal-200/[0.09] text-teal-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_0_28px_rgba(45,245,206,0.35),0_0_54px_rgba(45,220,215,0.15)] ring-1 ring-teal-200/14'
-                }`}
+                className={`relative z-[1] mb-6 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border ${isLightMode ? 'border-teal-700/35 bg-white/70 text-teal-950' : 'border-teal-200/20 bg-white/[0.06] text-teal-100'} shadow-[var(--elevation-1)]`}
               >
                 <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6 fill-current">
                   <path d="M12 3l8 4v5c0 5.25-3.45 8.71-8 10-4.55-1.29-8-4.75-8-10V7l8-4zm0 2.18L6 8v4c0 4.13 2.54 6.98 6 8.12 3.46-1.14 6-3.99 6-8.12V8l-6-2.82z" />
                 </svg>
               </div>
-              <span className={`absolute inset-x-6 top-0 z-[1] h-px bg-gradient-to-r ${isLightMode ? 'from-transparent via-teal-700/55 to-transparent' : 'from-transparent via-teal-200/40 to-transparent'}`} />
               <h3
-                className={`relative z-[1] text-2xl font-bold ${isLightMode ? 'text-[#053535]' : 'text-[#d8fff6]'}`}
-                style={
-                  !isLightMode ? { textShadow: '0 0 38px rgba(45,245,206,0.18)' } : undefined
-                }
+                className={`relative z-[1] text-2xl font-bold ${isLightMode ? 'text-[var(--text-high-3)]' : 'text-[var(--text-high-3)]'}`}
               >
                 Browse Causes
               </h3>
               <p
-                className={`relative z-[1] mt-3 text-sm font-medium leading-relaxed ${
-                  isLightMode ? 'text-[#0f3836]' : 'text-white/73'
-                }`}
+                className={`relative z-[1] mt-3 text-sm font-medium leading-relaxed ${isLightMode ? 'text-slate-700' : 'text-[var(--text-muted-1)]'}`}
               >
                 Discover verified projects with clear goals, transparent budgets, and measurable impact.
               </p>
               <span
-                className="relative z-[1] invisible mt-auto self-end text-4xl font-semibold text-[#2af4bf] transition-transform duration-300 group-hover:translate-x-2"
+                className="relative z-[1] mt-auto self-end text-3xl font-semibold text-[var(--accent-bright-2)] transition-transform duration-200 group-hover:translate-x-1"
                 aria-hidden="true"
               >
                 →
@@ -511,45 +495,31 @@ export function HomePage() {
 
             <Link
               to="/donate"
-              className={`group relative isolate flex min-h-[270px] flex-col overflow-hidden rounded-3xl p-8 transition duration-500 ease-out hover:-translate-y-1.5 hover:scale-[1.015] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(192,138,255,0.5)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] ${
-                isLightMode
-                  ? 'border-2 border-violet-600/40 bg-[linear-gradient(170deg,#e1d9ff_0%,#cbc0ff_44%,#e8e4ff_100%)] shadow-[0_16px_40px_rgba(91,71,154,0.22),inset_0_1px_0_rgba(255,255,255,0.82),inset_0_-1px_0_rgba(109,71,212,0.07)] backdrop-blur-sm hover:border-violet-700/52 hover:shadow-[0_24px_52px_rgba(88,64,164,0.28)]'
-                  : 'before:pointer-events-none before:absolute before:inset-0 before:z-0 before:rounded-[inherit] before:bg-[radial-gradient(ellipse_118%_68%_at_85%_-6%,rgba(196,138,255,0.3),transparent_58%)] before:opacity-[0.88] before:[content:_""] border border-violet-400/38 bg-[linear-gradient(170deg,rgba(52,24,92,0.44),rgba(28,14,62,0.32)_52%,rgba(18,12,52,0.4))] shadow-[0_16px_40px_rgba(4,0,22,0.58),inset_0_1px_0_rgba(255,255,255,0.07),inset_0_0_0_1px_rgba(199,154,255,0.1),0_0_56px_rgba(183,111,255,0.14)] backdrop-blur-[22px] after:pointer-events-none after:absolute after:inset-0 after:z-0 after:rounded-[inherit] after:bg-[radial-gradient(ellipse_80%_50%_at_12%_108%,rgba(170,118,248,0.14),transparent_62%)] after:[content:_""] hover:border-violet-300/50 hover:shadow-[0_22px_52px_rgba(5,2,26,0.6),inset_0_1px_0_rgba(255,255,255,0.09),0_0_74px_rgba(183,111,255,0.24)]'
-              }`}
+              className="group relative isolate flex min-h-[270px] flex-col overflow-hidden rounded-3xl p-8 transition duration-300 ease-out hover:-translate-y-1 hover:shadow-[var(--elevation-2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] vtx-surface"
             >
               <span
-                className={`pointer-events-none absolute -left-28 bottom-0 h-[12rem] w-[12rem] rounded-full blur-3xl ${isLightMode ? 'bg-violet-500/[0.35]' : 'bg-violet-500/22 opacity-[0.82]'}`}
+                className={`pointer-events-none absolute -left-28 bottom-0 h-[12rem] w-[12rem] rounded-full blur-3xl ${isLightMode ? 'bg-violet-500/[0.18]' : 'bg-violet-500/12 opacity-85'}`}
                 aria-hidden
               />
               <div
-                className={`relative z-[1] mb-6 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border backdrop-blur-sm ${
-                  isLightMode
-                    ? 'border-violet-800/34 bg-gradient-to-br from-white via-violet-100 to-violet-200/92 text-[#391f6b] shadow-[0_12px_28px_rgba(91,71,154,0.24),inset_0_1px_0_rgba(255,255,255,0.94)] ring-2 ring-violet-500/45'
-                    : 'border-violet-300/38 bg-violet-300/[0.09] text-violet-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_0_34px_rgba(198,154,255,0.4),0_0_62px_rgba(160,112,246,0.16)] ring-1 ring-violet-300/18'
-                }`}
+                className={`relative z-[1] mb-6 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border ${isLightMode ? 'border-violet-800/25 bg-white/70 text-[#391f6b]' : 'border-violet-300/22 bg-white/[0.06] text-violet-50'} shadow-[var(--elevation-1)]`}
               >
                 <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6 fill-current">
                   <path d="M17 8V7a5 5 0 10-10 0v1H5v13h14V8h-2zm-8 0V7a3 3 0 016 0v1H9zm3 8.8a2.2 2.2 0 112.2-2.2A2.2 2.2 0 0112 16.8z" />
                 </svg>
               </div>
-              <span className={`absolute inset-x-6 top-0 z-[1] h-px bg-gradient-to-r ${isLightMode ? 'from-transparent via-violet-800/48 to-transparent' : 'from-transparent via-violet-200/45 to-transparent'}`} />
               <h3
-                className={`relative z-[1] text-2xl font-bold ${isLightMode ? 'text-[#2a1855]' : 'text-[#f3eaff]'}`}
-                style={
-                  !isLightMode ? { textShadow: '0 0 36px rgba(198,154,255,0.2)' } : undefined
-                }
+                className="relative z-[1] text-2xl font-bold text-[var(--text-high-3)]"
               >
                 Donate Securely
               </h3>
               <p
-                className={`relative z-[1] mt-3 text-sm font-medium leading-relaxed ${
-                  isLightMode ? 'text-[#38285d]' : 'text-white/72'
-                }`}
+                className={`relative z-[1] mt-3 text-sm font-medium leading-relaxed ${isLightMode ? 'text-slate-700' : 'text-[var(--text-muted-1)]'}`}
               >
                 Connect your wallet and send ETH directly. Receive instant on-chain proof of your donation.
               </p>
               <span
-                className="relative z-[1] invisible mt-auto self-end text-4xl font-semibold text-[#c782ff] transition-transform duration-300 group-hover:translate-x-2"
+                className="relative z-[1] mt-auto self-end text-3xl font-semibold text-[var(--accent-bright-2)] transition-transform duration-200 group-hover:translate-x-1"
                 aria-hidden="true"
               >
                 →
@@ -558,47 +528,31 @@ export function HomePage() {
 
             <Link
               to="/ledger"
-              className={`group relative isolate flex min-h-[270px] flex-col overflow-hidden rounded-3xl p-8 transition duration-500 ease-out hover:-translate-y-1.5 hover:scale-[1.015] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(160,246,118,0.55)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] ${
-                isLightMode
-                  ? 'border-2 border-lime-700/38 bg-[linear-gradient(169deg,#d8efc5_0%,#bde8a8_42%,#dcf2cf_100%)] shadow-[0_16px_40px_rgba(56,98,42,0.21),inset_0_1px_0_rgba(255,255,255,0.82),inset_0_-1px_0_rgba(73,131,53,0.08)] backdrop-blur-sm hover:border-lime-800/45 hover:shadow-[0_24px_52px_rgba(52,96,38,0.27)]'
-                  : 'before:pointer-events-none before:absolute before:inset-0 before:z-0 before:rounded-[inherit] before:bg-[radial-gradient(ellipse_100%_64%_at_50%_-12%,rgba(184,255,108,0.22),transparent_55%)] before:opacity-[0.9] before:[content:_""] border border-lime-300/42 bg-[linear-gradient(169deg,rgba(36,62,26,0.46),rgba(18,42,22,0.3)_54%,rgba(14,48,26,0.38))] shadow-[0_16px_40px_rgba(0,10,2,0.55),inset_0_1px_0_rgba(255,255,255,0.08),inset_0_0_0_1px_rgba(190,255,130,0.1),0_0_48px_rgba(140,246,104,0.18)] backdrop-blur-[22px] after:pointer-events-none after:absolute after:inset-0 after:z-0 after:rounded-[inherit] after:bg-[radial-gradient(ellipse_90%_45%_at_105%_100%,rgba(160,246,118,0.12),transparent_65%)] after:[content:_""] hover:border-lime-200/52 hover:shadow-[0_22px_52px_rgba(0,12,4,0.58),inset_0_1px_0_rgba(255,255,255,0.09),0_0_74px_rgba(160,250,126,0.26)]'
-              }`}
+              className="group relative isolate flex min-h-[270px] flex-col overflow-hidden rounded-3xl p-8 transition duration-300 ease-out hover:-translate-y-1 hover:shadow-[var(--elevation-2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] vtx-surface"
             >
               <span
-                className={`pointer-events-none absolute left-16 -top-20 h-[10rem] w-[10rem] rounded-full blur-3xl ${
-                  isLightMode ? 'bg-lime-500/[0.35]' : 'bg-lime-400/26 opacity-[0.75]'
-                }`}
+                className={`pointer-events-none absolute left-16 -top-20 h-[10rem] w-[10rem] rounded-full blur-3xl ${isLightMode ? 'bg-lime-500/[0.16]' : 'bg-lime-400/10 opacity-85'}`}
                 aria-hidden
               />
               <div
-                className={`relative z-[1] mb-6 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border backdrop-blur-sm ${
-                  isLightMode
-                    ? 'border-lime-900/35 bg-gradient-to-br from-white via-lime-100 to-lime-200/93 text-[#1e3d14] shadow-[0_12px_28px_rgba(73,131,53,0.24),inset_0_1px_0_rgba(255,255,255,0.93)] ring-2 ring-lime-600/40'
-                    : 'border-lime-200/32 bg-lime-200/[0.08] text-lime-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_0_32px_rgba(184,255,108,0.38),0_0_62px_rgba(140,240,118,0.18)] ring-1 ring-lime-200/16'
-                }`}
+                className={`relative z-[1] mb-6 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border ${isLightMode ? 'border-lime-900/25 bg-white/70 text-[#1e3d14]' : 'border-lime-200/20 bg-white/[0.06] text-lime-50'} shadow-[var(--elevation-1)]`}
               >
                 <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6 fill-current">
                   <path d="M4 4h16v2H4zm2 4h12v12H6zm3 3v6h2v-6zm4 2v4h2v-4z" />
                 </svg>
               </div>
-              <span className={`absolute inset-x-6 top-0 z-[1] h-px bg-gradient-to-r ${isLightMode ? 'from-transparent via-lime-800/50 to-transparent' : 'from-transparent via-lime-200/43 to-transparent'}`} />
               <h3
-                className={`relative z-[1] text-2xl font-bold ${isLightMode ? 'text-[#173212]' : 'text-[#f4ffe6]'}`}
-                style={
-                  !isLightMode ? { textShadow: '0 0 38px rgba(184,255,130,0.16)' } : undefined
-                }
+                className="relative z-[1] text-2xl font-bold text-[var(--text-high-3)]"
               >
                 Live Ledger
               </h3>
               <p
-                className={`relative z-[1] mt-3 text-sm font-medium leading-relaxed ${
-                  isLightMode ? 'text-[#27421f]' : 'text-white/72'
-                }`}
+                className={`relative z-[1] mt-3 text-sm font-medium leading-relaxed ${isLightMode ? 'text-slate-700' : 'text-[var(--text-muted-1)]'}`}
               >
                 Watch every donation and payout in real-time. Full transparency on the blockchain.
               </p>
               <span
-                className="relative z-[1] invisible mt-auto self-end text-4xl font-semibold text-[#b8ff4a] transition-transform duration-300 group-hover:translate-x-2"
+                className="relative z-[1] mt-auto self-end text-3xl font-semibold text-[var(--accent-bright-2)] transition-transform duration-200 group-hover:translate-x-1"
                 aria-hidden="true"
               >
                 →
