@@ -8,18 +8,21 @@ Panels use shared CSS variables in `src/index.css`. Prefer these over ad-hoc mul
 
 | Token | Role |
 |-------|------|
-| `--glass-bg` | Frosted panel fill (with `backdrop-filter`) |
-| `--glass-bg-fallback` | Opaque fill when `prefers-reduced-motion: reduce` disables blur |
-| `--glass-border` | Single hairline for cards, header, and ledger dividers |
-| `--glass-blur` | Backdrop blur radius |
-| `--glass-highlight` | Subtle top inner highlight (folded into shadows) |
-| `--elevation-1` … `--elevation-3` | Restrained shadows (default surface = `--elevation-1`) |
+| `--glass-bg` / `background-color` | Tint behind the frost; kept slightly transparent so blur reads |
+| `--glass-bg-fallback` | Solid fill when `prefers-reduced-motion: reduce` disables blur |
+| `--glass-border` | Panel edge |
+| `--glass-border-outer` | Ultra-soft outer ring folded into shadows (specular rim) |
+| `--glass-blur` | Standard card blur radius |
+| `--glass-blur-strong` | Stronger frost on sticky header / popovers |
+| `--glass-saturate` / `--glass-brightness` | Fed into `backdrop-filter` with blur ( richer “glass” ) |
+| `--glass-rim-top` / `--glass-rim-bot` | Inset highlight + depth on cards and inset chips |
+| `--elevation-1` … `--elevation-3` | Rim + diffuse shadow stack |
 
 Utility classes:
 
-- `.vtx-surface` — default card shell (`SurfaceCard`).
-- `.vtx-glass-header` — sticky app header.
-- `.vtx-glass-popover` — floating menus (e.g. admin dropdown).
-- `.vtx-glass-inset` — nested list rows / chips without gradient fills.
+- `.vtx-surface` — card shell: blur + saturate + faint diagonal glaze (`SurfaceCard`).
+- `.vtx-glass-header` — stronger blur/glaze over scrolling content.
+- `.vtx-glass-popover` — strongest elevation + frost (admin menu, dialogs).
+- `.vtx-glass-inset` — etched chip (rim shadows only; no per-row backdrop blur).
 
-Under **reduced motion**, frosted layers drop blur and use `--glass-bg-fallback` for predictable contrast.
+Under **reduced motion**, frosted panels drop blur, glaze gradient, and use `--glass-bg-fallback`; rim shadows remain for depth.
