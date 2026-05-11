@@ -1,20 +1,51 @@
-# Vaultex (live-tx-ledger)
+# Vaultex
 
-Monorepo with separate folders for the **web app**, **API**, and **smart contracts** so each part can be developed independently.
+**Vaultex** is a capstone-style web app for **transparent charitable giving**: donors fund causes, funds flow through a **Vaultex** routing account (modeled against a local Ethereum dev chain), and admins can **disburse** to beneficiary organizations. A **live ledger** combines in-app events with optional **chain sync** when Anvil is available.
 
-| Folder | Contents |
-|--------|----------|
-| `frontend/` | React + TypeScript + Vite |
-| `backend/` | Express API (`server/`), SQLite data under `server/data/` |
-| `blockchain/` | Foundry project (Solidity, `lib/`, build artifacts) |
+The codebase name in `package.json` is `live-tx-ledger`; product name in the UI is **Vaultex**.
+
+---
+
+## What’s in the box
+
+| Area | Stack |
+|------|--------|
+| **Frontend** | React 19, TypeScript, Vite 8, Tailwind CSS 4, React Router |
+| **Backend** | Express 5, `better-sqlite3`, cookie sessions, bcrypt, ethers v6 |
+| **Chain (local dev)** | [Anvil](https://book.getfoundry.sh/reference/anvil/) — JSON-RPC + WebSocket for the block watcher |
+| **Contracts** | Foundry-style layout under `blockchain/` (see note below) |
+
+---
+
+## Repository layout
+
+| Path | Role |
+|------|------|
+| `frontend/` | SPA: causes, donate flow, ledger, account, admin |
+| `backend/server/` | REST API, SQLite schema, seeding, chain watcher |
+| `blockchain/` | Forge artifacts, `lib/` (OpenZeppelin, forge-std), `broadcast/`, `cache/`, `out/` |
+
+**Note:** The repo currently has **build/deploy outputs** under `blockchain/` but no top-level `foundry.toml` / `src/` in this snapshot. To compile from source you may need to restore or add contract sources and a root Foundry config; `forge build` in `blockchain/` may not succeed until that exists.
+
+---
+
+## Main user flows
+
+1. **Register / log in** — roles: `admin`, `donor`, `beneficiary`.
+2. **Causes** — browse `/causes`, open a cause, donate (donor).
+3. **Donation page** — `/donate` for the giving experience.
+4. **Ledger** — `/ledger` public activity (addresses masked where the API provides masked fields).
+5. **Account** — `/account` balances and history (ties to Anvil indices when seeded).
+6. **Admin** — `/admin/users`, create causes (`/admin/causes/new` or `/causes/new` with auth).
+
+API routes are mounted under **`/api`** (see `backend/server/app.ts`).
 
 ---
 
 ## Prerequisites
 
-- **Node.js** 20+ (LTS recommended) and **npm**
-- **Optional:** [Foundry](https://book.getfoundry.sh/getting-started/installation) to compile or deploy contracts under `blockchain/`
-- **Optional:** a local chain such as [Anvil](https://book.getfoundry.sh/reference/anvil/) on `http://127.0.0.1:8545` if you use on-chain features (the API defaults to that RPC/WebSocket)
+- **Node.js** 20+ and **npm**
+- **Optional:** [Foundry](https://book.getfoundry.sh/getting-started/installation) + **Anvil** on `http://127.0.0.1:8545` for chain-linked features and the watcher (without it the API still runs; the watcher may skip or log connection issues).
 
 ---
 
@@ -26,72 +57,84 @@ From the **repository root**:
 npm install
 ```
 
-This uses npm workspaces and installs dependencies for **frontend** and **backend** in one go.
+Uses **npm workspaces** (`frontend`, `backend`).
 
 ---
 
-## Run the app (recommended)
+## Run (development)
 
-Start **API + Vite** together (API on port **3847**, Vite proxies `/api` to it):
+**API + Vite together** (recommended):
 
 ```bash
 npm run dev
 ```
 
-Then open the URL printed by Vite (usually **http://localhost:5173**).
+- **Frontend:** Vite prints a URL (typically **http://localhost:5173**).
+- **Backend:** **http://127.0.0.1:3847** — Vite proxies **`/api`** to this port (`frontend/vite.config.ts`).
+
+| Command | Purpose |
+|---------|---------|
+| `npm run dev:web` | Frontend only |
+| `npm run dev:api` | Backend only |
 
 ---
 
-## Run services separately
+## Demo / seeded accounts
 
-| Goal | Command (from repo root) |
-|------|---------------------------|
-| Frontend only | `npm run dev:web` |
-| Backend only | `npm run dev:api` |
+On first run with an **empty** database, the API seeds demo users and causes. **Every seeded account uses the same password:**
 
-The Vite dev server proxies `/api/*` to `http://127.0.0.1:3847`, so for full UI behavior you normally run the backend too (or use `npm run dev`).
+**Password:** `demo123`
+
+| Role | Email |
+|------|--------|
+| Admin | `admin@vaultex.local` |
+| Donor | `haha@vaultex.local`, `sukhan@vaultex.local`, `tasin@vaultex.local` |
+| Beneficiary | `citygeneral@hospital.local`, `childrens@hospital.local`, `regional@hospital.local` |
+
+If the database already exists, seed users are **not** re-inserted. Delete `backend/server/data/*.db` (with the server stopped) to force a fresh seed, or register new users via `/register`.
 
 ---
 
 ## Environment variables (backend)
 
-Set these only if you need non-defaults (e.g. production):
+Create **`backend/.env`** if you need overrides (loaded via `dotenv` from `backend/server`).
 
 | Variable | Purpose | Default |
 |----------|---------|---------|
-| `PORT` | HTTP port for the API | `3847` |
-| `SQLITE_PATH` | SQLite database file path | `backend/server/data/donate.db` (relative to server code) |
-| `ANVIL_RPC_URL` | JSON-RPC for the chain | `http://127.0.0.1:8545` |
-| `ANVIL_WS_URL` | WebSocket URL for logs (optional) | Derived from `ANVIL_RPC_URL` |
-| `SESSION_SECRET` | Cookie session signing | dev placeholder if unset |
-
-You can use a `.env` file in **`backend/`** (loaded by `dotenv` when the API starts).
+| `PORT` | API listen port | `3847` |
+| `SQLITE_PATH` | SQLite file | `backend/server/data/donate.db` (under `server/data/`) |
+| `ANVIL_RPC_URL` | HTTP JSON-RPC | `http://127.0.0.1:8545` |
+| `ANVIL_WS_URL` | WebSocket for logs | Derived from `ANVIL_RPC_URL` (`http` → `ws`) |
+| `SESSION_SECRET` | Session cookie signing | dev fallback in code (set in production) |
 
 ---
 
-## Other scripts (from repo root)
+## Other npm scripts (root)
 
 | Script | What it does |
 |--------|----------------|
-| `npm run build` | Production build of the frontend → `frontend/dist` |
-| `npm run preview` | Serve the production build locally |
-| `npm run lint` | ESLint on `frontend/` |
+| `npm run build` | Production build → `frontend/dist` |
+| `npm run preview` | Serve the production build |
+| `npm run lint` | ESLint in `frontend/` |
 
 ---
 
-## Blockchain (contracts)
+## Capstone planning
 
-Work inside **`blockchain/`**. Typical Foundry commands (when your `foundry.toml` and sources are set up):
-
-```bash
-cd blockchain
-forge build
-forge test
-```
+Team task breakdown (owners, priorities, descriptions, and copy-paste prompts) lives in **`CAPSTONE_TASK_TRACKER.csv`** — open in Excel or any spreadsheet tool.
 
 ---
 
 ## Troubleshooting
 
-- **`better-sqlite3` install errors:** Use a supported Node version; on Windows you may need build tools for native addons.
-- **API connection errors in the browser:** Ensure the backend is running on port `3847`, or set `PORT` and update `frontend/vite.config.ts` proxy `target` to match.
+| Issue | What to try |
+|-------|-------------|
+| **`better-sqlite3` fails to install** | Use Node 20 LTS; on Windows install **Desktop development with C++** build tools if prebuilds miss. |
+| **Browser `/api` errors** | Confirm backend is on **3847** or change `PORT` and Vite `proxy.target` together. |
+| **Chain watcher warnings** | Start **Anvil**; check `ANVIL_RPC_URL` / firewall. The HTTP API can still work for many flows. |
+
+---
+
+## License / course use
+
+Private capstone repository — use and attribution per your course policy.
