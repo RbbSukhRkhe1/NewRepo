@@ -45,7 +45,7 @@ export function Layout() {
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--bg-depth-2)] text-[var(--text-high-1)]">
-      <header className="vtx-glass-header sticky top-0 z-50">
+      <header className="vtx-glass-header sticky! top-0! z-[60]! shrink-0 transition-[box-shadow,filter] duration-300 ease-out">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-4">
           <Link to="/" className="text-lg font-bold tracking-tight text-[var(--text-high-3)]">
             <span className="text-[var(--accent-bright-2)]">Vaultex</span>
