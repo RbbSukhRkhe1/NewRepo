@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactElement } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 type HeroSlide = {
@@ -170,84 +170,113 @@ const miniBenefitStyles: Record<
   },
 };
 
-const VAULT_JOIN_BENEFITS: {
-  title: string;
-  blurb: string;
-  icon: ReactElement;
-  tone: BenefitTone;
-}[] = [
-  {
-    tone: 'teal',
-    title: 'Ledger receipts',
-    blurb: 'Each gift shows up with a hash row you can line up against the cause you picked.',
-    icon: <path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z" />,
-  },
-  {
-    tone: 'violet',
-    title: 'Explainable flow',
-    blurb: 'Causes, ledger, and accounts share one narrative for markers—no mystery funnel.',
-    icon: <path d="M4 18h3V8H4v10zm5 0h3V4H9v14zm5 0h3v-7h-3v7zm5 0h3V9h-3v9z" />,
-  },
-  {
-    tone: 'lime',
-    title: 'Classroom-safe',
-    blurb: 'Seeded logins and SQLite data keep the story reproducible on any laptop.',
-    icon: (
-      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 6 4 4 6.5 4c1.74 0 3.41 1.01 4.22 2.09C11.59 5.01 13.26 4 15 4 17.5 4 19.5 6 19.5 8.5c0 3.78-3.4 6.86-8.55 11.53L12 21.35z" />
-    ),
-  },
-];
-
-const HOW_WORKS_CTA_HOVER: Record<
-  BenefitTone,
-  { light: string; dark: string }
-> = {
-  teal: {
-    light:
-      'hover:shadow-[0_18px_46px_rgba(16,107,96,0.22),0_0_52px_rgba(45,200,180,0.2),inset_0_1px_0_rgba(255,255,255,0.92)]',
-    dark: 'hover:shadow-[0_22px_58px_rgba(0,4,14,0.72),0_0_72px_rgba(45,245,205,0.32),inset_0_1px_0_rgba(255,255,255,0.1)]',
-  },
-  violet: {
-    light:
-      'hover:shadow-[0_18px_46px_rgba(91,71,154,0.22),0_0_56px_rgba(139,92,246,0.22),inset_0_1px_0_rgba(255,255,255,0.92)]',
-    dark: 'hover:shadow-[0_22px_58px_rgba(4,2,26,0.75),0_0_76px_rgba(183,111,255,0.36),inset_0_1px_0_rgba(255,255,255,0.1)]',
-  },
-  lime: {
-    light:
-      'hover:shadow-[0_18px_46px_rgba(56,98,42,0.2),0_0_52px_rgba(120,200,80,0.2),inset_0_1px_0_rgba(255,255,255,0.92)]',
-    dark: 'hover:shadow-[0_22px_58px_rgba(0,14,4,0.68),0_0_76px_rgba(140,246,104,0.3),inset_0_1px_0_rgba(255,255,255,0.1)]',
-  },
-};
-
-const HOW_WORKS_CTA: {
-  to: string;
+const HOW_IT_WORKS_TRUST_POINTS: {
   title: string;
   body: string;
   tone: BenefitTone;
   iconD: string;
 }[] = [
   {
-    to: '/causes',
-    title: 'Browse Causes',
-    body: 'Meet real stories and funding goals—take your time comparing what resonates before you give.',
+    title: '100% Transparent',
+    body: 'Every transaction is recorded on-chain with visible movement from gift to impact.',
     tone: 'teal',
-    iconD:
-      'M12 3l8 4v5c0 5.25-3.45 8.71-8 10-4.55-1.29-8-4.75-8-10V7l8-4zm0 2.18L6 8v4c0 4.13 2.54 6.98 6 8.12 3.46-1.14 6-3.99 6-8.12V8l-6-2.82z',
+    iconD: 'M12 2 4 5v6c0 4.5 3 8.7 8 10 5-1.3 8-5.5 8-10V5l-8-3z',
   },
   {
-    to: '/donate',
-    title: 'Donate Securely',
-    body: 'When you are ready, send ETH with clear prompts—your receipt trail stays with you, not hidden in fine print.',
+    title: "You're in Control",
+    body: 'Your wallet, your pace. You can review causes and donate only when you feel ready.',
     tone: 'violet',
     iconD:
       'M17 8V7a5 5 0 10-10 0v1H5v13h14V8h-2zm-8 0V7a3 3 0 016 0v1H9zm3 8.8a2.2 2.2 0 112.2-2.2A2.2 2.2 0 0112 16.8z',
   },
   {
-    to: '/ledger',
-    title: 'Live Ledger',
-    body: 'See movement in the open when you need peace of mind—every line is there for you to verify, not to impress.',
+    title: 'Real Impact',
+    body: 'Your gift reaches real people and outcomes you can verify in a live transparent ledger.',
     tone: 'lime',
-    iconD: 'M4 4h16v2H4zm2 4h12v12H6zm3 3v6h2v-6zm4 2v4h2v-4z',
+    iconD: 'M4 12h4l2-4 3 8 2-4h5',
+  },
+];
+
+const HOW_IT_WORKS_STEPS: {
+  id: string;
+  stepLabel: string;
+  title: string;
+  body: string;
+  to: string;
+  tone: BenefitTone;
+  iconD: string;
+  demoPill: string;
+  demoMain: string;
+  demoSub: string;
+}[] = [
+  {
+    id: 'browse',
+    stepLabel: '01',
+    title: 'Browse causes',
+    body: 'Explore stories, review goals, and choose what resonates most with you.',
+    to: '/causes',
+    tone: 'teal',
+    iconD: 'M11 4a7 7 0 105.15 11.85l3 3 1.4-1.4-3-3A7 7 0 0011 4zm0 2a5 5 0 110 10 5 5 0 010-10z',
+    demoPill: 'Cause preview',
+    demoMain: 'Community shelter · 75%',
+    demoSub: 'Funding progress updates live',
+  },
+  {
+    id: 'donate',
+    stepLabel: '02',
+    title: 'Donate securely',
+    body: 'Send ETH with clear prompts and keep a verifiable receipt tied to your donation.',
+    to: '/donate',
+    tone: 'violet',
+    iconD:
+      'M17 8V7a5 5 0 10-10 0v1H5v13h14V8h-2zm-8 0V7a3 3 0 016 0v1H9zm3 8.8a2.2 2.2 0 112.2-2.2A2.2 2.2 0 0112 16.8z',
+    demoPill: 'You sent',
+    demoMain: '1.25 ETH',
+    demoSub: 'Receipt hash · 0xf37a…7e2c',
+  },
+  {
+    id: 'track',
+    stepLabel: '03',
+    title: 'Track impact',
+    body: 'Follow the live ledger and see your gift turn into visible measurable outcomes.',
+    to: '/ledger',
+    tone: 'lime',
+    iconD: 'M4 4h16v2H4zm2 4h12v12H6zm3 7h2v3H9zm4-4h2v7h-2z',
+    demoPill: 'Live ledger',
+    demoMain: 'Impact status: active',
+    demoSub: 'Updated in real-time',
+  },
+];
+
+const HOW_IT_WORKS_TRUST_STRIP: {
+  title: string;
+  body: string;
+  tone: BenefitTone;
+  iconD: string;
+}[] = [
+  {
+    title: 'On-chain verified',
+    body: 'Built on Ethereum with transparent records.',
+    tone: 'teal',
+    iconD: 'M12 2a10 10 0 100 20 10 10 0 000-20zm0 2a8 8 0 016.8 12.2H5.2A8 8 0 0112 4z',
+  },
+  {
+    title: 'Trusted by donors',
+    body: 'Join thousands giving with confidence.',
+    tone: 'violet',
+    iconD: 'M16 11a4 4 0 10-8 0 5 5 0 00-3 4.6V18h14v-2.4A5 5 0 0016 11z',
+  },
+  {
+    title: 'Proof, not promises',
+    body: 'Receipts you can verify any time.',
+    tone: 'teal',
+    iconD: 'M12 1 3 5v6c0 5.6 3.8 10.8 9 12 5.2-1.2 9-6.4 9-12V5l-9-4zm-1 13-3-3 1.4-1.4L11 11.2l3.6-3.6L16 9l-5 5z',
+  },
+  {
+    title: 'Your kindness',
+    body: 'Visible. Verifiable. Valuable.',
+    tone: 'violet',
+    iconD: 'M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 6 4 4 6.5 4c1.7 0 3.4 1 4.2 2.1C11.6 5 13.3 4 15 4 17.5 4 19.5 6 19.5 8.5c0 3.8-3.4 6.9-8.5 11.5z',
   },
 ];
 
@@ -275,6 +304,12 @@ export function HomePage() {
     return () => observer.disconnect();
   }, []);
 
+  useEffect(() => {
+    const root = document.documentElement;
+    root.setAttribute('data-home-snap', 'true');
+    return () => root.removeAttribute('data-home-snap');
+  }, []);
+
   const goNext = () => setActiveSlide((prev) => (prev + 1) % heroSlides.length);
   const goPrev = () => setActiveSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length);
 
@@ -290,7 +325,8 @@ export function HomePage() {
         <div className="pointer-events-none absolute left-1/2 top-[176px] h-52 w-[520px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(11,21,39,0.95),transparent_70%)]" />
 
         <section
-          className={`relative mx-auto max-w-4xl overflow-hidden rounded-[30px] px-5 pb-7 pt-5 backdrop-blur-xl sm:px-8 sm:pb-8 sm:pt-6 md:px-10 md:pb-8 md:pt-6 ${
+          id="hero"
+          className={`home-snap-section relative mx-auto max-w-4xl overflow-hidden rounded-[30px] px-5 pb-7 pt-5 backdrop-blur-xl sm:px-8 sm:pb-8 sm:pt-6 md:px-10 md:pb-8 md:pt-6 ${
             isLightMode
               ? 'border border-[rgba(165,185,211,0.38)] bg-[linear-gradient(155deg,rgba(251,253,255,0.96),rgba(237,244,252,0.9))] shadow-[0_18px_34px_rgba(76,103,136,0.14)]'
               : 'border border-white/[0.08] bg-[linear-gradient(155deg,rgba(15,24,41,0.74),rgba(8,13,24,0.58))] shadow-[0_18px_42px_rgba(0,0,0,0.36),0_0_40px_rgba(45,245,173,0.1)]'
@@ -582,240 +618,175 @@ export function HomePage() {
         </section>
 
         <section
-          className="relative mx-auto mt-12 max-w-5xl px-0 sm:px-1"
+          id="how-it-works"
+          className="home-snap-section relative mx-auto mt-12 max-w-5xl px-0 sm:px-1 md:mt-0"
           aria-labelledby="how-it-works-heading"
         >
           <div
-            className={`rounded-[28px] border px-5 py-10 sm:px-10 sm:py-12 ${
+            className={`rounded-[30px] border px-5 py-8 sm:px-7 sm:py-9 md:flex md:flex-col md:justify-center lg:px-9 lg:py-10 ${
               isLightMode
-                ? 'border-slate-200/55 bg-gradient-to-b from-white/75 via-white/55 to-slate-50/40 shadow-[0_12px_48px_rgba(15,41,77,0.08)] backdrop-blur-xl'
-                : 'border-white/[0.09] bg-gradient-to-b from-slate-900/50 via-slate-950/35 to-[rgba(6,11,22,0.55)] shadow-[0_20px_56px_rgba(0,4,18,0.55)] backdrop-blur-xl'
+                ? 'border-slate-200/60 bg-gradient-to-b from-white/80 via-white/62 to-slate-50/50 shadow-[0_16px_54px_rgba(15,41,77,0.09)] backdrop-blur-xl'
+                : 'border-white/[0.1] bg-gradient-to-b from-slate-900/56 via-slate-950/40 to-[rgba(6,11,22,0.6)] shadow-[0_24px_60px_rgba(0,4,18,0.62)] backdrop-blur-xl'
             }`}
           >
-            <div className="mx-auto max-w-2xl text-center">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-[var(--text-muted-2)]">
-                At a glance
-              </p>
-              <h2
-                id="how-it-works-heading"
-                className="mt-2 text-2xl font-bold tracking-tight text-[var(--text-high-3)] sm:text-3xl"
-              >
-                How it works
-              </h2>
-              <div
-                className={`mx-auto mt-5 max-w-xl space-y-3 text-balance text-sm leading-relaxed sm:mt-6 sm:max-w-2xl sm:text-base sm:leading-relaxed ${
-                  isLightMode ? 'text-slate-600' : 'text-[var(--text-muted-1)]'
-                }`}
-              >
-                <p>
-                  Giving is deeply personal—we keep the path uncluttered so you can read, decide, and act without feeling
-                  rushed or judged.
-                </p>
-                <p className={isLightMode ? 'text-slate-600/95' : 'opacity-[0.94]'}>
-                  Start wherever you are: skim causes, send when you feel ready, and follow the ledger when you want
-                  reassurance that your gift landed where it should.
-                </p>
-              </div>
-            </div>
-
-            <div className="mx-auto mt-10 grid max-w-5xl list-none gap-5 p-0 sm:mt-12 sm:grid-cols-3 sm:gap-6">
-              {HOW_WORKS_CTA.map((c) => {
-                const m = miniBenefitStyles[c.tone];
-                const shell = isLightMode ? m.shellLight : m.shellDark;
-                const hoverGlow = isLightMode ? HOW_WORKS_CTA_HOVER[c.tone].light : HOW_WORKS_CTA_HOVER[c.tone].dark;
-                return (
-                  <Link
-                    key={c.to}
-                    to={c.to}
-                    className={`group relative isolate flex min-h-[260px] flex-col items-center gap-6 overflow-hidden rounded-[1.65rem] px-6 pb-8 pt-7 text-center transition-all duration-500 ease-out hover:-translate-y-1 hover:brightness-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] sm:min-h-[272px] sm:gap-7 sm:px-7 sm:pb-9 sm:pt-8 ${shell} ${isLightMode ? 'backdrop-blur-sm' : 'backdrop-blur-md'} ${hoverGlow}`}
-                  >
-                    <span
-                      className={`pointer-events-none absolute rounded-full blur-3xl ${isLightMode ? m.orbLight : m.orbDark}`}
-                      aria-hidden
-                    />
-                    <span
-                      aria-hidden
-                      className={`absolute inset-x-6 top-0 z-[2] h-px bg-gradient-to-r sm:inset-x-7 ${isLightMode ? m.hairLight : m.hairDark}`}
-                    />
-                    <span
-                      className={`relative z-[3] flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${isLightMode ? m.iconLight : m.iconDark}`}
-                      aria-hidden
-                    >
-                      <svg
-                        viewBox="0 0 24 24"
-                        className={`h-6 w-6 shrink-0 fill-current ${isLightMode ? m.svgLight : m.svgDark}`}
-                      >
-                        <path d={c.iconD} />
-                      </svg>
-                    </span>
-                    <div className="relative z-[3] flex flex-col gap-3">
-                      <h3
-                        className={`text-balance text-lg font-bold tracking-[-0.02em] sm:text-xl ${isLightMode ? m.titleLight : m.titleDark}`}
-                        style={!isLightMode && m.titleGlowDark ? { textShadow: m.titleGlowDark } : undefined}
-                      >
-                        {c.title}
-                      </h3>
-                      <p
-                        className={`mx-auto max-w-[16.5rem] text-balance text-sm font-semibold leading-relaxed sm:max-w-[17.5rem] sm:text-[0.9375rem] sm:leading-[1.55] ${isLightMode ? m.blurbLight : m.blurbDark}`}
-                      >
-                        {c.body}
-                      </p>
-                    </div>
-                    <span
-                      className="relative z-[3] mt-auto pt-1 text-2xl font-semibold text-[var(--accent-bright-2)] transition-transform duration-300 group-hover:translate-x-1 sm:text-3xl"
-                      aria-hidden
-                    >
-                      →
-                    </span>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-
-          <div
-            className={`relative mx-auto mt-14 max-w-5xl overflow-hidden rounded-[2rem] px-6 py-10 text-center backdrop-blur-[28px] sm:px-9 sm:py-11 lg:px-11 lg:py-12 lg:text-left ${
-              isLightMode
-                ? 'border border-[rgba(154,174,206,0.22)] bg-[linear-gradient(165deg,rgba(255,255,255,0.96)_0%,rgba(244,249,253,0.88)_42%,rgba(238,246,251,0.94)_100%)] shadow-[0_24px_60px_rgba(58,76,112,0.09),0_0_0_1px_rgba(255,255,255,0.85)_inset,0_1px_0_rgba(255,255,255,0.6)_inset]'
-                : 'border border-white/[0.07] bg-[linear-gradient(165deg,rgba(26,34,54,0.72)_0%,rgba(14,18,30,0.55)_38%,rgba(12,26,42,0.62)_100%)] shadow-[0_28px_70px_rgba(2,8,22,0.55),0_0_0_1px_rgba(255,255,255,0.045)_inset,0_0_100px_rgba(45,245,173,0.07)]'
-            }`}
-          >
-            <div
-              aria-hidden="true"
-              className={`pointer-events-none absolute inset-0 opacity-95 ${
-                isLightMode
-                  ? '[background:radial-gradient(ellipse_90%_55%_at_50%_0%,rgba(94,246,222,0.16),transparent_58%)]'
-                  : '[background:radial-gradient(ellipse_90%_50%_at_50%_0%,rgba(45,245,173,0.14),transparent_60%)]'
-              }`}
-            />
-            <div
-              className={`pointer-events-none absolute left-1/2 top-0 h-px w-[min(88%,26rem)] -translate-x-1/2 bg-gradient-to-r from-transparent to-transparent sm:w-[min(90%,34rem)] ${
-                isLightMode ? 'via-white/70' : 'via-white/15'
-              }`}
-            />
-            <div
-              className={`pointer-events-none absolute -left-20 top-[18%] h-44 w-44 rounded-full blur-3xl ${
-                isLightMode ? 'bg-violet-400/22' : 'bg-violet-500/14'
-              }`}
-            />
-            <div
-              className={`pointer-events-none absolute -right-24 bottom-[8%] h-52 w-52 rounded-full blur-3xl ${
-                isLightMode ? 'bg-cyan-300/18' : 'bg-teal-400/14'
-              }`}
-            />
-
-            <div className="relative z-[1]">
-              <div className="mx-auto flex w-full max-w-none flex-col lg:grid lg:grid-cols-12 lg:items-start lg:gap-x-11 lg:gap-y-2">
-                <div className="flex flex-col items-center lg:col-span-5 lg:items-start">
-                  <p
-                    className={`relative inline-flex max-w-[min(100%,20rem)] items-center justify-center rounded-full px-5 py-2 text-[0.6875rem] font-semibold uppercase tracking-[0.22em] sm:max-w-none sm:text-[11px] sm:tracking-[0.26em] ${
-                      isLightMode
-                        ? 'bg-white/80 text-[#4a5a6c] ring-1 ring-[rgba(100,128,156,0.2)] shadow-[0_1px_2px_rgba(15,40,60,0.04)]'
-                        : 'bg-white/[0.06] text-[#b8c7d8] ring-1 ring-white/[0.1]'
-                    }`}
-                  >
-                    Proof-forward giving
-                  </p>
-
-                  <h2
-                    id="vault-join-heading"
-                    className={`relative mx-auto mt-5 max-w-[19rem] text-balance font-serif text-[1.875rem] font-medium leading-[1.12] tracking-[-0.035em] sm:mt-7 sm:max-w-3xl sm:text-[2.35rem] sm:leading-[1.08] lg:mx-0 lg:mt-6 lg:max-w-none lg:text-left lg:text-[2.6rem] lg:leading-[1.06] ${
-                      isLightMode ? 'text-[#101827]' : 'text-[#f8fafc]'
-                    }`}
-                  >
-                    <span className="block sm:inline">Your generosity,</span>{' '}
-                    <span className="block sm:inline">
-                      <span className={isLightMode ? 'text-[#0d6f5c]' : 'text-[#6ef5d8]'}>visible end to end</span>.
-                    </span>
-                  </h2>
-
-                  <div
-                    className={`relative mx-auto mt-7 flex max-w-[32rem] flex-col gap-2.5 text-pretty text-center sm:mt-8 lg:mx-0 lg:mt-6 lg:max-w-[26rem] lg:text-left ${
-                      isLightMode
-                        ? 'text-[15px] leading-[1.72] text-neutral-600 sm:text-[16px] sm:leading-[1.68]'
-                        : 'font-light text-[var(--text-muted-1)] sm:text-[17px] sm:leading-[1.68]'
-                    }`}
-                  >
-                    <p>
-                      Connect in minutes, give from your wallet, and keep receipts that cannot be rewritten.
-                    </p>
-                    <p className={isLightMode ? 'text-[14px] text-neutral-600/88 sm:text-[15px]' : 'opacity-[0.92]'}>
-                      Follow the live ledger—confidence for you, accountability for every cause you champion.
-                    </p>
-                  </div>
-                </div>
-
-                <ul
-                  className="relative mt-10 list-none space-y-3 lg:col-span-7 lg:mt-3 lg:max-w-none"
-                  role="list"
+            <div className="grid gap-10 lg:grid-cols-[0.95fr_1.55fr] lg:items-start lg:gap-10">
+              <div className="text-left">
+                <p
+                  className={`inline-flex items-center rounded-full px-3.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.24em] ${
+                    isLightMode
+                      ? 'bg-white text-slate-600 shadow-[0_1px_3px_rgba(15,40,60,0.08)] ring-1 ring-slate-200/80'
+                      : 'bg-white/[0.06] text-slate-300 ring-1 ring-white/[0.1]'
+                  }`}
                 >
-                  {VAULT_JOIN_BENEFITS.map((item) => {
-                    const m = miniBenefitStyles[item.tone];
-                    const accentBorder =
-                      item.tone === 'teal'
-                        ? 'border-l-teal-400/85'
-                        : item.tone === 'violet'
-                          ? 'border-l-violet-400/78'
-                          : 'border-l-lime-400/72';
+                  At a glance
+                </p>
+                <h2
+                  id="how-it-works-heading"
+                  className={`mt-3 text-balance text-4xl font-extrabold tracking-[-0.03em] sm:text-[2.7rem] ${
+                    isLightMode ? 'text-[#0f172a]' : 'text-[#f8fafc]'
+                  }`}
+                >
+                  How it <span className={isLightMode ? 'text-[#0f937b]' : 'text-[#61f2d9]'}>works</span>
+                </h2>
+                <p
+                  className={`mt-4 max-w-md text-pretty text-sm leading-relaxed sm:text-[0.96rem] ${
+                    isLightMode ? 'text-slate-600' : 'text-slate-300/90'
+                  }`}
+                >
+                  We make giving simple, transparent, and verifiable. You stay in control at every step, from choosing
+                  a cause to tracking real impact in the ledger.
+                </p>
+                <ul className="mt-7 space-y-4">
+                  {HOW_IT_WORKS_TRUST_POINTS.map((point) => {
+                    const m = miniBenefitStyles[point.tone];
                     return (
-                      <li
-                        key={item.title}
-                        className={`flex gap-3.5 rounded-xl border border-l-[3px] py-3.5 pl-3.5 pr-4 text-left shadow-[0_1px_0_rgba(255,255,255,0.05)_inset] transition duration-300 ease-out hover:brightness-[1.02] sm:gap-4 sm:py-4 ${accentBorder} ${
-                          isLightMode
-                            ? 'border border-slate-200/65 bg-white/60 backdrop-blur-sm'
-                            : 'border border-white/[0.09] bg-white/[0.045] backdrop-blur-sm'
-                        }`}
-                      >
-                        <span
-                          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg sm:h-11 sm:w-11 ${
-                            isLightMode ? m.iconLight : m.iconDark
-                          }`}
-                          aria-hidden="true"
-                        >
-                          <svg
-                            viewBox="0 0 24 24"
-                            aria-hidden="true"
-                            className={`h-5 w-5 shrink-0 fill-current sm:h-6 sm:w-6 ${isLightMode ? m.svgLight : m.svgDark}`}
+                      <li key={point.title} className="space-y-3">
+                        <div className="flex items-start gap-3.5">
+                          <span
+                            className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
+                              isLightMode ? m.iconLight : m.iconDark
+                            }`}
+                            aria-hidden
                           >
-                            {item.icon}
-                          </svg>
-                        </span>
-                        <div className="min-w-0 flex-1 pt-0.5">
-                          <p
-                            className={`text-[15px] font-bold tracking-[-0.02em] sm:text-base ${isLightMode ? m.titleLight : m.titleDark}`}
-                            style={
-                              !isLightMode && m.titleGlowDark ? { textShadow: m.titleGlowDark } : undefined
-                            }
-                          >
-                            {item.title}
-                          </p>
-                          <p
-                            className={`mt-1.5 text-sm font-semibold leading-snug sm:text-[0.938rem] sm:leading-[1.55] ${isLightMode ? m.blurbLight : m.blurbDark}`}
-                          >
-                            {item.blurb}
-                          </p>
+                            <svg viewBox="0 0 24 24" className={`h-4.5 w-4.5 fill-current ${isLightMode ? m.svgLight : m.svgDark}`}>
+                              <path d={point.iconD} />
+                            </svg>
+                          </span>
+                          <div>
+                            <p className={`text-base font-semibold ${isLightMode ? m.titleLight : m.titleDark}`}>{point.title}</p>
+                            <p className={`mt-1 text-sm leading-relaxed ${isLightMode ? m.blurbLight : m.blurbDark}`}>{point.body}</p>
+                          </div>
                         </div>
+                        <div className={`h-px w-full ${isLightMode ? 'bg-slate-200/80' : 'bg-white/[0.08]'}`} aria-hidden />
                       </li>
                     );
                   })}
                 </ul>
               </div>
 
-              <div className="relative mx-auto mt-10 flex justify-center lg:mt-11">
-                <Link
-                  to="/register"
-                  className={`group relative isolate inline-flex min-h-[3.65rem] items-center justify-center overflow-hidden rounded-full px-14 py-4 text-[1.075rem] font-semibold tracking-wide transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-                    isLightMode
-                      ? 'border border-white/55 bg-gradient-to-br from-[#65ffeb] via-[#3dead0] to-[#18b892] text-[#041f1a] shadow-[0_0_0_1px_rgba(255,255,255,0.5)_inset,0_6px_28px_rgba(32,180,148,0.38),0_0_52px_rgba(58,230,196,0.55),0_0_112px_rgba(58,230,196,0.22)] hover:-translate-y-0.5 hover:scale-[1.035] hover:shadow-[0_0_0_1px_rgba(255,255,255,0.65)_inset,0_12px_40px_rgba(32,180,148,0.48),0_0_72px_rgba(58,230,196,0.65)] active:scale-[0.98] active:translate-y-0'
-                      : 'border border-[rgba(130,255,220,0.4)] bg-gradient-to-br from-[#58ffe0] via-[#32eab8] to-[#14b086] text-[#03140f] shadow-[0_0_0_1px_rgba(190,255,235,0.3)_inset,0_6px_32px_rgba(45,245,173,0.32),0_0_56px_rgba(45,245,173,0.58),0_0_120px_rgba(45,245,173,0.2)] hover:-translate-y-0.5 hover:scale-[1.035] hover:shadow-[0_0_0_1px_rgba(210,255,240,0.38)_inset,0_12px_46px_rgba(45,245,173,0.42),0_0_80px_rgba(45,245,173,0.72)] active:scale-[0.98] active:translate-y-0'
-                  }`}
-                >
-                  <span className="pointer-events-none absolute -inset-2 rounded-full bg-gradient-to-tr from-transparent via-white/25 to-transparent opacity-0 blur-md transition-opacity duration-500 group-hover:opacity-100 group-hover:duration-[700ms]" />
-                  <span className="pointer-events-none absolute inset-[1px] rounded-full bg-gradient-to-t from-white/15 to-transparent opacity-55" aria-hidden="true" />
-                  <span className="relative z-10 px-1">Join the Vault</span>
-                </Link>
+              <div className="space-y-6">
+                <div className="relative hidden px-2 md:block" aria-hidden>
+                  <svg viewBox="0 0 680 88" className="h-[88px] w-full">
+                    <path
+                      d="M48 45 C130 18, 190 70, 260 45 S410 18, 478 45 S620 70, 650 45"
+                      fill="none"
+                      stroke={isLightMode ? '#8adac7' : '#5ef6de66'}
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                    />
+                    <path
+                      d="M260 45 C320 18, 380 70, 478 45"
+                      fill="none"
+                      stroke={isLightMode ? '#c8a4ff' : '#ca90ff88'}
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <div className="absolute left-[5%] top-1/2 z-10 -translate-y-1/2 rounded-full">
+                    <span className={`flex h-12 w-12 items-center justify-center rounded-full text-[1.65rem] font-bold leading-none ${isLightMode ? miniBenefitStyles.teal.iconLight : miniBenefitStyles.teal.iconDark}`}>01</span>
+                  </div>
+                  <div className="absolute left-[47.5%] top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 rounded-full">
+                    <span className={`flex h-12 w-12 items-center justify-center rounded-full text-[1.65rem] font-bold leading-none ${isLightMode ? miniBenefitStyles.violet.iconLight : miniBenefitStyles.violet.iconDark}`}>02</span>
+                  </div>
+                  <div className="absolute right-[3%] top-1/2 z-10 -translate-y-1/2 rounded-full">
+                    <span className={`flex h-12 w-12 items-center justify-center rounded-full text-[1.65rem] font-bold leading-none ${isLightMode ? miniBenefitStyles.lime.iconLight : miniBenefitStyles.lime.iconDark}`}>03</span>
+                  </div>
+                  <span className={`absolute left-[30.5%] top-1/2 z-10 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-xs font-bold ${isLightMode ? 'bg-white text-slate-500 ring-1 ring-slate-200/80' : 'bg-white/[0.07] text-slate-300 ring-1 ring-white/[0.1]'}`}>›</span>
+                  <span className={`absolute left-[68.8%] top-1/2 z-10 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-xs font-bold ${isLightMode ? 'bg-white text-slate-500 ring-1 ring-slate-200/80' : 'bg-white/[0.07] text-slate-300 ring-1 ring-white/[0.1]'}`}>›</span>
+                </div>
+
+                <div className="grid gap-6 md:grid-cols-3">
+                  {HOW_IT_WORKS_STEPS.map((step) => {
+                    const m = miniBenefitStyles[step.tone];
+                    return (
+                      <Link key={step.id} to={step.to} className="group text-center md:text-center">
+                        <span className={`mx-auto flex h-14 w-14 items-center justify-center rounded-full ${isLightMode ? m.iconLight : m.iconDark}`}>
+                          <svg viewBox="0 0 24 24" className={`h-6 w-6 fill-current ${isLightMode ? m.svgLight : m.svgDark}`}>
+                            <path d={step.iconD} />
+                          </svg>
+                        </span>
+                        <p className={`mt-4 text-[1.55rem] font-extrabold tracking-[-0.03em] ${isLightMode ? m.titleLight : m.titleDark}`}>
+                          {step.title}
+                        </p>
+                        <p className={`mx-auto mt-2 max-w-[15rem] text-sm leading-relaxed ${isLightMode ? m.blurbLight : m.blurbDark}`}>
+                          {step.body}
+                        </p>
+                        <div
+                          className={`mx-auto mt-4 w-full max-w-[16rem] rounded-xl border px-3 py-3 text-left ${
+                            isLightMode
+                              ? 'border-slate-200/90 bg-white/92 shadow-[0_6px_18px_rgba(15,41,77,0.08)]'
+                              : 'border-white/[0.1] bg-white/[0.03]'
+                          }`}
+                        >
+                          <p className={`text-[10px] font-semibold uppercase tracking-[0.09em] ${isLightMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                            {step.demoPill}
+                          </p>
+                          <p className={`mt-1 text-sm font-semibold ${isLightMode ? 'text-slate-800' : 'text-white/95'}`}>{step.demoMain}</p>
+                          <div className={`mt-2 h-1.5 rounded-full ${isLightMode ? 'bg-slate-200' : 'bg-white/[0.1]'}`} aria-hidden>
+                            <div
+                              className="h-full rounded-full"
+                              style={{
+                                width: step.id === 'browse' ? '75%' : step.id === 'donate' ? '52%' : '88%',
+                                backgroundColor: step.tone === 'teal' ? '#5ef6de' : step.tone === 'violet' ? '#ca90ff' : '#9de36d',
+                              }}
+                            />
+                          </div>
+                          <p className={`mt-2 text-[11px] ${isLightMode ? 'text-slate-500' : 'text-slate-400'}`}>{step.demoSub}</p>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
               </div>
             </div>
+
+          </div>
+        </section>
+
+        <section id="causes" className="home-snap-section relative mx-auto mt-8 max-w-5xl px-0 sm:px-1 md:mt-0">
+          <div
+            className={`grid gap-3 rounded-2xl border p-3 sm:grid-cols-2 lg:grid-cols-4 ${
+              isLightMode
+                ? 'border-slate-200/85 bg-white/82 shadow-[0_10px_30px_rgba(15,41,77,0.06)]'
+                : 'border-white/[0.1] bg-white/[0.03]'
+            }`}
+          >
+            {HOW_IT_WORKS_TRUST_STRIP.map((item) => {
+              const m = miniBenefitStyles[item.tone];
+              return (
+                <div key={item.title} className="flex items-start gap-3 rounded-xl px-2 py-2">
+                  <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${isLightMode ? m.iconLight : m.iconDark}`}>
+                    <svg viewBox="0 0 24 24" className={`h-4.5 w-4.5 fill-current ${isLightMode ? m.svgLight : m.svgDark}`}>
+                      <path d={item.iconD} />
+                    </svg>
+                  </span>
+                  <div className="min-w-0">
+                    <p className={`text-sm font-semibold ${isLightMode ? m.titleLight : m.titleDark}`}>{item.title}</p>
+                    <p className={`mt-0.5 text-xs leading-relaxed ${isLightMode ? m.blurbLight : m.blurbDark}`}>{item.body}</p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </section>
       </div>
