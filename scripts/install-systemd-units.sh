@@ -1,27 +1,38 @@
 #!/usr/bin/env bash
 # Write vaultex-anvil + vaultex-api units with correct user and binary paths.
+# Always uses the app user (ubuntu), not root — Foundry installs under /home/ubuntu.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=deploy-env.sh
-source "$SCRIPT_DIR/deploy-env.sh"
 
 APP_DIR="${VAULTEX_HOME:-${DEPLOY_PATH:-/opt/vaultex}}"
-RUN_USER="${VAULTEX_RUN_USER:-$USER}"
-ANVIL_BIN="${HOME}/.foundry/bin/anvil"
-NPM_BIN="$(command -v npm)"
+
+# sudo resets $USER/$HOME to root; use the user who invoked sudo.
+RUN_USER="${VAULTEX_RUN_USER:-${SUDO_USER:-$USER}}"
+if [[ "$RUN_USER" == "root" ]] || [[ -z "$RUN_USER" ]]; then
+  RUN_USER="ubuntu"
+fi
+
+RUN_HOME="$(getent passwd "$RUN_USER" | cut -d: -f6)"
+ANVIL_BIN="${RUN_HOME}/.foundry/bin/anvil"
+NPM_BIN="$(sudo -u "$RUN_USER" -H bash -lc 'command -v npm')"
 
 if [[ ! -x "$ANVIL_BIN" ]]; then
-  echo "ERROR: anvil not found at $ANVIL_BIN — run scripts/install-foundry.sh" >&2
+  echo "ERROR: anvil not found at $ANVIL_BIN" >&2
+  echo "Install as $RUN_USER: sudo -u $RUN_USER bash $SCRIPT_DIR/install-foundry.sh" >&2
   exit 1
 fi
 
-if [[ -z "$NPM_BIN" ]]; then
-  echo "ERROR: npm not in PATH" >&2
+if [[ -z "$NPM_BIN" ]] || [[ ! -x "$NPM_BIN" ]]; then
+  echo "ERROR: npm not found for user $RUN_USER" >&2
   exit 1
 fi
 
-echo "==> Installing systemd units (user=$RUN_USER, anvil=$ANVIL_BIN)"
+echo "==> Installing systemd units"
+echo "    user=$RUN_USER home=$RUN_HOME"
+echo "    anvil=$ANVIL_BIN"
+echo "    npm=$NPM_BIN"
+echo "    app=$APP_DIR"
 
 sudo tee /etc/systemd/system/vaultex-anvil.service >/dev/null <<EOF
 [Unit]
