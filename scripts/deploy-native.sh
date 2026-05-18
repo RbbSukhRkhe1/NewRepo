@@ -20,8 +20,8 @@ if [[ ! -f "$API_ENV" ]]; then
 fi
 
 echo "==> Install dependencies & build frontend…"
-export NODE_ENV=production
-npm ci
+# Install devDependencies too (tsc, vite for build; tsx for API runtime).
+npm ci --include=dev
 npm run build
 
 echo "==> Publish SPA to $WEB_ROOT…"
