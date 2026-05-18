@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { apiJson } from '../lib/api';
+import { useIsLightMode } from '../lib/useIsLightMode';
 import { useAuth } from '../context/AuthContext';
 import { PrimaryButton, SectionHeader, SurfaceCard } from '../components/ui';
 import { CauseFundingDonut } from '../components/CauseFundingDonut';
@@ -244,9 +245,7 @@ const DETAIL_COPY_BY_TITLE: Record<string, CauseDetailCopy> = {
 export function CauseDetailPage() {
   const { id } = useParams();
   const { user } = useAuth();
-  const [isLightMode, setIsLightMode] = useState(
-    () => typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'light',
-  );
+  const isLightMode = useIsLightMode();
   const [cause, setCause] = useState<Cause | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [amount, setAmount] = useState('0.1');
@@ -254,7 +253,8 @@ export function CauseDetailPage() {
   const [busy, setBusy] = useState(false);
   const [activeSlice, setActiveSlice] = useState<number | null>(null);
   const dashboardHoverLeaveRef = useRef<ReturnType<typeof window.setTimeout> | null>(null);
-  const [heroFailed, setHeroFailed] = useState(false);
+  const [failedHeroUrl, setFailedHeroUrl] = useState<string | null>(null);
+  const heroFailed = Boolean(cause?.image_url && failedHeroUrl === cause.image_url);
 
   function cancelImpactSliceDeferClear() {
     if (dashboardHoverLeaveRef.current != null) {
@@ -293,19 +293,6 @@ export function CauseDetailPage() {
       .then(setCause)
       .catch((e: Error) => setErr(e.message));
   }, [id]);
-
-  useEffect(() => {
-    setHeroFailed(false);
-  }, [cause?.id, cause?.image_url]);
-
-  useEffect(() => {
-    const root = document.documentElement;
-    const syncTheme = () => setIsLightMode(root.getAttribute('data-theme') === 'light');
-    syncTheme();
-    const observer = new MutationObserver(syncTheme);
-    observer.observe(root, { attributes: true, attributeFilter: ['data-theme'] });
-    return () => observer.disconnect();
-  }, []);
 
   const canDonate =
     user && (user.role === 'donor' || user.role === 'admin') && user.anvilIndex != null;
@@ -431,7 +418,9 @@ export function CauseDetailPage() {
             src={cause.image_url}
             alt=""
             className="h-full w-full object-cover"
-            onError={() => setHeroFailed(true)}
+            onError={() => {
+              if (cause.image_url) setFailedHeroUrl(cause.image_url);
+            }}
           />
         ) : (
           <>

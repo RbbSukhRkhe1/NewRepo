@@ -6,20 +6,23 @@ import { useAuth } from '../context/AuthContext';
 type ThemeMode = 'dark' | 'light';
 const THEME_STORAGE_KEY = 'vaultex-theme-mode';
 
+function readStoredTheme(): ThemeMode {
+  if (typeof window === 'undefined') return 'dark';
+  return window.localStorage.getItem(THEME_STORAGE_KEY) === 'light' ? 'light' : 'dark';
+}
+
 export function Layout() {
   const { user, logout } = useAuth();
   const loc = useLocation();
   const navigationType = useNavigationType();
-  const [themeMode, setThemeMode] = useState<ThemeMode>('dark');
+  const [themeMode, setThemeMode] = useState<ThemeMode>(readStoredTheme);
 
   useLayoutEffect(() => {
     if (navigationType === 'POP') return;
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
   }, [loc.pathname, loc.search, navigationType]);
 
-  useEffect(() => {
-    const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
-    const resolved: ThemeMode = stored === 'light' ? 'light' : 'dark';
+  useLayoutEffect(() => {
     const root = document.documentElement;
     const body = document.body;
     root.style.transition = root.style.transition
@@ -28,10 +31,6 @@ export function Layout() {
     body.style.transition = body.style.transition
       ? `${body.style.transition}, background-color 320ms ease`
       : 'background-color 320ms ease';
-    root.setAttribute('data-theme', resolved);
-    root.style.backgroundColor = resolved === 'light' ? '#f3f8ff' : '#0A1F1C';
-    body.style.backgroundColor = resolved === 'light' ? '#f3f8ff' : '#0A1F1C';
-    setThemeMode(resolved);
   }, []);
 
   useEffect(() => {

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { apiJson } from '../lib/api';
+import { useIsLightMode } from '../lib/useIsLightMode';
 import { CauseFundingDonut } from '../components/CauseFundingDonut';
 
 const SAMPLE_HERO_PLACEHOLDER = '/samples/placeholder.svg';
@@ -147,10 +148,8 @@ function CauseCard({
   raisedEth?: number;
   goalEth?: number;
 }) {
-  const [heroFailed, setHeroFailed] = useState(false);
-  useEffect(() => {
-    setHeroFailed(false);
-  }, [imageUrl]);
+  const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
+  const heroFailed = Boolean(imageUrl && failedImageUrl === imageUrl);
 
   const hasLiveStats = raisedEth != null && goalEth != null && goalEth > 0;
   const livePct = hasLiveStats ? Math.min(100, ((raisedEth as number) / (goalEth as number)) * 100) : null;
@@ -194,7 +193,9 @@ function CauseCard({
               src={imageUrl!}
               alt=""
               className="h-full w-full object-cover"
-              onError={() => setHeroFailed(true)}
+              onError={() => {
+                if (imageUrl) setFailedImageUrl(imageUrl);
+              }}
             />
           ) : (
             <img
@@ -348,19 +349,8 @@ type ApiCauseRow = {
 };
 
 export function CausesPage() {
-  const [isLightMode, setIsLightMode] = useState(
-    () => typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'light',
-  );
+  const isLightMode = useIsLightMode();
   const [apiCauses, setApiCauses] = useState<ApiCauseRow[]>([]);
-
-  useEffect(() => {
-    const root = document.documentElement;
-    const syncTheme = () => setIsLightMode(root.getAttribute('data-theme') === 'light');
-    syncTheme();
-    const observer = new MutationObserver(syncTheme);
-    observer.observe(root, { attributes: true, attributeFilter: ['data-theme'] });
-    return () => observer.disconnect();
-  }, []);
 
   useEffect(() => {
     let cancelled = false;
