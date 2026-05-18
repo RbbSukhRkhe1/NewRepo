@@ -328,8 +328,8 @@ export function HomePage() {
           id="hero"
           className={`home-snap-section relative mx-auto max-w-4xl overflow-hidden rounded-[30px] px-5 pb-7 pt-5 backdrop-blur-xl sm:px-8 sm:pb-8 sm:pt-6 md:px-10 md:pb-8 md:pt-6 ${
             isLightMode
-              ? 'border border-[rgba(165,185,211,0.38)] bg-[linear-gradient(155deg,rgba(251,253,255,0.96),rgba(237,244,252,0.9))] shadow-[0_18px_34px_rgba(76,103,136,0.14)]'
-              : 'border border-white/[0.08] bg-[linear-gradient(155deg,rgba(15,24,41,0.74),rgba(8,13,24,0.58))] shadow-[0_18px_42px_rgba(0,0,0,0.36),0_0_40px_rgba(45,245,173,0.1)]'
+              ? 'border border-[rgba(165,185,211,0.38)] bg-[linear-gradient(155deg,rgba(236,244,252,0.94),rgba(224,236,250,0.88))] shadow-[0_18px_34px_rgba(76,103,136,0.14)]'
+              : 'border border-white/[0.07] bg-[linear-gradient(155deg,rgba(8,14,24,0.88),rgba(4,8,16,0.82))] shadow-[0_18px_42px_rgba(0,0,0,0.42),0_0_36px_rgba(45,245,173,0.08)]'
           }`}
         >
           <div
@@ -625,8 +625,8 @@ export function HomePage() {
           <div
             className={`rounded-[30px] border px-5 py-8 sm:px-7 sm:py-9 md:flex md:flex-col md:justify-center lg:px-9 lg:py-10 ${
               isLightMode
-                ? 'border-slate-200/60 bg-gradient-to-b from-white/80 via-white/62 to-slate-50/50 shadow-[0_16px_54px_rgba(15,41,77,0.09)] backdrop-blur-xl'
-                : 'border-white/[0.1] bg-gradient-to-b from-slate-900/56 via-slate-950/40 to-[rgba(6,11,22,0.6)] shadow-[0_24px_60px_rgba(0,4,18,0.62)] backdrop-blur-xl'
+                ? 'border-slate-200/60 bg-gradient-to-b from-slate-100/90 via-slate-100/78 to-slate-200/65 shadow-[0_16px_54px_rgba(15,41,77,0.09)] backdrop-blur-xl'
+                : 'border-white/[0.08] bg-gradient-to-b from-slate-950/78 via-slate-950/62 to-[rgba(3,7,14,0.82)] shadow-[0_24px_60px_rgba(0,4,18,0.68)] backdrop-blur-xl'
             }`}
           >
             <div className="grid gap-10 lg:grid-cols-[0.95fr_1.55fr] lg:items-start lg:gap-10">
@@ -759,35 +759,149 @@ export function HomePage() {
               </div>
             </div>
 
+            <div
+              className={`mt-8 grid gap-3 rounded-2xl border p-3 sm:mt-10 sm:grid-cols-2 lg:grid-cols-4 ${
+                isLightMode
+                  ? 'border-slate-200/70 bg-slate-100/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] backdrop-blur-md'
+                  : 'border-white/[0.08] bg-[rgba(2,6,12,0.55)] backdrop-blur-md'
+              }`}
+            >
+              {HOW_IT_WORKS_TRUST_STRIP.map((item) => {
+                const m = miniBenefitStyles[item.tone];
+                return (
+                  <div key={item.title} className="flex items-start gap-3 rounded-xl px-2 py-2">
+                    <span
+                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${isLightMode ? m.iconLight : m.iconDark}`}
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        className={`h-4.5 w-4.5 fill-current ${isLightMode ? m.svgLight : m.svgDark}`}
+                      >
+                        <path d={item.iconD} />
+                      </svg>
+                    </span>
+                    <div className="min-w-0">
+                      <p className={`text-sm font-semibold ${isLightMode ? m.titleLight : m.titleDark}`}>{item.title}</p>
+                      <p className={`mt-0.5 text-xs leading-snug ${isLightMode ? m.blurbLight : m.blurbDark}`}>
+                        {item.body}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </section>
 
-        <section id="causes" className="home-snap-section relative mx-auto mt-8 max-w-5xl px-0 sm:px-1 md:mt-0">
+        <section
+          id="join-the-vault"
+          className="home-snap-section relative mx-auto mt-10 max-w-5xl px-0 sm:px-1 md:mt-12"
+          aria-labelledby="join-vault-heading"
+        >
           <div
-            className={`grid gap-3 rounded-2xl border p-3 sm:grid-cols-2 lg:grid-cols-4 ${
+            className={`relative overflow-hidden rounded-[30px] border px-6 py-12 text-center sm:px-10 sm:py-14 md:py-16 ${
               isLightMode
-                ? 'border-slate-200/85 bg-white/82 shadow-[0_10px_30px_rgba(15,41,77,0.06)]'
-                : 'border-white/[0.1] bg-white/[0.03]'
+                ? 'border-emerald-500/25 bg-[linear-gradient(165deg,rgba(228,240,252,0.94)_0%,rgba(210,235,228,0.9)_42%,rgba(196,230,216,0.86)_100%)] shadow-[0_20px_56px_rgba(16,120,90,0.14),inset_0_1px_0_rgba(255,255,255,0.65)] backdrop-blur-xl'
+                : 'border-emerald-400/18 bg-[linear-gradient(168deg,rgba(4,14,12,0.94)_0%,rgba(3,10,18,0.92)_48%,rgba(2,8,14,0.96)_100%)] shadow-[0_24px_64px_rgba(0,4,18,0.62),inset_0_1px_0_rgba(255,255,255,0.04),0_0_64px_rgba(45,245,173,0.1)] backdrop-blur-xl'
             }`}
           >
-            {HOW_IT_WORKS_TRUST_STRIP.map((item) => {
-              const m = miniBenefitStyles[item.tone];
-              return (
-                <div key={item.title} className="flex items-start gap-3 rounded-xl px-2 py-2">
-                  <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${isLightMode ? m.iconLight : m.iconDark}`}>
-                    <svg viewBox="0 0 24 24" className={`h-4.5 w-4.5 fill-current ${isLightMode ? m.svgLight : m.svgDark}`}>
-                      <path d={item.iconD} />
-                    </svg>
-                  </span>
-                  <div className="min-w-0">
-                    <p className={`text-sm font-semibold ${isLightMode ? m.titleLight : m.titleDark}`}>{item.title}</p>
-                    <p className={`mt-0.5 text-xs leading-snug ${isLightMode ? m.blurbLight : m.blurbDark}`}>{item.body}</p>
-                  </div>
-                </div>
-              );
-            })}
+            <div
+              aria-hidden
+              className={`pointer-events-none absolute inset-0 motion-safe:animate-[pulse_10s_ease-in-out_infinite] motion-reduce:animate-none ${
+                isLightMode
+                  ? 'bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(16,185,129,0.18),transparent_62%)]'
+                  : 'bg-[radial-gradient(ellipse_75%_55%_at_50%_-10%,rgba(45,245,173,0.22),transparent_58%)]'
+              }`}
+            />
+            <div
+              aria-hidden
+              className={`pointer-events-none absolute -left-16 top-1/2 h-48 w-48 -translate-y-1/2 rounded-full blur-3xl ${
+                isLightMode ? 'bg-teal-400/20' : 'bg-teal-400/15'
+              }`}
+            />
+            <div
+              aria-hidden
+              className={`pointer-events-none absolute -right-12 top-1/4 h-40 w-40 rounded-full blur-3xl ${
+                isLightMode ? 'bg-violet-400/15' : 'bg-violet-500/12'
+              }`}
+            />
+
+            <div className="relative z-[1] mx-auto flex max-w-2xl flex-col items-center">
+              <p
+                className={`text-[10px] font-semibold uppercase tracking-[0.28em] ${
+                  isLightMode ? 'text-emerald-700/80' : 'text-emerald-300/75'
+                }`}
+              >
+                Join the Vault
+              </p>
+              <h2
+                id="join-vault-heading"
+                className={`mt-4 text-balance text-3xl font-extrabold tracking-[-0.03em] sm:text-4xl md:text-[2.65rem] md:leading-[1.08] ${
+                  isLightMode ? 'text-[#0f172a]' : 'text-[#f8fafc]'
+                }`}
+              >
+                Ready to Make{' '}
+                <span
+                  className={
+                    isLightMode
+                      ? 'bg-gradient-to-r from-emerald-600 via-teal-500 to-cyan-600 bg-clip-text text-transparent'
+                      : 'bg-gradient-to-r from-[#ecfffd] via-[#5ef6de] to-[#34f0a0] bg-clip-text text-transparent drop-shadow-[0_0_24px_rgba(94,246,222,0.45)]'
+                  }
+                >
+                  Real Impact?
+                </span>
+              </h2>
+              <p
+                className={`mt-4 max-w-lg text-pretty text-base leading-relaxed sm:text-[1.05rem] ${
+                  isLightMode ? 'text-slate-600' : 'text-slate-300/92'
+                }`}
+              >
+                Create your free account and start donating with full transparency.
+              </p>
+
+              <div className="mt-10 flex flex-col items-center sm:mt-12">
+              <Link
+                to="/register"
+                className={`group relative inline-flex min-h-[3.25rem] items-center justify-center gap-2 overflow-hidden rounded-full border px-10 py-3.5 text-base font-bold tracking-[0.02em] motion-safe:transition-[transform,box-shadow] motion-safe:duration-300 motion-safe:ease-out hover:scale-[1.03] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 motion-reduce:transition-none sm:min-h-14 sm:px-12 sm:text-lg ${
+                  isLightMode
+                    ? 'border-emerald-500/50 bg-[linear-gradient(180deg,#3dffc4_0%,#1fd88a_48%,#12b872_100%)] text-[#032316] shadow-[0_0_32px_rgba(16,185,129,0.35),0_12px_28px_rgba(16,120,90,0.22),inset_0_1px_0_rgba(255,255,255,0.55)] hover:shadow-[0_0_48px_rgba(16,185,129,0.48),0_16px_36px_rgba(16,120,90,0.28)] focus-visible:ring-emerald-500/60 focus-visible:ring-offset-white'
+                    : 'border-emerald-300/55 bg-[linear-gradient(180deg,#4dffd0_0%,#2ee89a_45%,#18c97a_100%)] text-[#021a10] shadow-[0_0_40px_rgba(51,255,178,0.42),0_0_72px_rgba(45,245,173,0.22),inset_0_1px_0_rgba(255,255,255,0.35)] hover:shadow-[0_0_56px_rgba(51,255,178,0.55),0_0_96px_rgba(45,245,173,0.28),inset_0_1px_0_rgba(255,255,255,0.4)] focus-visible:ring-emerald-400/70 focus-visible:ring-offset-[#070a12]'
+                }`}
+              >
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0 opacity-0 motion-safe:transition-opacity motion-safe:duration-300 group-hover:opacity-100 motion-reduce:opacity-0"
+                  style={{
+                    background:
+                      'radial-gradient(circle at 50% 0%, rgba(255,255,255,0.45), transparent 65%)',
+                  }}
+                />
+                <span className="relative z-[1]">Join the Vault</span>
+                <svg
+                  viewBox="0 0 24 24"
+                  className="relative z-[1] h-5 w-5 motion-safe:transition-transform motion-safe:duration-300 group-hover:translate-x-0.5 motion-reduce:transition-none"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  aria-hidden
+                >
+                  <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </Link>
+              <p className={`mt-4 text-sm ${isLightMode ? 'text-slate-600' : 'text-slate-400'}`}>
+                Already have an account?{' '}
+                <Link
+                  to="/login"
+                  className={`font-semibold underline-offset-2 hover:underline ${isLightMode ? 'text-emerald-700' : 'text-emerald-300'}`}
+                >
+                  Sign in
+                </Link>
+              </p>
+              </div>
+            </div>
           </div>
         </section>
+
       </div>
     </div>
   );

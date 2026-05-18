@@ -149,8 +149,7 @@ function CauseCard({
   raisedEth?: number;
   goalEth?: number;
 }) {
-  const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
-  const heroFailed = Boolean(imageUrl && failedImageUrl === imageUrl);
+  const [heroFailed, setHeroFailed] = useState(false);
 
   const hasLiveStats = raisedEth != null && goalEth != null && goalEth > 0;
   const livePct = hasLiveStats ? Math.min(100, ((raisedEth as number) / (goalEth as number)) * 100) : null;
@@ -173,7 +172,12 @@ function CauseCard({
 
   const detailHref = detailCauseId != null ? `/causes/${detailCauseId}` : '/causes';
   const heroSrc = resolveCauseHeroUrl(cause.apiTitle, imageUrl);
-  const showHero = Boolean(heroSrc) && !heroFailed;
+  const displayHero =
+    heroSrc && !heroFailed ? heroSrc : SAMPLE_HERO_PLACEHOLDER;
+
+  useEffect(() => {
+    setHeroFailed(false);
+  }, [heroSrc]);
 
   return (
     <article
@@ -190,22 +194,15 @@ function CauseCard({
 
       <div className="grid gap-4 md:grid-cols-[minmax(0,11rem)_minmax(0,230px)_1fr] md:gap-6">
         <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-[var(--glass-border)] bg-[var(--overlay-surface-soft)] md:aspect-auto md:min-h-[11rem]">
-          {showHero ? (
-            <img
-              src={heroSrc!}
-              alt=""
-              className="h-full w-full object-cover"
-              onError={() => {
-                if (imageUrl) setFailedImageUrl(imageUrl);
-              }}
-            />
-          ) : (
-            <img
-              src={SAMPLE_HERO_PLACEHOLDER}
-              alt=""
-              className="h-full w-full object-cover"
-            />
-          )}
+          <img
+            key={displayHero}
+            src={displayHero}
+            alt=""
+            className="h-full w-full object-cover"
+            onError={() => {
+              if (heroSrc && displayHero === heroSrc) setHeroFailed(true);
+            }}
+          />
         </div>
 
         <div className={`vtx-glass-inset p-5 ${tagStyle(cause.accent, 'story', isLightMode)}`}>

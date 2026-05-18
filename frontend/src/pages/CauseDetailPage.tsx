@@ -254,8 +254,7 @@ export function CauseDetailPage() {
   const [busy, setBusy] = useState(false);
   const [activeSlice, setActiveSlice] = useState<number | null>(null);
   const dashboardHoverLeaveRef = useRef<ReturnType<typeof window.setTimeout> | null>(null);
-  const [failedHeroUrl, setFailedHeroUrl] = useState<string | null>(null);
-  const heroFailed = Boolean(cause?.image_url && failedHeroUrl === cause.image_url);
+  const [heroFailed, setHeroFailed] = useState(false);
 
   function cancelImpactSliceDeferClear() {
     if (dashboardHoverLeaveRef.current != null) {
@@ -294,6 +293,10 @@ export function CauseDetailPage() {
       .then(setCause)
       .catch((e: Error) => setErr(e.message));
   }, [id]);
+
+  useEffect(() => {
+    setHeroFailed(false);
+  }, [cause?.id, cause?.image_url]);
 
   const canDonate =
     user && (user.role === 'donor' || user.role === 'admin') && user.anvilIndex != null;
@@ -420,9 +423,7 @@ export function CauseDetailPage() {
             src={heroSrc}
             alt=""
             className="h-full w-full object-cover"
-            onError={() => {
-              if (cause.image_url) setFailedHeroUrl(cause.image_url);
-            }}
+            onError={() => setHeroFailed(true)}
           />
         ) : (
           <>
