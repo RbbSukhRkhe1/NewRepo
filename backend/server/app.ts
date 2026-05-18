@@ -116,6 +116,8 @@ function requireAdmin(req: express.Request, res: express.Response, next: express
 
 export function createApp() {
   const app = express();
+  // Behind nginx: correct client IP and optional X-Forwarded-Proto for cookies / redirects.
+  app.set('trust proxy', 1);
   app.use(
     cors({
       origin: true,

@@ -39,13 +39,59 @@ Site: **http://vaultex.club** (port 80). nginx serves **`/opt/vaultex/frontend/d
 
 ---
 
+## Sign in or register fails
+
+### 1. nginx strips `/api` (most common)
+
+If `location` uses **`proxy_pass http://127.0.0.1:3847/;`** (trailing slash), `/api/auth/login` becomes **`/auth/login`** on the backend and returns **404**. Login and register will not work.
+
+Use **no** trailing slash on the upstream URL:
+
+```nginx
+location /api {
+    proxy_pass http://127.0.0.1:3847;
+    # ... headers ...
+}
+```
+
+Then: `sudo nginx -t && sudo systemctl reload nginx`
+
+Quick check from the server:
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" -X POST http://127.0.0.1/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"x@y.z","password":"bad"}'
+# Expect 401 (invalid credentials), not 404
+```
+
+### 2. Register needs Anvil
+
+`POST /auth/register` funds a new account on-chain. If Anvil is down or RPC fails, registration returns **500**. Sign in with **seeded** users (e.g. `admin@vaultex.local` / `demo123`) only needs the database.
+
+### 3. SQLite not writable
+
+Ensure the API user can write `/var/lib/vaultex/`:
+
+```bash
+sudo chown -R ubuntu:ubuntu /var/lib/vaultex
+```
+
+### 4. HTTPS vs HTTP
+
+Use **http://** for your domain until TLS is configured. **https://** without a certificate can break requests or cookies.
+
+---
+
 ## GitHub Actions
 
 | Secret | Value |
 |--------|--------|
-| `DEPLOY_NATIVE` | `true` |
+| `DEPLOY_HOST` | Public IP |
+| `DEPLOY_USER` | `ubuntu` |
+| `DEPLOY_SSH_KEY` | SSH private key |
 
-Plus `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY`.
+Optional: `DEPLOY_PATH` = `/opt/vaultex`
 
 ---
 

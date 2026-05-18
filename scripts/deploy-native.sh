@@ -132,6 +132,21 @@ if ! curl -sf http://127.0.0.1/api/config | grep -q '"chainId"'; then
 fi
 echo "GET /api/config via nginx: ok"
 
+# Wrong nginx often uses proxy_pass ...3847/ which strips /api — login/register then 404.
+login_code="$(curl -s -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1/api/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"nonexistent@vaultex.local","password":"wrong"}')"
+if [[ "$login_code" == "404" ]]; then
+  echo "POST /api/auth/login returned 404 — nginx is stripping /api. Use:" >&2
+  echo "  location /api { proxy_pass http://127.0.0.1:3847; }   # no trailing slash on 3847" >&2
+  exit 1
+fi
+if [[ "$login_code" != "401" ]] && [[ "$login_code" != "400" ]]; then
+  echo "POST /api/auth/login unexpected HTTP $login_code (expected 401 invalid credentials)" >&2
+  exit 1
+fi
+echo "POST /api/auth/login via nginx: ok (route reachable, got $login_code)"
+
 if ! wait_for_http "http://127.0.0.1:3847/health" "GET /health"; then
   sudo ss -tlnp | grep 3847 >&2 || true
   sudo journalctl -u vaultex-api -n 50 --no-pager >&2 || true
