@@ -35,7 +35,7 @@ git pull origin main
 ./scripts/deploy-native.sh
 ```
 
-Site: **http://vaultex.club** (port 80).
+Site: **http://vaultex.club** (port 80). nginx serves **`/opt/vaultex/frontend/dist`**; `/api` proxies to the API (keep `/api` prefix — do not use `proxy_pass …3847/`).
 
 ---
 

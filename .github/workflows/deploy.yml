@@ -1,6 +1,6 @@
-# Vaultex — deploy to Oracle Cloud Ubuntu over SSH after CI passes on main.
+# Deploy Vaultex to Oracle Cloud (native: nginx + Node + Anvil) after CI passes on main.
 # Required secrets: DEPLOY_HOST, DEPLOY_USER, DEPLOY_SSH_KEY
-# Optional: DEPLOY_PATH (/opt/vaultex), DEPLOY_SSH_PORT (22)
+# Optional secrets: DEPLOY_PATH (default /opt/vaultex), DEPLOY_SSH_PORT (default 22)
 
 name: Deploy
 
@@ -11,13 +11,13 @@ on:
   workflow_dispatch:
     inputs:
       diagnose_only:
-        description: "SSH diagnostics only (no build/deploy)"
+        description: "SSH diagnostics only (no deploy)"
         required: false
-        default: "false"
+        default: false
         type: boolean
 
 concurrency:
-  group: deploy-production
+  group: deploy-vaultex-production
   cancel-in-progress: false
 
 permissions:
@@ -31,34 +31,36 @@ jobs:
       github.event_name == 'workflow_dispatch' ||
       (
         github.event.workflow_run.conclusion == 'success' &&
-        github.event.workflow_run.head_branch == 'main' &&
-        github.event.workflow_run.event == 'push'
+        github.event.workflow_run.head_branch == 'main'
       )
+
     steps:
       - name: Check deploy secrets
         run: |
+          set -euo pipefail
           missing=0
-          for name in DEPLOY_HOST DEPLOY_USER DEPLOY_SSH_KEY; do
-            val=""
-            case "$name" in
-              DEPLOY_HOST) val="${{ secrets.DEPLOY_HOST }}" ;;
-              DEPLOY_USER) val="${{ secrets.DEPLOY_USER }}" ;;
-              DEPLOY_SSH_KEY) val="${{ secrets.DEPLOY_SSH_KEY }}" ;;
-            esac
-            if [[ -z "$val" ]]; then
-              echo "::error::Repository secret $name is missing or empty"
-              missing=1
-            else
-              echo "OK: $name is set"
-            fi
-          done
-          exit $missing
+          if [[ -z "${{ secrets.DEPLOY_HOST }}" ]]; then
+            echo "::error::Repository secret DEPLOY_HOST is missing or empty"
+            missing=1
+          fi
+          if [[ -z "${{ secrets.DEPLOY_USER }}" ]]; then
+            echo "::error::Repository secret DEPLOY_USER is missing or empty"
+            missing=1
+          fi
+          if [[ -z "${{ secrets.DEPLOY_SSH_KEY }}" ]]; then
+            echo "::error::Repository secret DEPLOY_SSH_KEY is missing or empty"
+            missing=1
+          fi
+          if [[ "$missing" -ne 0 ]]; then
+            exit 1
+          fi
+          echo "Required deploy secrets are set."
 
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1.2.0
         env:
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
-          DIAGNOSE_ONLY: ${{ github.event_name == 'workflow_dispatch' && inputs.diagnose_only && 'true' || 'false' }}
+          DIAGNOSE_ONLY: ${{ github.event_name == 'workflow_dispatch' && inputs.diagnose_only == true && 'true' || 'false' }}
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
@@ -66,8 +68,8 @@ jobs:
           port: ${{ secrets.DEPLOY_SSH_PORT != '' && secrets.DEPLOY_SSH_PORT || 22 }}
           envs: DEPLOY_PATH,DIAGNOSE_ONLY
           script_stop: true
-          command_timeout: 45m
           script_stderr: true
+          command_timeout: 45m
           script: |
             set -eo pipefail
             on_err() {
@@ -78,20 +80,19 @@ jobs:
 
             export DEPLOY_PATH="${DEPLOY_PATH:-/opt/vaultex}"
             APP_DIR="$DEPLOY_PATH"
-            REPO_URL="https://github.com/RbbSukhRkhe1/NewRepo.git"
+            REPO_URL="https://github.com/${{ github.repository }}.git"
 
-            echo "========== Vaultex deploy =========="
-            echo "user=$(whoami) host=$(hostname) app_dir=$APP_DIR"
-            echo "node=$(command -v node || echo MISSING) npm=$(command -v npm || echo MISSING)"
-            echo "git=$(command -v git || echo MISSING)"
-            echo "api.env=$([ -f /etc/vaultex/api.env ] && echo yes || echo no)"
-            echo "anvil.unit=$([ -f /etc/systemd/system/vaultex-anvil.service ] && echo yes || echo no)"
-            echo "free -h:"; free -h || true
-            echo "df /:"; df -h / || true
+            echo "==> Vaultex deploy | $(whoami)@$(hostname) | $APP_DIR"
+            echo "Node: $(command -v node >/dev/null && node --version || echo MISSING)"
+            echo "NPM: $(command -v npm >/dev/null && npm --version || echo MISSING)"
+            free -h || true
+            df -h / || true
 
             if [[ "${DIAGNOSE_ONLY:-false}" == "true" ]]; then
-              echo "Diagnose-only mode — skipping deploy"
-              sudo systemctl status vaultex-anvil vaultex-api nginx --no-pager 2>/dev/null || true
+              echo "==> Diagnose only"
+              sudo systemctl status nginx vaultex-api vaultex-anvil --no-pager 2>/dev/null || true
+              curl -sI http://127.0.0.1/ | head -5 || true
+              curl -s http://127.0.0.1/api/config || true
               exit 0
             fi
 
@@ -102,7 +103,7 @@ jobs:
             fi
 
             if [[ ! -d "$APP_DIR/.git" ]]; then
-              echo "==> Cloning $REPO_URL → $APP_DIR"
+              echo "==> Cloning $REPO_URL"
               sudo mkdir -p "$(dirname "$APP_DIR")"
               sudo rm -rf "$APP_DIR"
               sudo git clone --branch main --depth 1 "$REPO_URL" "$APP_DIR"
@@ -114,14 +115,8 @@ jobs:
             git reset --hard origin/main
             chmod +x scripts/*.sh 2>/dev/null || true
 
-            if [[ "${{ secrets.DEPLOY_DOCKER }}" == "true" ]]; then
-              echo "==> Docker deploy"
-              bash ./scripts/deploy.sh
-            else
-              echo "==> Native deploy"
-              export DEPLOY_PATH="$APP_DIR"
-              bash ./scripts/deploy-remote.sh
-            fi
+            export DEPLOY_PATH="$APP_DIR"
+            bash ./scripts/deploy-remote.sh
 
       - name: Summary
         if: success()
@@ -129,7 +124,11 @@ jobs:
           {
             echo "## Deploy"
             echo ""
-            echo "Host configured · path: \`${{ secrets.DEPLOY_PATH || '/opt/vaultex' }}\`"
+            echo "**Host:** configured · **path:** \`${{ secrets.DEPLOY_PATH != '' && secrets.DEPLOY_PATH || '/opt/vaultex' }}\`"
+            echo ""
+            echo "- nginx: \`/etc/nginx/conf.d/default.conf\`"
+            echo "- SPA: \`/opt/vaultex/frontend/dist\`"
+            echo "- API: \`127.0.0.1:3847\` (proxied at \`/api\`)"
             echo ""
             echo "Site: http://vaultex.club"
           } >> "$GITHUB_STEP_SUMMARY"

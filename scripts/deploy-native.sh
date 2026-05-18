@@ -13,7 +13,8 @@ if ! command -v git >/dev/null 2>&1; then
 fi
 
 APP_DIR="${VAULTEX_HOME:-${DEPLOY_PATH:-/opt/vaultex}}"
-WEB_ROOT="${VAULTEX_WEB_ROOT:-/var/www/vaultex}"
+FRONTEND_DIST="${APP_DIR}/frontend/dist"
+NGINX_CONF="${NGINX_CONF:-/etc/nginx/conf.d/default.conf}"
 API_ENV="${VAULTEX_API_ENV:-/etc/vaultex/api.env}"
 
 cd "$APP_DIR"
@@ -34,15 +35,16 @@ echo "==> Install dependencies & build frontend…"
 npm ci --include=dev
 npm run build
 
-echo "==> Publish SPA to $WEB_ROOT…"
-sudo mkdir -p "$WEB_ROOT"
-sudo rsync -a --delete frontend/dist/ "$WEB_ROOT/"
-sudo chown -R www-data:www-data "$WEB_ROOT"
+echo "==> Frontend build at $FRONTEND_DIST…"
+if [[ ! -f "$FRONTEND_DIST/index.html" ]]; then
+  echo "ERROR: missing $FRONTEND_DIST/index.html after npm run build" >&2
+  exit 1
+fi
+sudo chown -R www-data:www-data "$FRONTEND_DIST"
 
-echo "==> Install nginx site…"
-sudo cp deploy/nginx-vaultex.conf /etc/nginx/sites-available/vaultex
-sudo ln -sf /etc/nginx/sites-available/vaultex /etc/nginx/sites-enabled/vaultex
-sudo rm -f /etc/nginx/sites-enabled/default
+echo "==> Install nginx ($NGINX_CONF)…"
+sudo cp deploy/nginx-vaultex.conf "$NGINX_CONF"
+sudo rm -f /etc/nginx/sites-enabled/vaultex 2>/dev/null || true
 sudo nginx -t
 
 echo "==> Ensure Foundry / Anvil…"
@@ -117,6 +119,18 @@ else
   sudo journalctl -u vaultex-api -n 40 --no-pager >&2 || true
   exit 1
 fi
+
+if ! wait_for_http "http://127.0.0.1/api/config" "GET /api/config (via nginx)"; then
+  echo "Trying direct API health…" >&2
+  wait_for_http "http://127.0.0.1:3847/health" "GET /health (direct)" || true
+fi
+
+if ! curl -sf http://127.0.0.1/api/config | grep -q '"chainId"'; then
+  echo "GET /api/config via nginx: FAIL (check proxy_pass keeps /api prefix)" >&2
+  sudo nginx -T 2>/dev/null | head -80 >&2 || true
+  exit 1
+fi
+echo "GET /api/config via nginx: ok"
 
 if ! wait_for_http "http://127.0.0.1:3847/health" "GET /health"; then
   sudo ss -tlnp | grep 3847 >&2 || true
