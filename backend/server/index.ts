@@ -9,7 +9,6 @@ let stopWatcher: () => void = () => {};
 
 async function main() {
   seedIfEmpty();
-  stopWatcher = await startChainWatcherSafe();
 
   const app = createApp();
   app.get('/health', (_req, res) => res.json({ ok: true }));
@@ -30,9 +29,15 @@ async function main() {
   });
 
   const port = parseInt(process.env.PORT || '3847', 10);
-  app.listen(port, '0.0.0.0', () => {
-    console.log(`[api] http://127.0.0.1:${port}`);
+  await new Promise<void>((resolve) => {
+    app.listen(port, '0.0.0.0', () => {
+      console.log(`[api] http://127.0.0.1:${port}`);
+      resolve();
+    });
   });
+
+  // Start watcher after HTTP is up so deploy healthchecks and systemd don't time out.
+  stopWatcher = await startChainWatcherSafe();
 }
 
 void main().catch((e) => {

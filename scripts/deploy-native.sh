@@ -85,6 +85,22 @@ sudo systemctl enable vaultex-api
 sudo systemctl restart vaultex-api
 sudo systemctl reload nginx
 
+wait_for_http() {
+  local url="$1"
+  local label="$2"
+  local max="${3:-90}"
+  local i
+  for ((i = 1; i <= max; i++)); do
+    if curl -sf "$url" >/dev/null 2>&1; then
+      echo "$label: ok (after ${i}s)"
+      return 0
+    fi
+    sleep 1
+  done
+  echo "$label: FAIL after ${max}s" >&2
+  return 1
+}
+
 echo "==> Status"
 if sudo systemctl is-active --quiet vaultex-anvil; then
   echo "vaultex-anvil: active"
@@ -102,18 +118,24 @@ else
   exit 1
 fi
 
-if curl -sf http://127.0.0.1:3847/health >/dev/null; then
-  echo "GET /health: ok"
-else
-  echo "GET /health: FAIL" >&2
+if ! wait_for_http "http://127.0.0.1:3847/health" "GET /health"; then
+  sudo ss -tlnp | grep 3847 >&2 || true
+  sudo journalctl -u vaultex-api -n 50 --no-pager >&2 || true
   exit 1
 fi
 
-ready_body="$(curl -sf http://127.0.0.1:3847/ready || true)"
-echo "GET /ready: ${ready_body:-<no response>}"
+ready_body=""
+for _ in $(seq 1 30); do
+  ready_body="$(curl -sf http://127.0.0.1:3847/ready 2>/dev/null || true)"
+  if echo "$ready_body" | grep -q '"status":"ok"'; then
+    echo "GET /ready: ok — $ready_body"
+    break
+  fi
+  sleep 1
+done
 if ! echo "$ready_body" | grep -q '"status":"ok"'; then
-  echo "GET /ready: not ok — check anvil and /etc/vaultex/api.env" >&2
-  sudo journalctl -u vaultex-api -n 20 --no-pager >&2 || true
+  echo "GET /ready: ${ready_body:-<no response>}" >&2
+  sudo journalctl -u vaultex-api -n 30 --no-pager >&2 || true
   exit 1
 fi
 
