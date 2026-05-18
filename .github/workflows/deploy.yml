@@ -51,8 +51,14 @@ jobs:
 
             if ! command -v git >/dev/null 2>&1; then
               echo "==> Installing git (required for deploy)…"
-              sudo DEBIAN_FRONTEND=noninteractive apt-get update -qq
-              sudo DEBIAN_FRONTEND=noninteractive apt-get install -y git curl ca-certificates
+              chmod +x scripts/wait-for-apt.sh 2>/dev/null || true
+              if [[ -f scripts/wait-for-apt.sh ]]; then
+                ./scripts/wait-for-apt.sh apt-get update -qq
+                ./scripts/wait-for-apt.sh apt-get install -y git curl ca-certificates
+              else
+                sudo DEBIAN_FRONTEND=noninteractive apt-get update -qq
+                sudo DEBIAN_FRONTEND=noninteractive apt-get install -y git curl ca-certificates
+              fi
             fi
 
             if [[ ! -d "$APP_DIR/.git" ]]; then

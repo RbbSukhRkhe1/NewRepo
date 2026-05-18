@@ -14,18 +14,24 @@ if [[ "$(id -u)" -eq 0 ]]; then
   exit 1
 fi
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=wait-for-apt.sh
+source "$SCRIPT_DIR/wait-for-apt.sh"
+chmod +x "$SCRIPT_DIR/wait-for-apt.sh" 2>/dev/null || true
+
 echo "==> Packages (git, nginx, build tools for better-sqlite3)…"
 if ! command -v git >/dev/null 2>&1; then
-  sudo DEBIAN_FRONTEND=noninteractive apt-get update -qq
-  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y git
+  "$SCRIPT_DIR/wait-for-apt.sh" apt-get update -qq
+  "$SCRIPT_DIR/wait-for-apt.sh" apt-get install -y git
 fi
-sudo DEBIAN_FRONTEND=noninteractive apt-get update -qq
-sudo DEBIAN_FRONTEND=noninteractive apt-get install -y nginx rsync git curl ca-certificates build-essential python3
+"$SCRIPT_DIR/wait-for-apt.sh" apt-get update -qq
+"$SCRIPT_DIR/wait-for-apt.sh" apt-get install -y nginx rsync git curl ca-certificates build-essential python3
 
 if ! command -v node >/dev/null 2>&1 || [[ "$(node -v | cut -d. -f1 | tr -d v)" -lt 20 ]]; then
   echo "==> Node.js 20…"
+  wait_for_apt_lock
   curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-  sudo apt-get install -y nodejs
+  "$SCRIPT_DIR/wait-for-apt.sh" apt-get install -y nodejs
 fi
 
 echo "==> Clone or update repo at $APP_DIR…"
