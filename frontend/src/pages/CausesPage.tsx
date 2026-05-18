@@ -149,7 +149,7 @@ function CauseCard({
   raisedEth?: number;
   goalEth?: number;
 }) {
-  const [heroFailed, setHeroFailed] = useState(false);
+  const [failedHeroKey, setFailedHeroKey] = useState<string | null>(null);
 
   const hasLiveStats = raisedEth != null && goalEth != null && goalEth > 0;
   const livePct = hasLiveStats ? Math.min(100, ((raisedEth as number) / (goalEth as number)) * 100) : null;
@@ -172,12 +172,10 @@ function CauseCard({
 
   const detailHref = detailCauseId != null ? `/causes/${detailCauseId}` : '/causes';
   const heroSrc = resolveCauseHeroUrl(cause.apiTitle, imageUrl);
+  const heroFailureKey = `${detailCauseId ?? ''}:${cause.title}:${heroSrc ?? ''}`;
+  const heroFailed = failedHeroKey === heroFailureKey;
   const displayHero =
     heroSrc && !heroFailed ? heroSrc : SAMPLE_HERO_PLACEHOLDER;
-
-  useEffect(() => {
-    setHeroFailed(false);
-  }, [heroSrc]);
 
   return (
     <article
@@ -200,7 +198,7 @@ function CauseCard({
             alt=""
             className="h-full w-full object-cover"
             onError={() => {
-              if (heroSrc && displayHero === heroSrc) setHeroFailed(true);
+              if (heroSrc && displayHero === heroSrc) setFailedHeroKey(heroFailureKey);
             }}
           />
         </div>

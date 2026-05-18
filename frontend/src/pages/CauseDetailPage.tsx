@@ -254,7 +254,8 @@ export function CauseDetailPage() {
   const [busy, setBusy] = useState(false);
   const [activeSlice, setActiveSlice] = useState<number | null>(null);
   const dashboardHoverLeaveRef = useRef<ReturnType<typeof window.setTimeout> | null>(null);
-  const [heroFailed, setHeroFailed] = useState(false);
+  /** Track which hero URL failed; when `cause`/`heroSrc` changes, key mismatch clears failure without an effect. */
+  const [failedHeroKey, setFailedHeroKey] = useState<string | null>(null);
 
   function cancelImpactSliceDeferClear() {
     if (dashboardHoverLeaveRef.current != null) {
@@ -294,10 +295,6 @@ export function CauseDetailPage() {
       .catch((e: Error) => setErr(e.message));
   }, [id]);
 
-  useEffect(() => {
-    setHeroFailed(false);
-  }, [cause?.id, cause?.image_url]);
-
   const canDonate =
     user && (user.role === 'donor' || user.role === 'admin') && user.anvilIndex != null;
 
@@ -334,6 +331,8 @@ export function CauseDetailPage() {
 
   const pct = Math.min(100, (cause.raised_eth / cause.goal_eth) * 100);
   const heroSrc = resolveCauseHeroUrl(cause.title, cause.image_url);
+  const heroFailureKey = `${cause.id}:${heroSrc ?? ''}`;
+  const heroFailed = failedHeroKey === heroFailureKey;
   const detailCopy = DETAIL_COPY_BY_TITLE[cause.title];
   const remainingEth = Math.max(0, cause.goal_eth - cause.raised_eth);
   const parsedAmount = Number.parseFloat(amount || '0');
@@ -423,7 +422,7 @@ export function CauseDetailPage() {
             src={heroSrc}
             alt=""
             className="h-full w-full object-cover"
-            onError={() => setHeroFailed(true)}
+            onError={() => setFailedHeroKey(heroFailureKey)}
           />
         ) : (
           <>
