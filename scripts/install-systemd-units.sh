@@ -6,8 +6,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 APP_DIR="${VAULTEX_HOME:-${DEPLOY_PATH:-/opt/vaultex}}"
+BACKEND_DIR="${APP_DIR}/backend"
 
-# sudo resets $USER/$HOME to root; use the user who invoked sudo.
 RUN_USER="${VAULTEX_RUN_USER:-${SUDO_USER:-$USER}}"
 if [[ "$RUN_USER" == "root" ]] || [[ -z "$RUN_USER" ]]; then
   RUN_USER="ubuntu"
@@ -15,23 +15,33 @@ fi
 
 RUN_HOME="$(getent passwd "$RUN_USER" | cut -d: -f6)"
 ANVIL_BIN="${RUN_HOME}/.foundry/bin/anvil"
-NPM_BIN="$(sudo -u "$RUN_USER" -H bash -lc 'command -v npm')"
+NODE_BIN="$(sudo -u "$RUN_USER" -H bash -lc 'command -v node')"
 
-if [[ ! -x "$ANVIL_BIN" ]]; then
-  echo "ERROR: anvil not found at $ANVIL_BIN" >&2
-  echo "Install as $RUN_USER: sudo -u $RUN_USER bash $SCRIPT_DIR/install-foundry.sh" >&2
+# tsx is hoisted to the workspace root in npm workspaces
+TSX_IMPORT="${APP_DIR}/node_modules/tsx"
+if [[ ! -d "$TSX_IMPORT" ]]; then
+  TSX_IMPORT="${BACKEND_DIR}/node_modules/tsx"
+fi
+if [[ ! -d "$TSX_IMPORT" ]]; then
+  echo "ERROR: tsx not found under ${APP_DIR}/node_modules — run: npm ci --include=dev" >&2
   exit 1
 fi
 
-if [[ -z "$NPM_BIN" ]] || [[ ! -x "$NPM_BIN" ]]; then
-  echo "ERROR: npm not found for user $RUN_USER" >&2
+if [[ ! -x "$ANVIL_BIN" ]]; then
+  echo "ERROR: anvil not found at $ANVIL_BIN" >&2
+  exit 1
+fi
+
+if [[ -z "$NODE_BIN" ]] || [[ ! -x "$NODE_BIN" ]]; then
+  echo "ERROR: node not found for user $RUN_USER" >&2
   exit 1
 fi
 
 echo "==> Installing systemd units"
 echo "    user=$RUN_USER home=$RUN_HOME"
 echo "    anvil=$ANVIL_BIN"
-echo "    npm=$NPM_BIN"
+echo "    node=$NODE_BIN"
+echo "    backend cwd=$BACKEND_DIR"
 echo "    app=$APP_DIR"
 
 sudo tee /etc/systemd/system/vaultex-anvil.service >/dev/null <<EOF
@@ -53,6 +63,7 @@ MemoryMax=384M
 WantedBy=multi-user.target
 EOF
 
+# Run from backend/ so server/index.ts resolves; env from /etc/vaultex/api.env (PORT=3847).
 sudo tee /etc/systemd/system/vaultex-api.service >/dev/null <<EOF
 [Unit]
 Description=Vaultex API (Node)
@@ -63,9 +74,9 @@ Wants=vaultex-anvil.service
 Type=simple
 User=${RUN_USER}
 Group=${RUN_USER}
-WorkingDirectory=${APP_DIR}
+WorkingDirectory=${BACKEND_DIR}
 EnvironmentFile=/etc/vaultex/api.env
-ExecStart=${NPM_BIN} run start -w backend
+ExecStart=${NODE_BIN} --import tsx ./server/index.ts
 Restart=on-failure
 RestartSec=5
 MemoryMax=512M
