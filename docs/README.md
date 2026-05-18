@@ -16,3 +16,4 @@ Task ownership and priorities: **`../CAPSTONE_TASK_TRACKER.csv`** (repo root). C
 | [ANVIL_STATE.md](./ANVIL_STATE.md) | Saving / restoring local chain state for repeatable demos |
 | [REDIS_EVENTS.md](./REDIS_EVENTS.md) | Redis pub/sub envelope schema and dev commands |
 | [DEPLOY.md](./DEPLOY.md) | CI/CD deploy to Oracle Cloud Ubuntu (Docker Compose over SSH) |
+| [DEPLOY-NATIVE.md](./DEPLOY-NATIVE.md) | Lightweight nginx + Node (no Docker, recommended for Always Free) |

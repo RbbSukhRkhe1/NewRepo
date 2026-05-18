@@ -139,6 +139,22 @@ jobs:
             echo "| Backend | \`npx tsc -p backend/tsconfig.json\` (typecheck) |"
           } >> "$GITHUB_STEP_SUMMARY"
 
+  deploy-scripts:
+    name: "Deploy — native script syntax"
+    runs-on: ubuntu-latest
+    needs: [lint]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate bash deploy scripts
+        run: |
+          set -euo pipefail
+          for f in scripts/deploy-native.sh scripts/server-bootstrap-native.sh scripts/install-foundry.sh scripts/deploy.sh; do
+            bash -n "$f"
+            echo "OK $f"
+          done
+
   docker:
     name: "Docker — compose build (main pushes only)"
     runs-on: ubuntu-latest

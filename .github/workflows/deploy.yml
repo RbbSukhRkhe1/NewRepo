@@ -1,14 +1,9 @@
-# Vaultex — deploy to Oracle Cloud (or any Ubuntu host) over SSH after CI passes on main.
+# Vaultex — deploy to Oracle Cloud Ubuntu over SSH after CI passes on main.
+# Default: native stack (nginx + Node + Anvil). Optional Docker: set secret DEPLOY_DOCKER=true
 #
-# Required GitHub repository secrets:
-#   DEPLOY_HOST      — public IP or DNS of the Ubuntu server
-#   DEPLOY_USER      — SSH user (e.g. ubuntu)
-#   DEPLOY_SSH_KEY   — private key (PEM) matching the server's authorized_keys
-# Optional:
-#   DEPLOY_SSH_PORT  — default 22
-#   DEPLOY_PATH      — app directory on server (default /opt/vaultex)
-#
-# One-time server setup: scripts/server-bootstrap.sh (see docs/DEPLOY.md)
+# Required secrets: DEPLOY_HOST, DEPLOY_USER, DEPLOY_SSH_KEY
+# Optional: DEPLOY_PATH (/opt/vaultex), DEPLOY_SSH_PORT (22)
+# One-time on server (or auto on first deploy): scripts/server-bootstrap-native.sh
 
 name: Deploy
 
@@ -27,7 +22,7 @@ permissions:
 
 jobs:
   deploy:
-    name: Deploy to Ubuntu server
+    name: Deploy to Ubuntu (native)
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'workflow_dispatch' ||
@@ -53,14 +48,25 @@ jobs:
             set -euo pipefail
             APP_DIR="${DEPLOY_PATH:-/opt/vaultex}"
             if [[ ! -d "$APP_DIR/.git" ]]; then
-              echo "Missing git repo at $APP_DIR — run scripts/server-bootstrap.sh on the server first."
+              echo "Missing git repo at $APP_DIR — clone the repo or run scripts/server-bootstrap-native.sh" >&2
               exit 1
             fi
             cd "$APP_DIR"
             git fetch origin main
             git reset --hard origin/main
-            chmod +x scripts/deploy.sh
-            ./scripts/deploy.sh
+            chmod +x scripts/deploy.sh scripts/deploy-native.sh scripts/server-bootstrap-native.sh scripts/install-foundry.sh 2>/dev/null || true
+
+            if [[ "${{ secrets.DEPLOY_DOCKER }}" == "true" ]]; then
+              echo "==> Docker deploy (DEPLOY_DOCKER=true)"
+              ./scripts/deploy.sh
+            else
+              echo "==> Native deploy (nginx + Node + Anvil)"
+              if [[ ! -f /etc/vaultex/api.env ]] || [[ ! -f /etc/systemd/system/vaultex-anvil.service ]]; then
+                echo "==> First run: bootstrap native stack…"
+                ./scripts/server-bootstrap-native.sh
+              fi
+              ./scripts/deploy-native.sh
+            fi
 
       - name: Summary
         if: success()
@@ -68,7 +74,13 @@ jobs:
           {
             echo "## Deploy"
             echo ""
-            echo "Stack updated on **\`${{ secrets.DEPLOY_HOST }}\`** (path: \`${{ secrets.DEPLOY_PATH || '/opt/vaultex' }}\`)."
+            echo "Host: **\`${{ secrets.DEPLOY_HOST }}\`** · path: \`${{ secrets.DEPLOY_PATH || '/opt/vaultex' }}\`"
             echo ""
-            echo "Open **http://\`<host>\`:8080\`** (or your \`WEB_HOST_PORT\`) after Oracle Cloud security lists allow inbound TCP on that port."
+            if [[ "${{ secrets.DEPLOY_DOCKER }}" == "true" ]]; then
+              echo "Mode: **Docker Compose** — http://\`<host>\`:8080 (or \`WEB_HOST_PORT\`)"
+            else
+              echo "Mode: **native** (nginx + Anvil + API) — http://vaultex.club on port **80**"
+              echo ""
+              echo "Services: \`vaultex-anvil\`, \`vaultex-api\`, nginx"
+            fi
           } >> "$GITHUB_STEP_SUMMARY"

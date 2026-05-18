@@ -1,0 +1,18 @@
+[Unit]
+Description=Vaultex local chain (Anvil / Foundry)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+# Install path from scripts/install-foundry.sh (adjust user if not ubuntu)
+ExecStart=%h/.foundry/bin/anvil --host 127.0.0.1 --port 8545
+Restart=on-failure
+RestartSec=3
+
+MemoryMax=384M
+
+[Install]
+WantedBy=multi-user.target

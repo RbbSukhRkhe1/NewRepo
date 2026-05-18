@@ -1,6 +1,8 @@
 # Deploy Vaultex to Oracle Cloud (Ubuntu)
 
-This guide wires **GitHub Actions** to your **Oracle Cloud** Ubuntu VM using **SSH** and **Docker Compose** (same stack as local: frontend, backend, Redis, Anvil).
+**Production default (CI/CD):** **[DEPLOY-NATIVE.md](./DEPLOY-NATIVE.md)** — nginx + Node + Anvil via systemd (no Docker, fits Always Free).
+
+This guide covers the **Docker Compose** path (optional). Set GitHub secret `DEPLOY_DOCKER=true` to use it instead of native deploy.
 
 ## Architecture
 

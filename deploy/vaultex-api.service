@@ -1,0 +1,20 @@
+[Unit]
+Description=Vaultex API (Node)
+After=network-online.target vaultex-anvil.service
+Wants=vaultex-anvil.service
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/opt/vaultex
+EnvironmentFile=/etc/vaultex/api.env
+ExecStart=/usr/bin/npm run start -w backend
+Restart=on-failure
+RestartSec=5
+
+# Free-tier friendly
+MemoryMax=512M
+
+[Install]
+WantedBy=multi-user.target
