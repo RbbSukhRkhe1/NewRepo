@@ -70,9 +70,7 @@ sudo chown root:"$USER" /etc/vaultex/api.env
 sudo chmod 640 /etc/vaultex/api.env
 
 echo "==> systemd units (Anvil + API)…"
-sudo cp deploy/vaultex-anvil.service /etc/systemd/system/vaultex-anvil.service
-sudo cp deploy/vaultex-api.service /etc/systemd/system/vaultex-api.service
-sudo systemctl daemon-reload
+bash "$SCRIPT_DIR/install-systemd-units.sh"
 sudo systemctl enable vaultex-anvil
 
 echo "==> UFW (optional)…"

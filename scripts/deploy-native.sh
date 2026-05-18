@@ -49,9 +49,7 @@ echo "==> Ensure Foundry / Anvil…"
 if [[ -x scripts/install-foundry.sh ]]; then
   bash scripts/install-foundry.sh
 fi
-if [[ -f deploy/vaultex-anvil.service ]]; then
-  sudo cp deploy/vaultex-anvil.service /etc/systemd/system/vaultex-anvil.service
-fi
+bash "$SCRIPT_DIR/install-systemd-units.sh"
 
 echo "==> Enable Anvil RPC in API env (if upgrading from no-chain mode)…"
 if [[ -f /etc/vaultex/api.env ]] && grep -q '^READY_SKIP_RPC=1' /etc/vaultex/api.env; then
@@ -88,7 +86,35 @@ sudo systemctl restart vaultex-api
 sudo systemctl reload nginx
 
 echo "==> Status"
-sudo systemctl is-active vaultex-api
-curl -sf http://127.0.0.1:3847/health >/dev/null && echo "API health: ok" || echo "API health: FAIL — check: sudo journalctl -u vaultex-api -n 40"
-curl -sf http://127.0.0.1:3847/ready >/dev/null && echo "API ready (DB + RPC): ok" || echo "API ready: check RPC — sudo journalctl -u vaultex-anvil -n 20"
+if sudo systemctl is-active --quiet vaultex-anvil; then
+  echo "vaultex-anvil: active"
+else
+  echo "vaultex-anvil: FAILED" >&2
+  sudo journalctl -u vaultex-anvil -n 40 --no-pager >&2 || true
+  exit 1
+fi
+
+if sudo systemctl is-active --quiet vaultex-api; then
+  echo "vaultex-api: active"
+else
+  echo "vaultex-api: FAILED" >&2
+  sudo journalctl -u vaultex-api -n 40 --no-pager >&2 || true
+  exit 1
+fi
+
+if curl -sf http://127.0.0.1:3847/health >/dev/null; then
+  echo "GET /health: ok"
+else
+  echo "GET /health: FAIL" >&2
+  exit 1
+fi
+
+ready_body="$(curl -sf http://127.0.0.1:3847/ready || true)"
+echo "GET /ready: ${ready_body:-<no response>}"
+if ! echo "$ready_body" | grep -q '"status":"ok"'; then
+  echo "GET /ready: not ok — check anvil and /etc/vaultex/api.env" >&2
+  sudo journalctl -u vaultex-api -n 20 --no-pager >&2 || true
+  exit 1
+fi
+
 echo "Done. Open http://vaultex.club (port 80 — ensure OCI allows TCP 80)."

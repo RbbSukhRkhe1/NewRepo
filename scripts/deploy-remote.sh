@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Entry point for GitHub Actions SSH deploy (and manual parity).
-set -euo pipefail
+set -eo pipefail
+export DEPLOY_PATH="${DEPLOY_PATH:-/opt/vaultex}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=deploy-env.sh
