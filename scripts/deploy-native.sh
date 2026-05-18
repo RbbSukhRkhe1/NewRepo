@@ -2,6 +2,12 @@
 # Native deploy: nginx static + systemd Node API (no Docker).
 set -euo pipefail
 
+if ! command -v git >/dev/null 2>&1; then
+  echo "==> Installing git…"
+  sudo DEBIAN_FRONTEND=noninteractive apt-get update -qq
+  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y git
+fi
+
 APP_DIR="${VAULTEX_HOME:-${DEPLOY_PATH:-/opt/vaultex}}"
 WEB_ROOT="${VAULTEX_WEB_ROOT:-/var/www/vaultex}"
 API_ENV="${VAULTEX_API_ENV:-/etc/vaultex/api.env}"

@@ -47,10 +47,24 @@ jobs:
           script: |
             set -euo pipefail
             APP_DIR="${DEPLOY_PATH:-/opt/vaultex}"
-            if [[ ! -d "$APP_DIR/.git" ]]; then
-              echo "Missing git repo at $APP_DIR — clone the repo or run scripts/server-bootstrap-native.sh" >&2
-              exit 1
+            REPO_URL="https://github.com/RbbSukhRkhe1/NewRepo.git"
+
+            if ! command -v git >/dev/null 2>&1; then
+              echo "==> Installing git (required for deploy)…"
+              sudo DEBIAN_FRONTEND=noninteractive apt-get update -qq
+              sudo DEBIAN_FRONTEND=noninteractive apt-get install -y git curl ca-certificates
             fi
+
+            if [[ ! -d "$APP_DIR/.git" ]]; then
+              echo "==> No git repo at $APP_DIR — cloning…"
+              sudo mkdir -p "$(dirname "$APP_DIR")"
+              if [[ -d "$APP_DIR" ]]; then
+                sudo rm -rf "$APP_DIR"
+              fi
+              sudo git clone --branch main --depth 1 "$REPO_URL" "$APP_DIR"
+              sudo chown -R "$USER:$USER" "$APP_DIR"
+            fi
+
             cd "$APP_DIR"
             git fetch origin main
             git reset --hard origin/main

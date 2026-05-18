@@ -14,9 +14,13 @@ if [[ "$(id -u)" -eq 0 ]]; then
   exit 1
 fi
 
-echo "==> Packages (nginx, build tools for better-sqlite3)…"
-sudo apt-get update
-sudo apt-get install -y nginx rsync git curl ca-certificates build-essential python3
+echo "==> Packages (git, nginx, build tools for better-sqlite3)…"
+if ! command -v git >/dev/null 2>&1; then
+  sudo DEBIAN_FRONTEND=noninteractive apt-get update -qq
+  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y git
+fi
+sudo DEBIAN_FRONTEND=noninteractive apt-get update -qq
+sudo DEBIAN_FRONTEND=noninteractive apt-get install -y nginx rsync git curl ca-certificates build-essential python3
 
 if ! command -v node >/dev/null 2>&1 || [[ "$(node -v | cut -d. -f1 | tr -d v)" -lt 20 ]]; then
   echo "==> Node.js 20…"
