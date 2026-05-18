@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Wait for unattended-upgrades / other apt jobs, then run apt-get (or any command).
 # Usage: ./scripts/wait-for-apt.sh apt-get install -y nginx
-set -euo pipefail
+# Sourced by bootstrap for wait_for_apt_lock only — must not exit the parent script.
 
 MAX_WAIT="${WAIT_FOR_APT_MAX:-900}"
 
@@ -32,10 +32,13 @@ wait_for_apt_lock() {
   done
 }
 
-if [[ $# -eq 0 ]]; then
+# Only run CLI when executed directly — sourcing defines wait_for_apt_lock only.
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  set -euo pipefail
+  if [[ $# -eq 0 ]]; then
+    wait_for_apt_lock
+    exit 0
+  fi
   wait_for_apt_lock
-  exit 0
+  exec sudo DEBIAN_FRONTEND=noninteractive "$@"
 fi
-
-wait_for_apt_lock
-exec sudo DEBIAN_FRONTEND=noninteractive "$@"
