@@ -2,6 +2,8 @@
 # Native deploy: nginx static + systemd Node API (no Docker).
 set -euo pipefail
 
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:${HOME}/.foundry/bin:${PATH:-}"
+
 if ! command -v git >/dev/null 2>&1; then
   echo "==> Installing git…"
   sudo DEBIAN_FRONTEND=noninteractive apt-get update -qq
@@ -13,6 +15,12 @@ WEB_ROOT="${VAULTEX_WEB_ROOT:-/var/www/vaultex}"
 API_ENV="${VAULTEX_API_ENV:-/etc/vaultex/api.env}"
 
 cd "$APP_DIR"
+
+if ! command -v node >/dev/null 2>&1 || ! command -v npm >/dev/null 2>&1; then
+  echo "ERROR: node/npm not in PATH. Install Node 20 or run server-bootstrap-native.sh." >&2
+  echo "PATH=$PATH" >&2
+  exit 1
+fi
 
 if [[ ! -f "$API_ENV" ]]; then
   echo "Missing $API_ENV — run scripts/server-bootstrap-native.sh first." >&2

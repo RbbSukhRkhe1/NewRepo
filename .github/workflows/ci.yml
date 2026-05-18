@@ -151,7 +151,7 @@ jobs:
       - name: Validate bash deploy scripts
         run: |
           set -euo pipefail
-          for f in scripts/deploy-native.sh scripts/server-bootstrap-native.sh scripts/install-foundry.sh scripts/deploy.sh scripts/wait-for-apt.sh; do
+          for f in scripts/deploy-native.sh scripts/deploy-remote.sh scripts/server-bootstrap-native.sh scripts/install-foundry.sh scripts/deploy.sh scripts/wait-for-apt.sh; do
             bash -n "$f"
             echo "OK $f"
           done
