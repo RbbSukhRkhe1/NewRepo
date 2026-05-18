@@ -2,7 +2,9 @@
 # Native deploy: nginx static + systemd Node API (no Docker).
 set -euo pipefail
 
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:${HOME}/.foundry/bin:${PATH:-}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=deploy-env.sh
+source "$SCRIPT_DIR/deploy-env.sh"
 
 if ! command -v git >/dev/null 2>&1; then
   echo "==> Installing git…"
