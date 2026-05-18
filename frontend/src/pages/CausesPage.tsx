@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { apiJson } from '../lib/api';
+import { resolveCauseHeroUrl } from '../lib/causeHeroImages';
 import { useIsLightMode } from '../lib/useIsLightMode';
 import { CauseFundingDonut } from '../components/CauseFundingDonut';
 
@@ -171,7 +172,8 @@ function CauseCard({
         : 'text-emerald-300';
 
   const detailHref = detailCauseId != null ? `/causes/${detailCauseId}` : '/causes';
-  const showHero = Boolean(imageUrl) && !heroFailed;
+  const heroSrc = resolveCauseHeroUrl(cause.apiTitle, imageUrl);
+  const showHero = Boolean(heroSrc) && !heroFailed;
 
   return (
     <article
@@ -190,7 +192,7 @@ function CauseCard({
         <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-[var(--glass-border)] bg-[var(--overlay-surface-soft)] md:aspect-auto md:min-h-[11rem]">
           {showHero ? (
             <img
-              src={imageUrl!}
+              src={heroSrc!}
               alt=""
               className="h-full w-full object-cover"
               onError={() => {

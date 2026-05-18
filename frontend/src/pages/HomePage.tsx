@@ -178,20 +178,20 @@ const HOW_IT_WORKS_TRUST_POINTS: {
 }[] = [
   {
     title: '100% Transparent',
-    body: 'Every transaction is recorded on-chain with visible movement from gift to impact.',
+    body: 'On-chain from gift to impact.',
     tone: 'teal',
     iconD: 'M12 2 4 5v6c0 4.5 3 8.7 8 10 5-1.3 8-5.5 8-10V5l-8-3z',
   },
   {
     title: "You're in Control",
-    body: 'Your wallet, your pace. You can review causes and donate only when you feel ready.',
+    body: 'Your wallet—donate when ready.',
     tone: 'violet',
     iconD:
       'M17 8V7a5 5 0 10-10 0v1H5v13h14V8h-2zm-8 0V7a3 3 0 016 0v1H9zm3 8.8a2.2 2.2 0 112.2-2.2A2.2 2.2 0 0112 16.8z',
   },
   {
     title: 'Real Impact',
-    body: 'Your gift reaches real people and outcomes you can verify in a live transparent ledger.',
+    body: 'Verify outcomes on the live ledger.',
     tone: 'lime',
     iconD: 'M4 12h4l2-4 3 8 2-4h5',
   },
@@ -213,38 +213,38 @@ const HOW_IT_WORKS_STEPS: {
     id: 'browse',
     stepLabel: '01',
     title: 'Browse causes',
-    body: 'Explore stories, review goals, and choose what resonates most with you.',
+    body: 'Pick a cause that fits you.',
     to: '/causes',
     tone: 'teal',
     iconD: 'M11 4a7 7 0 105.15 11.85l3 3 1.4-1.4-3-3A7 7 0 0011 4zm0 2a5 5 0 110 10 5 5 0 010-10z',
     demoPill: 'Cause preview',
     demoMain: 'Community shelter · 75%',
-    demoSub: 'Funding progress updates live',
+    demoSub: 'Live progress',
   },
   {
     id: 'donate',
     stepLabel: '02',
     title: 'Donate securely',
-    body: 'Send ETH with clear prompts and keep a verifiable receipt tied to your donation.',
+    body: 'Send ETH, get a verifiable receipt.',
     to: '/donate',
     tone: 'violet',
     iconD:
       'M17 8V7a5 5 0 10-10 0v1H5v13h14V8h-2zm-8 0V7a3 3 0 016 0v1H9zm3 8.8a2.2 2.2 0 112.2-2.2A2.2 2.2 0 0112 16.8z',
     demoPill: 'You sent',
     demoMain: '1.25 ETH',
-    demoSub: 'Receipt hash · 0xf37a…7e2c',
+    demoSub: '0xf37a…7e2c',
   },
   {
     id: 'track',
     stepLabel: '03',
     title: 'Track impact',
-    body: 'Follow the live ledger and see your gift turn into visible measurable outcomes.',
+    body: 'Follow your gift on the ledger.',
     to: '/ledger',
     tone: 'lime',
     iconD: 'M4 4h16v2H4zm2 4h12v12H6zm3 7h2v3H9zm4-4h2v7h-2z',
     demoPill: 'Live ledger',
-    demoMain: 'Impact status: active',
-    demoSub: 'Updated in real-time',
+    demoMain: 'Impact: active',
+    demoSub: 'Live updates',
   },
 ];
 
@@ -256,25 +256,25 @@ const HOW_IT_WORKS_TRUST_STRIP: {
 }[] = [
   {
     title: 'On-chain verified',
-    body: 'Built on Ethereum with transparent records.',
+    body: 'Ethereum-backed records.',
     tone: 'teal',
     iconD: 'M12 2a10 10 0 100 20 10 10 0 000-20zm0 2a8 8 0 016.8 12.2H5.2A8 8 0 0112 4z',
   },
   {
     title: 'Trusted by donors',
-    body: 'Join thousands giving with confidence.',
+    body: 'Give with confidence.',
     tone: 'violet',
     iconD: 'M16 11a4 4 0 10-8 0 5 5 0 00-3 4.6V18h14v-2.4A5 5 0 0016 11z',
   },
   {
     title: 'Proof, not promises',
-    body: 'Receipts you can verify any time.',
+    body: 'Verify any receipt.',
     tone: 'teal',
     iconD: 'M12 1 3 5v6c0 5.6 3.8 10.8 9 12 5.2-1.2 9-6.4 9-12V5l-9-4zm-1 13-3-3 1.4-1.4L11 11.2l3.6-3.6L16 9l-5 5z',
   },
   {
     title: 'Your kindness',
-    body: 'Visible. Verifiable. Valuable.',
+    body: 'Visible. Verifiable.',
     tone: 'violet',
     iconD: 'M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 6 4 4 6.5 4c1.7 0 3.4 1 4.2 2.1C11.6 5 13.3 4 15 4 17.5 4 19.5 6 19.5 8.5c0 3.8-3.4 6.9-8.5 11.5z',
   },
@@ -649,12 +649,11 @@ export function HomePage() {
                   How it <span className={isLightMode ? 'text-[#0f937b]' : 'text-[#61f2d9]'}>works</span>
                 </h2>
                 <p
-                  className={`mt-4 max-w-md text-pretty text-sm leading-relaxed sm:text-[0.96rem] ${
+                  className={`mt-4 max-w-md text-pretty text-sm leading-snug sm:text-[0.96rem] ${
                     isLightMode ? 'text-slate-600' : 'text-slate-300/90'
                   }`}
                 >
-                  We make giving simple, transparent, and verifiable. You stay in control at every step, from choosing
-                  a cause to tracking real impact in the ledger.
+                  Simple, transparent giving—from cause to ledger.
                 </p>
                 <ul className="mt-7 space-y-4">
                   {HOW_IT_WORKS_TRUST_POINTS.map((point) => {
@@ -674,7 +673,7 @@ export function HomePage() {
                           </span>
                           <div>
                             <p className={`text-base font-semibold ${isLightMode ? m.titleLight : m.titleDark}`}>{point.title}</p>
-                            <p className={`mt-1 text-sm leading-relaxed ${isLightMode ? m.blurbLight : m.blurbDark}`}>{point.body}</p>
+                            <p className={`mt-1 text-sm leading-snug ${isLightMode ? m.blurbLight : m.blurbDark}`}>{point.body}</p>
                           </div>
                         </div>
                         <div className={`h-px w-full ${isLightMode ? 'bg-slate-200/80' : 'bg-white/[0.08]'}`} aria-hidden />
@@ -728,7 +727,7 @@ export function HomePage() {
                         <p className={`mt-4 text-[1.55rem] font-extrabold tracking-[-0.03em] ${isLightMode ? m.titleLight : m.titleDark}`}>
                           {step.title}
                         </p>
-                        <p className={`mx-auto mt-2 max-w-[15rem] text-sm leading-relaxed ${isLightMode ? m.blurbLight : m.blurbDark}`}>
+                        <p className={`mx-auto mt-2 max-w-[15rem] text-sm leading-snug ${isLightMode ? m.blurbLight : m.blurbDark}`}>
                           {step.body}
                         </p>
                         <div
@@ -782,7 +781,7 @@ export function HomePage() {
                   </span>
                   <div className="min-w-0">
                     <p className={`text-sm font-semibold ${isLightMode ? m.titleLight : m.titleDark}`}>{item.title}</p>
-                    <p className={`mt-0.5 text-xs leading-relaxed ${isLightMode ? m.blurbLight : m.blurbDark}`}>{item.body}</p>
+                    <p className={`mt-0.5 text-xs leading-snug ${isLightMode ? m.blurbLight : m.blurbDark}`}>{item.body}</p>
                   </div>
                 </div>
               );

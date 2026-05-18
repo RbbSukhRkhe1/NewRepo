@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { apiJson } from '../lib/api';
+import { resolveCauseHeroUrl } from '../lib/causeHeroImages';
 import { useIsLightMode } from '../lib/useIsLightMode';
 import { useAuth } from '../context/AuthContext';
 import { PrimaryButton, SectionHeader, SurfaceCard } from '../components/ui';
@@ -329,6 +330,7 @@ export function CauseDetailPage() {
   }
 
   const pct = Math.min(100, (cause.raised_eth / cause.goal_eth) * 100);
+  const heroSrc = resolveCauseHeroUrl(cause.title, cause.image_url);
   const detailCopy = DETAIL_COPY_BY_TITLE[cause.title];
   const remainingEth = Math.max(0, cause.goal_eth - cause.raised_eth);
   const parsedAmount = Number.parseFloat(amount || '0');
@@ -413,9 +415,9 @@ export function CauseDetailPage() {
           isLightMode ? 'border-emerald-400/35 bg-slate-100' : 'border-cyan-500/20 bg-slate-950/70'
         } aspect-[2.2/1] max-h-[min(42vh,24rem)] min-h-[11rem] w-full`}
       >
-        {cause.image_url && !heroFailed ? (
+        {heroSrc && !heroFailed ? (
           <img
-            src={cause.image_url}
+            src={heroSrc}
             alt=""
             className="h-full w-full object-cover"
             onError={() => {
