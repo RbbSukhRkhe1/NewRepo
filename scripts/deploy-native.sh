@@ -32,6 +32,12 @@ fi
 
 echo "==> Install dependencies & build frontend…"
 # Install devDependencies too (tsc, vite for build; tsx for API runtime).
+# After a prior deploy, dist/ is often owned by www-data for nginx; Vite must
+# rimraf output before rebuild — reclaim ownership for the current user first.
+if [[ -e "$FRONTEND_DIST" ]]; then
+  echo "==> Reclaim $FRONTEND_DIST for build (fix www-data ownership from last deploy)…"
+  sudo chown -R "$(id -u):$(id -g)" "$FRONTEND_DIST"
+fi
 npm ci --include=dev
 npm run build
 
