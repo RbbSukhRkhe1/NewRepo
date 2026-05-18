@@ -1,0 +1,74 @@
+# Vaultex — deploy to Oracle Cloud (or any Ubuntu host) over SSH after CI passes on main.
+#
+# Required GitHub repository secrets:
+#   DEPLOY_HOST      — public IP or DNS of the Ubuntu server
+#   DEPLOY_USER      — SSH user (e.g. ubuntu)
+#   DEPLOY_SSH_KEY   — private key (PEM) matching the server's authorized_keys
+# Optional:
+#   DEPLOY_SSH_PORT  — default 22
+#   DEPLOY_PATH      — app directory on server (default /opt/vaultex)
+#
+# One-time server setup: scripts/server-bootstrap.sh (see docs/DEPLOY.md)
+
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy to Ubuntu server
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.head_branch == 'main' &&
+        github.event.workflow_run.event == 'push'
+      )
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_SSH_PORT != '' && secrets.DEPLOY_SSH_PORT || 22 }}
+          envs: DEPLOY_PATH
+          script_stop: true
+          command_timeout: 45m
+          script: |
+            set -euo pipefail
+            APP_DIR="${DEPLOY_PATH:-/opt/vaultex}"
+            if [[ ! -d "$APP_DIR/.git" ]]; then
+              echo "Missing git repo at $APP_DIR — run scripts/server-bootstrap.sh on the server first."
+              exit 1
+            fi
+            cd "$APP_DIR"
+            git fetch origin main
+            git reset --hard origin/main
+            chmod +x scripts/deploy.sh
+            ./scripts/deploy.sh
+
+      - name: Summary
+        if: success()
+        run: |
+          {
+            echo "## Deploy"
+            echo ""
+            echo "Stack updated on **\`${{ secrets.DEPLOY_HOST }}\`** (path: \`${{ secrets.DEPLOY_PATH || '/opt/vaultex' }}\`)."
+            echo ""
+            echo "Open **http://\`<host>\`:8080\`** (or your \`WEB_HOST_PORT\`) after Oracle Cloud security lists allow inbound TCP on that port."
+          } >> "$GITHUB_STEP_SUMMARY"
