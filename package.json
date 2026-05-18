@@ -5,6 +5,7 @@
   "type": "module",
   "workspaces": ["frontend", "backend"],
   "scripts": {
+    "postinstall": "npm rebuild better-sqlite3",
     "dev": "concurrently -k \"npm run dev -w backend\" \"npm run dev -w frontend\"",
     "dev:web": "npm run dev -w frontend",
     "dev:api": "npm run dev -w backend",
