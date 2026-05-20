@@ -4,11 +4,16 @@ import { getReadiness } from './health.js';
 import { seedIfEmpty } from './seed.js';
 import { startChainWatcherSafe } from './watcher.js';
 import { closeRedis } from './lib/redis.js';
+import { backfillLedgerV2Defaults, recomputeAllDisbursementLinks } from './ledger/LedgerService.js';
+import { WebSocketServer } from 'ws';
+import { subscribeToEvents } from './lib/redis.js';
 
 let stopWatcher: () => void = () => {};
 
 async function main() {
   seedIfEmpty();
+  backfillLedgerV2Defaults();
+  recomputeAllDisbursementLinks();
 
   const app = createApp();
   app.get('/health', (_req, res) => res.json({ ok: true }));
@@ -29,11 +34,27 @@ async function main() {
   });
 
   const port = parseInt(process.env.PORT || '3847', 10);
-  await new Promise<void>((resolve) => {
-    app.listen(port, '0.0.0.0', () => {
+  const server = await new Promise<import('node:http').Server>((resolve) => {
+    const s = app.listen(port, '0.0.0.0', () => {
       console.log(`[api] http://127.0.0.1:${port}`);
-      resolve();
+      resolve(s);
     });
+  });
+
+  // WebSocket bridge for realtime ledger updates.
+  // Uses Redis pub/sub if available; otherwise clients can rely on polling.
+  const wss = new WebSocketServer({ server, path: '/ws' });
+  wss.on('connection', (socket) => {
+    socket.send(
+      JSON.stringify({ type: 'hello', ts: new Date().toISOString() })
+    );
+  });
+
+  await subscribeToEvents((envelope) => {
+    const payload = JSON.stringify({ type: 'event', envelope });
+    for (const client of wss.clients) {
+      if (client.readyState === client.OPEN) client.send(payload);
+    }
   });
 
   // Start watcher after HTTP is up so deploy healthchecks and systemd don't time out.

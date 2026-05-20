@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiJson } from '../lib/api';
@@ -24,6 +24,38 @@ const POLL_MS = 6000;
 function shortHash(hash: string): string {
   if (hash.length <= 14) return hash;
   return `${hash.slice(0, 8)}…${hash.slice(-6)}`;
+}
+
+function TierBadgeMedal({ tier }: { tier: string }) {
+  const gradId = `gold-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
+  const t = tier.toLowerCase();
+  const d = 'M12 3.5l1.9 5.8h6.1l-4.9 3.6 1.9 5.8-4.9-3.6-4.9 3.6 1.9-5.8-4.9-3.6h6.1z';
+  if (t === 'gold') {
+    return (
+      <svg className="h-9 w-9 shrink-0 drop-shadow-[0_0_10px_rgba(251,191,36,0.45)]" viewBox="0 0 24 24" aria-hidden>
+        <defs>
+          <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#fde68a" />
+            <stop offset="45%" stopColor="#f59e0b" />
+            <stop offset="100%" stopColor="#d97706" />
+          </linearGradient>
+        </defs>
+        <path fill={`url(#${gradId})`} d={d} />
+      </svg>
+    );
+  }
+  if (t === 'silver') {
+    return (
+      <svg className="h-9 w-9 shrink-0 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.35" aria-hidden>
+        <path d={d} />
+      </svg>
+    );
+  }
+  return (
+    <svg className="h-9 w-9 shrink-0 text-amber-700" viewBox="0 0 24 24" aria-hidden>
+      <path fill="#92400e" d={d} />
+    </svg>
+  );
 }
 
 function WalletMeter({
@@ -137,7 +169,19 @@ function HistoryRow({ e }: { e: UserHistoryEntry }) {
         ) : e.causeName && e.kind === 'donation_in' ? (
           <p className="truncate text-xs text-[var(--text-muted-1)]">{e.causeName}</p>
         ) : null}
-        <p className="mt-0.5 font-mono text-[10px] text-[var(--text-muted-3)]">{shortHash(e.txHash)}</p>
+        {e.kind === 'donation_in' ? (
+          <Link
+            to={`/lifecycle/${e.txHash}`}
+            className="mt-0.5 inline-flex w-fit font-mono text-[10px] text-[var(--text-muted-3)] hover:text-[var(--text-high-2)] hover:underline"
+            title="View donation lifecycle"
+          >
+            {shortHash(e.txHash)}
+          </Link>
+        ) : (
+          <span className="mt-0.5 inline-flex w-fit font-mono text-[10px] text-[var(--text-muted-3)]" title="Transaction hash">
+            {shortHash(e.txHash)}
+          </span>
+        )}
       </div>
       <div className="font-mono text-right text-base font-semibold tabular-nums text-amber-100 sm:text-lg">
         {incoming ? '+' : '−'}
@@ -167,6 +211,9 @@ export function AccountPage() {
   const [busyBeneficiary, setBusyBeneficiary] = useState(false);
   const [history, setHistory] = useState<MeHistoryResponse | null>(null);
   const [historyErr, setHistoryErr] = useState<string | null>(null);
+  const [badges, setBadges] = useState<
+    { causeId: number | null; causeName: string; donations: number; totalEth: number; tier: string }[]
+  >([]);
 
   const refreshHistory = useCallback(() => {
     if (!user) {
@@ -205,6 +252,18 @@ export function AccountPage() {
     const t = setInterval(refreshHistory, POLL_MS);
     return () => clearInterval(t);
   }, [refreshHistory, user]);
+
+  useEffect(() => {
+    if (!user) {
+      setBadges([]);
+      return;
+    }
+    apiJson<{ badges: { causeId: number | null; causeName: string; donations: number; totalEth: number; tier: string }[] }>(
+      '/me/badges'
+    )
+      .then((r) => setBadges(r.badges ?? []))
+      .catch(() => setBadges([]));
+  }, [user]);
 
   useEffect(() => {
     if (user?.role !== 'admin') return;
@@ -332,6 +391,40 @@ export function AccountPage() {
               <WalletMeter summary={history.summary} role={user.role} />
             </div>
           )}
+
+          {user.role === 'donor' ? (
+            <section className="mt-8 rounded-2xl border border-white/10 bg-white/[0.02] p-5 sm:p-6" aria-labelledby="acct-badges">
+              <h2 id="acct-badges" className="text-lg font-semibold text-[var(--text-high-3)]">
+                Contribution badges
+              </h2>
+              <p className="mt-1 text-xs text-[var(--text-muted-1)]">
+                Earned per cause from your donation totals (Bronze &lt; 1 ETH, Silver ≥ 1 ETH, Gold ≥ 5 ETH).
+              </p>
+              {badges.length === 0 ? (
+                <p className="mt-4 text-sm text-[var(--text-muted-1)]">No badges yet — donate to a cause to earn your first badge.</p>
+              ) : (
+                <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+                  {badges.map((b) => (
+                    <li key={`${b.causeId ?? 'general'}-${b.tier}`} className="vtx-glass-inset px-4 py-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex min-w-0 items-center gap-3">
+                          <TierBadgeMedal tier={b.tier} />
+                          <p className="truncate text-sm font-semibold text-[var(--text-high-3)]">{b.causeName}</p>
+                        </div>
+                        <span className="shrink-0 rounded-full border border-[var(--glass-border)] bg-[var(--overlay-surface-soft)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted-1)]">
+                          {b.tier}
+                        </span>
+                      </div>
+                      <p className="mt-2 text-xs text-[var(--text-muted-1)]">
+                        {b.donations} donation{b.donations === 1 ? '' : 's'} ·{' '}
+                        <span className="font-mono text-[var(--text-high-2)]">{b.totalEth.toFixed(4)} ETH</span>
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          ) : null}
 
           <section className="mt-8 rounded-2xl border border-white/10 bg-white/[0.02] p-5 sm:p-6" aria-labelledby="acct-history">
             <h2 id="acct-history" className="text-lg font-semibold text-[var(--text-high-3)]">

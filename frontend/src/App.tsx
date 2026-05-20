@@ -13,6 +13,8 @@ import { RegisterPage } from './pages/RegisterPage';
 import { AccountPage } from './pages/AccountPage';
 import { LedgerPage } from './pages/LedgerPage';
 import { DonationPage } from './pages/DonationPage';
+import { TxLifecyclePage } from './pages/TxLifecyclePage';
+import { RequireAuth } from './components/RequireAuth';
 
 function App() {
   return (
@@ -35,6 +37,14 @@ function App() {
             />
             <Route path="/ledger" element={<LedgerPage />} />
             <Route path="/account" element={<AccountPage />} />
+            <Route
+              path="/lifecycle/:txHash"
+              element={
+                <RequireAuth>
+                  <TxLifecyclePage />
+                </RequireAuth>
+              }
+            />
             <Route path="/donate" element={<DonationPage />} />
             <Route
               path="/admin/users"

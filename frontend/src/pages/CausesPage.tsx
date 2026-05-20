@@ -141,7 +141,10 @@ function CauseCard({
   detailCauseId,
   imageUrl,
   disbursedEth,
-  goalEth,
+  donatedEth,
+  remainingEth,
+  utilizationPct,
+  fundsMatched,
 }: {
   cause: ShowcaseCause;
   isLightMode: boolean;
@@ -150,19 +153,19 @@ function CauseCard({
   detailCauseId?: number;
   imageUrl?: string | null;
   disbursedEth?: number;
-  goalEth?: number;
+  donatedEth?: number;
+  remainingEth?: number;
+  utilizationPct?: number;
+  fundsMatched?: boolean;
 }) {
   const [failedHeroKey, setFailedHeroKey] = useState<string | null>(null);
 
-  const hasLiveStats = disbursedEth != null && goalEth != null && goalEth > 0;
-  const livePct = hasLiveStats ? Math.min(100, ((disbursedEth as number) / (goalEth as number)) * 100) : null;
-  const progressPct = livePct ?? cause.progressPct;
-  const progressLabel =
-    livePct != null ? `${livePct.toFixed(0)}%` : cause.progressLabel;
-  const amountLabel =
-    hasLiveStats
-      ? `${(disbursedEth as number).toFixed(2)} ETH disbursed of ${(goalEth as number).toFixed(2)} ETH goal`
-      : cause.amountLabel;
+  const hasUtil = utilizationPct != null && donatedEth != null;
+  const progressPct = hasUtil ? Math.min(100, Math.max(0, utilizationPct as number)) : cause.progressPct;
+  const progressLabel = hasUtil ? `${(utilizationPct as number).toFixed(0)}% utilized` : cause.progressLabel;
+  const amountLabel = hasUtil
+    ? `${(disbursedEth ?? 0).toFixed(2)} ETH disbursed of ${(donatedEth ?? 0).toFixed(2)} ETH donated · ${(remainingEth ?? 0).toFixed(2)} ETH remaining`
+    : cause.amountLabel;
 
   const accentText =
     cause.accent === 'orange'
@@ -192,7 +195,15 @@ function CauseCard({
     >
       <div className="mb-4 flex items-center justify-between">
         <p className={`text-[10px] font-semibold uppercase tracking-[0.25em] ${accentText}`}>{cause.sectionLabel}</p>
-        {cause.section === 'completed' ? (
+        {fundsMatched ? (
+          <span
+            className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${
+              isLightMode ? 'border border-emerald-600/25 bg-emerald-600/10 text-emerald-800' : 'border border-emerald-400/25 bg-emerald-400/10 text-emerald-200'
+            }`}
+          >
+            Funds Matched
+          </span>
+        ) : cause.section === 'completed' ? (
           <button type="button" className="text-xs text-[var(--text-muted-2)] hover:text-[var(--text-high-1)]">
             Delete
           </button>
@@ -272,11 +283,11 @@ function CauseCard({
             />
           </div>
 
-          {hasLiveStats ? (
+          {hasUtil ? (
             <div className="mt-4 max-w-[14rem]">
               <CauseFundingDonut
                 raisedEth={disbursedEth as number}
-                goalEth={goalEth as number}
+                goalEth={(donatedEth as number) || 1}
                 isLightMode={isLightMode}
                 compact
               />
@@ -353,6 +364,10 @@ type ApiCauseRow = {
   description: string;
   goal_eth: number;
   disbursed_eth: number;
+  donated_eth: number;
+  remaining_eth: number;
+  utilization_pct: number;
+  funds_matched: boolean;
   image_url: string | null;
 };
 
@@ -456,7 +471,10 @@ export function CausesPage() {
               detailCauseId={match.id}
               imageUrl={match.image_url}
               disbursedEth={match.disbursed_eth}
-              goalEth={match.goal_eth}
+              donatedEth={match.donated_eth}
+              remainingEth={match.remaining_eth}
+              utilizationPct={match.utilization_pct}
+              fundsMatched={match.funds_matched}
             />
           );
         })}

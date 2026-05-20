@@ -13,6 +13,15 @@ import { getRpcHttpUrl, chainId, network } from './config.js';
 import { maskAddr } from './resolve.js';
 import { publishEvent } from './lib/redis.js';
 import { ensureCauseWallets, nextCauseAnvilIndex } from './causeWallets.js';
+import {
+  buildNarrative,
+  causeUtilizationByCauseId,
+  computeAndStoreDisbursementAggregation,
+  ledgerReference,
+  parseAggregatedFrom,
+  searchLedgerV2,
+  type LedgerKind,
+} from './ledger/LedgerService.js';
 
 const vaultLower = () => anvilAddress(SUPER_RICH_INDEX).toLowerCase();
 
@@ -370,7 +379,23 @@ export function createApp() {
       | undefined;
     if (!row) return res.status(404).json({ error: 'Cause not found' });
     const disbursedMap = disbursedEthByCauseId();
-    res.json(attachDisbursedEth(row, disbursedMap));
+    const utilMap = causeUtilizationByCauseId();
+    const base = attachDisbursedEth(row, disbursedMap);
+    const util = utilMap.get(row.id);
+    res.json({
+      ...base,
+      donated_eth: util?.donatedEth ?? Number(row.raised_eth) ?? 0,
+      disbursed_eth: util?.disbursedEth ?? base.disbursed_eth ?? 0,
+      remaining_eth:
+        util?.remainingEth ??
+        Math.max(0, (Number(row.raised_eth) ?? 0) - (base.disbursed_eth ?? 0)),
+      utilization_pct:
+        util?.utilizationPct ??
+        (Number(row.raised_eth) > 0
+          ? Math.min(100, ((base.disbursed_eth ?? 0) / Number(row.raised_eth)) * 100)
+          : 0),
+      funds_matched: util != null && util.disbursedEth > 0,
+    });
   });
 
   api.get('/causes', (_req, res) => {
@@ -386,7 +411,21 @@ export function createApp() {
       created_at: string;
     }[];
     const disbursedMap = disbursedEthByCauseId();
-    res.json(rows.map((row) => attachDisbursedEth(row, disbursedMap)));
+    const utilMap = causeUtilizationByCauseId();
+    res.json(
+      rows.map((row) => {
+        const base = attachDisbursedEth(row, disbursedMap);
+        const util = utilMap.get(row.id);
+        return {
+          ...base,
+          donated_eth: util?.donatedEth ?? Number(row.raised_eth) ?? 0,
+          disbursed_eth: util?.disbursedEth ?? base.disbursed_eth ?? 0,
+          remaining_eth: util?.remainingEth ?? Math.max(0, (Number(row.raised_eth) ?? 0) - (base.disbursed_eth ?? 0)),
+          utilization_pct: util?.utilizationPct ?? (Number(row.raised_eth) > 0 ? Math.min(100, ((base.disbursed_eth ?? 0) / Number(row.raised_eth)) * 100) : 0),
+          funds_matched: util != null && util.disbursedEth > 0,
+        };
+      })
+    );
   });
 
   api.post('/causes', requireAuth, requireAdmin, (req, res) => {
@@ -521,11 +560,22 @@ export function createApp() {
       });
       const receipt = await tx.wait();
       const valueEthStr = ethers.formatEther(value);
+      const reference = ledgerReference('donation_in', tx.hash);
+      const narrative = buildNarrative({
+        kind: 'donation_in',
+        fromDisplay: u.name,
+        toDisplay: 'Vaultex',
+        amountEth: valueEthStr,
+        causeName: cause.title,
+        utilization: null,
+        memo: null,
+      });
       db.prepare(
         `INSERT INTO ledger_entries (
           tx_hash, block_number, from_addr, to_addr, value_eth, kind,
-          cause_id, from_display_name, to_display_name, cause_name, memo
-        ) VALUES (?,?,?,?,?,?,?,?,?,?,?)
+          cause_id, from_display_name, to_display_name, cause_name, memo,
+          reference, narrative, tags, linked_tx_ids, aggregated_from
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
         ON CONFLICT(tx_hash) DO UPDATE SET
           block_number = excluded.block_number,
           from_addr = excluded.from_addr,
@@ -536,7 +586,12 @@ export function createApp() {
           from_display_name = excluded.from_display_name,
           to_display_name = excluded.to_display_name,
           cause_name = excluded.cause_name,
-          memo = excluded.memo`
+          memo = excluded.memo,
+          reference = excluded.reference,
+          narrative = excluded.narrative,
+          tags = excluded.tags,
+          linked_tx_ids = excluded.linked_tx_ids,
+          aggregated_from = excluded.aggregated_from`
       ).run(
         tx.hash,
         receipt?.blockNumber ?? null,
@@ -548,6 +603,11 @@ export function createApp() {
         u.name,
         'Vaultex',
         cause.title,
+        null,
+        reference,
+        narrative,
+        JSON.stringify(['donation']),
+        null,
         null
       );
       db.prepare(`UPDATE causes SET raised_eth = raised_eth + ? WHERE id = ?`).run(
@@ -603,11 +663,22 @@ export function createApp() {
       const tx = await signer.sendTransaction({ to, value });
       const receipt = await tx.wait();
       const valueEthStr = ethers.formatEther(value);
+      const reference = ledgerReference('disbursement_out', tx.hash);
+      const narrative = buildNarrative({
+        kind: 'disbursement_out',
+        fromDisplay: 'Vaultex',
+        toDisplay: cause.title,
+        amountEth: valueEthStr,
+        causeName: cause.title,
+        utilization: null,
+        memo: msgParsed.value,
+      });
       db.prepare(
         `INSERT INTO ledger_entries (
           tx_hash, block_number, from_addr, to_addr, value_eth, kind,
-          cause_id, from_display_name, to_display_name, cause_name, memo
-        ) VALUES (?,?,?,?,?,?,?,?,?,?,?)
+          cause_id, from_display_name, to_display_name, cause_name, memo,
+          reference, narrative, tags, linked_tx_ids, aggregated_from
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
         ON CONFLICT(tx_hash) DO UPDATE SET
           block_number = excluded.block_number,
           from_addr = excluded.from_addr,
@@ -618,7 +689,12 @@ export function createApp() {
           from_display_name = excluded.from_display_name,
           to_display_name = excluded.to_display_name,
           cause_name = excluded.cause_name,
-          memo = excluded.memo`
+          memo = excluded.memo,
+          reference = excluded.reference,
+          narrative = excluded.narrative,
+          tags = excluded.tags,
+          linked_tx_ids = excluded.linked_tx_ids,
+          aggregated_from = excluded.aggregated_from`
       ).run(
         tx.hash,
         receipt?.blockNumber ?? null,
@@ -630,8 +706,24 @@ export function createApp() {
         'Vaultex',
         cause.title,
         cause.title,
-        msgParsed.value
+        msgParsed.value,
+        reference,
+        narrative,
+        JSON.stringify(['disbursement']),
+        null,
+        null
       );
+      const leRow = db.prepare(`SELECT id FROM ledger_entries WHERE tx_hash = ?`).get(tx.hash) as
+        | { id: number }
+        | undefined;
+      if (leRow?.id != null) {
+        computeAndStoreDisbursementAggregation({
+          ledgerEntryId: leRow.id,
+          txHash: tx.hash,
+          causeId: cause.id,
+          amountEth: valueEthStr,
+        });
+      }
       void publishEvent('disbursement.created', {
         txHash: tx.hash,
         amountEth: valueEthStr,
@@ -686,11 +778,22 @@ export function createApp() {
       const valueEthStr = ethers.formatEther(value);
       const cn = causeRow?.title ?? (causeName?.trim() || 'General allocation');
       const cid = causeRow?.id ?? null;
+      const reference = ledgerReference('disbursement_out', tx.hash);
+      const narrative = buildNarrative({
+        kind: 'disbursement_out',
+        fromDisplay: 'Vaultex',
+        toDisplay: beneficiary.name,
+        amountEth: valueEthStr,
+        causeName: cn,
+        utilization: null,
+        memo: msgParsed.value,
+      });
       db.prepare(
         `INSERT INTO ledger_entries (
           tx_hash, block_number, from_addr, to_addr, value_eth, kind,
-          cause_id, from_display_name, to_display_name, cause_name, memo
-        ) VALUES (?,?,?,?,?,?,?,?,?,?,?)
+          cause_id, from_display_name, to_display_name, cause_name, memo,
+          reference, narrative, tags, linked_tx_ids, aggregated_from
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
         ON CONFLICT(tx_hash) DO UPDATE SET
           block_number = excluded.block_number,
           from_addr = excluded.from_addr,
@@ -701,7 +804,12 @@ export function createApp() {
           from_display_name = excluded.from_display_name,
           to_display_name = excluded.to_display_name,
           cause_name = excluded.cause_name,
-          memo = excluded.memo`
+          memo = excluded.memo,
+          reference = excluded.reference,
+          narrative = excluded.narrative,
+          tags = excluded.tags,
+          linked_tx_ids = excluded.linked_tx_ids,
+          aggregated_from = excluded.aggregated_from`
       ).run(
         tx.hash,
         receipt?.blockNumber ?? null,
@@ -713,8 +821,26 @@ export function createApp() {
         'Vaultex',
         beneficiary.name,
         cn,
-        msgParsed.value
+        msgParsed.value,
+        reference,
+        narrative,
+        JSON.stringify(['disbursement']),
+        null,
+        null
       );
+      if (cid != null) {
+        const leRow = db.prepare(`SELECT id FROM ledger_entries WHERE tx_hash = ?`).get(tx.hash) as
+          | { id: number }
+          | undefined;
+        if (leRow?.id != null) {
+          computeAndStoreDisbursementAggregation({
+            ledgerEntryId: leRow.id,
+            txHash: tx.hash,
+            causeId: cid,
+            amountEth: valueEthStr,
+          });
+        }
+      }
       void publishEvent('disbursement.created', {
         txHash: tx.hash,
         amountEth: valueEthStr,
@@ -737,6 +863,285 @@ export function createApp() {
     const vl = vaultLower();
     const mapped = rows.map((r) => mapLedgerRowToApi(r, vl));
     res.json(mapped);
+  });
+
+  // Ledger v2: searchable + filterable + enriched (narrative/reference/aggregation).
+  api.get('/ledger/v2', (req, res) => {
+    const q = typeof req.query.q === 'string' ? req.query.q : undefined;
+    const kind = typeof req.query.kind === 'string' ? (req.query.kind as LedgerKind) : undefined;
+    const reference = typeof req.query.reference === 'string' ? req.query.reference : undefined;
+    const tag = typeof req.query.tag === 'string' ? req.query.tag : undefined;
+    const startIso = typeof req.query.start === 'string' ? req.query.start : undefined;
+    const endIso = typeof req.query.end === 'string' ? req.query.end : undefined;
+    const limitRaw = typeof req.query.limit === 'string' ? parseInt(req.query.limit, 10) : undefined;
+    const offsetRaw = typeof req.query.offset === 'string' ? parseInt(req.query.offset, 10) : undefined;
+    const causeIdRaw = typeof req.query.causeId === 'string' ? parseInt(req.query.causeId, 10) : undefined;
+
+    const rows = searchLedgerV2({
+      q,
+      kind,
+      reference,
+      tag,
+      startIso,
+      endIso,
+      limit: Number.isFinite(limitRaw as number) ? (limitRaw as number) : undefined,
+      offset: Number.isFinite(offsetRaw as number) ? (offsetRaw as number) : undefined,
+      causeId: Number.isFinite(causeIdRaw as number) ? (causeIdRaw as number) : undefined,
+    });
+    res.json(rows);
+  });
+
+  api.get('/ledger/v2/tags', (_req, res) => {
+    const rows = db
+      .prepare(`SELECT COALESCE(tags,'') AS tags FROM ledger_entries WHERE tags IS NOT NULL AND tags <> '' LIMIT 1000`)
+      .all() as { tags: string }[];
+    const set = new Set<string>();
+    for (const r of rows) {
+      try {
+        const parsed = JSON.parse(r.tags) as unknown;
+        if (Array.isArray(parsed)) {
+          for (const t of parsed) {
+            const s = String(t).trim();
+            if (s) set.add(s);
+          }
+        } else {
+          const s = String(parsed).trim();
+          if (s) set.add(s);
+        }
+      } catch {
+        const s = String(r.tags).trim();
+        if (s) set.add(s);
+      }
+    }
+    res.json({ tags: [...set].sort((a, b) => a.localeCompare(b)) });
+  });
+
+  api.get('/ledger/v2/:id', (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id)) return res.status(400).json({ error: 'invalid id' });
+
+    const row = db
+      .prepare(
+        `SELECT
+          id, tx_hash, block_number, from_addr, to_addr, value_eth, kind, cause_id,
+          from_display_name, to_display_name, cause_name, memo, recorded_at,
+          tags, reference, narrative, linked_tx_ids, aggregated_from
+         FROM ledger_entries
+         WHERE id = ?`
+      )
+      .get(id) as
+      | {
+          id: number;
+          tx_hash: string;
+          block_number: number | null;
+          from_addr: string;
+          to_addr: string;
+          value_eth: string;
+          kind: string;
+          cause_id: number | null;
+          from_display_name: string | null;
+          to_display_name: string | null;
+          cause_name: string | null;
+          memo: string | null;
+          recorded_at: string;
+          tags: string | null;
+          reference: string | null;
+          narrative: string | null;
+          linked_tx_ids: string | null;
+          aggregated_from: string | null;
+        }
+      | undefined;
+
+    if (!row) return res.status(404).json({ error: 'Not found' });
+
+    // Privacy logic is enforced here: only show full donor name for the logged-in user.
+    const u = getUser(req);
+    const currentUserName = u?.name ?? null;
+
+    const linkedIds = (() => {
+      try {
+        const parsed = JSON.parse(row.linked_tx_ids ?? '[]') as unknown;
+        return Array.isArray(parsed) ? parsed.map((x) => Number(x)).filter((n) => Number.isFinite(n)) : [];
+      } catch {
+        return [];
+      }
+    })();
+
+    const linkedDonations =
+      linkedIds.length > 0
+        ? (db
+            .prepare(
+              `SELECT id, value_eth, from_display_name, tx_hash, recorded_at
+               FROM ledger_entries
+               WHERE id IN (${linkedIds.map(() => '?').join(',')})`
+            )
+            .all(...linkedIds) as {
+            id: number;
+            value_eth: string;
+            from_display_name: string | null;
+            tx_hash: string;
+            recorded_at: string;
+          }[])
+        : [];
+
+    const donors = linkedDonations
+      .map((d) => {
+        const full = d.from_display_name?.trim() || '';
+        const isSelf = currentUserName != null && full.toLowerCase() === currentUserName.toLowerCase();
+        const displayName = isSelf ? full : (full ? full[0]!.toUpperCase() : 'Anonymous');
+        return {
+          donationEntryId: d.id,
+          displayName,
+          amountEth: d.value_eth,
+          txHash: d.tx_hash,
+          recordedAt: new Date(d.recorded_at + 'Z').toISOString(),
+        };
+      })
+      .sort((a, b) => Number.parseFloat(b.amountEth) - Number.parseFloat(a.amountEth));
+
+    const util =
+      row.cause_id != null
+        ? causeUtilizationByCauseId().get(row.cause_id) ?? null
+        : null;
+
+    res.json({
+      entry: row,
+      donors,
+      aggregatedFrom: parseAggregatedFrom(row as never),
+      utilization: util,
+    });
+  });
+
+  api.get('/ledger/v2/:id/verify', async (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id)) return res.status(400).json({ error: 'invalid id' });
+
+    const row = db
+      .prepare(`SELECT tx_hash, block_number FROM ledger_entries WHERE id = ?`)
+      .get(id) as { tx_hash: string; block_number: number | null } | undefined;
+    if (!row) return res.status(404).json({ error: 'Not found' });
+    if (row.block_number == null) return res.status(400).json({ error: 'Missing block number' });
+
+    try {
+      const provider = rpcProvider();
+      const vault = anvilAddress(SUPER_RICH_INDEX);
+      const beforeBlock = Math.max(0, row.block_number - 1);
+      const [before, after] = await Promise.all([
+        provider.getBalance(vault, beforeBlock),
+        provider.getBalance(vault, row.block_number),
+      ]);
+      res.json({
+        txHash: row.tx_hash,
+        vaultMasked: maskAddr(vault),
+        vaultBalanceBeforeEth: ethers.formatEther(before),
+        vaultBalanceAfterEth: ethers.formatEther(after),
+        blockNumber: row.block_number,
+      });
+    } catch (e: unknown) {
+      res.status(500).json({ error: e instanceof Error ? e.message : 'verify failed' });
+    }
+  });
+
+  // Donation lifecycle for a specific donor tx hash (auth + ownership required).
+  api.get('/ledger/v2/lifecycle/:txHash', requireAuth, (req, res) => {
+    const txHash = String(req.params.txHash || '').trim();
+    if (!/^0x[a-fA-F0-9]{64}$/.test(txHash)) {
+      return res.status(400).json({ error: 'invalid tx hash' });
+    }
+
+    const u = getUser(req)!;
+    if (u.anvil_index == null) return res.status(400).json({ error: 'No wallet assigned' });
+
+    const userAddr = anvilAddress(u.anvil_index).toLowerCase();
+
+    const donation = db
+      .prepare(
+        `SELECT
+          id, tx_hash, block_number, from_addr, to_addr, value_eth, kind, cause_id,
+          from_display_name, to_display_name, cause_name, memo, recorded_at,
+          tags, reference, narrative, linked_tx_ids, aggregated_from
+         FROM ledger_entries
+         WHERE tx_hash = ? AND kind = 'donation_in'`
+      )
+      .get(txHash) as any;
+
+    if (!donation) return res.status(404).json({ error: 'Donation not found' });
+    if (String(donation.from_addr || '').toLowerCase() !== userAddr) {
+      return res.status(403).json({ error: 'Not your donation' });
+    }
+
+    const donationId = Number(donation.id);
+    const causeId = donation.cause_id != null ? Number(donation.cause_id) : null;
+
+    // Find disbursements for the same cause and filter by linked_tx_ids containing this donation id.
+    const candidate = causeId
+      ? (db
+          .prepare(
+            `SELECT
+              id, tx_hash, block_number, from_addr, to_addr, value_eth, kind, cause_id,
+              from_display_name, to_display_name, cause_name, memo, recorded_at,
+              tags, reference, narrative, linked_tx_ids, aggregated_from
+             FROM ledger_entries
+             WHERE kind = 'disbursement_out' AND cause_id = ?
+             ORDER BY recorded_at ASC, id ASC`
+          )
+          .all(causeId) as any[])
+      : [];
+
+    const linkedDisbursements = candidate.filter((d) => {
+      try {
+        const arr = JSON.parse(d.linked_tx_ids ?? '[]') as unknown;
+        return Array.isArray(arr) && arr.some((x) => Number(x) === donationId);
+      } catch {
+        return false;
+      }
+    });
+
+    // Totals for the cause (for progress / remaining).
+    const util = causeId != null ? causeUtilizationByCauseId().get(causeId) ?? null : null;
+
+    res.json({
+      donation,
+      linkedDisbursements,
+      utilization: util,
+    });
+  });
+
+  // Contribution badges (per-cause totals for the signed-in donor).
+  api.get('/me/badges', requireAuth, (req, res) => {
+    const u = getUser(req)!;
+    if (u.anvil_index == null) return res.json({ badges: [] });
+    const addr = anvilAddress(u.anvil_index).toLowerCase();
+
+    const rows = db
+      .prepare(
+        `SELECT
+          cause_id,
+          COALESCE(cause_name,'') AS cause_name,
+          COUNT(*) AS donations,
+          COALESCE(SUM(CAST(value_eth AS REAL)),0) AS total_eth
+         FROM ledger_entries
+         WHERE kind = 'donation_in' AND lower(from_addr) = ?
+         GROUP BY cause_id, cause_name
+         ORDER BY total_eth DESC`
+      )
+      .all(addr) as { cause_id: number | null; cause_name: string; donations: number; total_eth: number }[];
+
+    function tier(totalEth: number): 'Bronze' | 'Silver' | 'Gold' {
+      if (totalEth >= 5) return 'Gold';
+      if (totalEth >= 1) return 'Silver';
+      return 'Bronze';
+    }
+
+    res.json({
+      badges: rows.map((r) => ({
+        causeId: r.cause_id,
+        causeName: r.cause_name || 'General allocation',
+        donations: Number(r.donations) || 0,
+        totalEth: Number(r.total_eth) || 0,
+        tier: tier(Number(r.total_eth) || 0),
+      })),
+    });
   });
 
   api.get('/me/history', requireAuth, async (req, res) => {

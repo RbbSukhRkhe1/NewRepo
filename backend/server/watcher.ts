@@ -3,6 +3,7 @@ import { db } from './db.js';
 import { SUPER_RICH_INDEX, anvilAddress } from './anvil.js';
 import { getRpcHttpUrl, getRpcWsUrl } from './config.js';
 import { buildAddressBook, labelForAddress } from './resolve.js';
+import { buildNarrative, ledgerReference } from './ledger/LedgerService.js';
 
 async function rpcReachable(rpcUrl: string): Promise<boolean> {
   try {
@@ -45,8 +46,9 @@ export function startChainWatcher(wsUrl: string): () => void {
   const insert = db.prepare(`
     INSERT OR IGNORE INTO ledger_entries (
       tx_hash, block_number, from_addr, to_addr, value_eth, kind,
-      cause_id, from_display_name, to_display_name, cause_name, memo
-    ) VALUES (?,?,?,?,?,?,?,?,?,?,?)
+      cause_id, from_display_name, to_display_name, cause_name, memo,
+      reference, narrative, tags
+    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
   `);
 
   const onBlock = async (blockNumber: number) => {
@@ -75,6 +77,18 @@ export function startChainWatcher(wsUrl: string): () => void {
         if (!tracked.has(from) && !tracked.has(to)) continue;
 
         const valueEth = ethers.formatEther(tx.value);
+        const fromName = labelForAddress(tx.from, book);
+        const toName = tx.to ? labelForAddress(tx.to, book) : 'Contract';
+        const reference = ledgerReference('chain_sync', tx.hash);
+        const narrative = buildNarrative({
+          kind: 'chain_sync',
+          fromDisplay: fromName,
+          toDisplay: toName,
+          amountEth: valueEth,
+          causeName: '',
+          utilization: null,
+          memo: null,
+        });
         insert.run(
           tx.hash,
           blockNumber,
@@ -83,10 +97,13 @@ export function startChainWatcher(wsUrl: string): () => void {
           valueEth,
           'chain_sync',
           null,
-          labelForAddress(tx.from, book),
-          tx.to ? labelForAddress(tx.to, book) : 'Contract',
+          fromName,
+          toName,
           '',
-          null
+          null,
+          reference,
+          narrative,
+          JSON.stringify(['chain_sync'])
         );
       }
     } catch (e) {

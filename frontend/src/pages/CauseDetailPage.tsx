@@ -254,7 +254,8 @@ export function CauseDetailPage() {
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [activeSlice, setActiveSlice] = useState<number | null>(null);
-  const dashboardHoverLeaveRef = useRef<ReturnType<typeof window.setTimeout> | null>(null);
+  // Browser timeout ids are numbers; keep it explicit to avoid Node Timeout typing.
+  const dashboardHoverLeaveRef = useRef<number | null>(null);
   /** Track which hero URL failed; when `cause`/`heroSrc` changes, key mismatch clears failure without an effect. */
   const [failedHeroKey, setFailedHeroKey] = useState<string | null>(null);
 

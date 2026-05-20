@@ -14,6 +14,43 @@ if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
 export const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
 
+function ensureMigrations() {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS schema_migrations (
+      id TEXT PRIMARY KEY,
+      applied_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+  `);
+}
+
+function applySqlMigrations() {
+  ensureMigrations();
+  const migrationsDir = path.join(__dirname, 'migrations');
+  if (!fs.existsSync(migrationsDir)) return;
+
+  const applied = new Set(
+    (db.prepare(`SELECT id FROM schema_migrations`).all() as { id: string }[]).map((r) => r.id)
+  );
+
+  const files = fs
+    .readdirSync(migrationsDir)
+    .filter((f) => f.toLowerCase().endsWith('.sql'))
+    .sort((a, b) => a.localeCompare(b));
+
+  const apply = db.transaction(() => {
+    for (const f of files) {
+      if (applied.has(f)) continue;
+      const full = path.join(migrationsDir, f);
+      const sql = fs.readFileSync(full, 'utf8');
+      db.exec(sql);
+      db.prepare(`INSERT INTO schema_migrations (id) VALUES (?)`).run(f);
+      console.log('[db] applied migration', f);
+    }
+  });
+
+  apply();
+}
+
 db.exec(`
 CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -56,6 +93,8 @@ CREATE TABLE IF NOT EXISTS ledger_entries (
 CREATE INDEX IF NOT EXISTS idx_ledger_recorded ON ledger_entries(recorded_at DESC);
 CREATE INDEX IF NOT EXISTS idx_users_anvil ON users(anvil_index);
 `);
+
+applySqlMigrations();
 
 const causesColumns = db.prepare(`PRAGMA table_info(causes)`).all() as { name: string }[];
 if (!causesColumns.some((c) => c.name === 'image_url')) {
