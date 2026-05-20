@@ -6,6 +6,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends python3 make g+
 COPY package.json package-lock.json ./
 COPY backend/package.json ./backend/
 COPY frontend/package.json ./frontend/
+# better-sqlite3 may fall back to node-gyp; flaky DNS during `docker build` otherwise fails the image.
+ENV npm_config_fetch_retries=10
+ENV npm_config_fetch_retry_mintimeout=20000
+ENV npm_config_fetch_retry_maxtimeout=120000
 # Include devDependencies so `tsx` is available for `node --import tsx` (see backend/package.json).
 RUN npm ci -w backend
 

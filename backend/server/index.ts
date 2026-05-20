@@ -50,12 +50,16 @@ async function main() {
     );
   });
 
-  await subscribeToEvents((envelope) => {
-    const payload = JSON.stringify({ type: 'event', envelope });
-    for (const client of wss.clients) {
-      if (client.readyState === client.OPEN) client.send(payload);
-    }
-  });
+  try {
+    await subscribeToEvents((envelope) => {
+      const payload = JSON.stringify({ type: 'event', envelope });
+      for (const client of wss.clients) {
+        if (client.readyState === client.OPEN) client.send(payload);
+      }
+    });
+  } catch (e) {
+    console.warn('[ws] Redis subscribe unavailable — realtime bridge disabled:', e);
+  }
 
   // Start watcher after HTTP is up so deploy healthchecks and systemd don't time out.
   stopWatcher = await startChainWatcherSafe();
