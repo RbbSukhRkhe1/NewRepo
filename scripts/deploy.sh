@@ -19,9 +19,48 @@ if [[ ! -f docker-compose.yml ]]; then
 fi
 
 if [[ ! -f .env ]]; then
-  echo "Missing .env — copy .env.example to .env and set SESSION_SECRET (see docs/DEPLOY.md)." >&2
-  exit 1
+  if [[ -f .env.example ]]; then
+    echo "==> Creating .env from .env.example (first deploy)…"
+    cp .env.example .env
+  else
+    echo "Missing .env and .env.example — cannot continue." >&2
+    exit 1
+  fi
 fi
+
+ensure_session_secret() {
+  if grep -q '^SESSION_SECRET=' .env 2>/dev/null; then
+    # If user explicitly set it, keep it.
+    local v
+    v="$(grep -E '^SESSION_SECRET=' .env | head -n 1 | cut -d= -f2- | tr -d '\r')"
+    if [[ -n "$v" ]] && [[ "$v" != "vaultex-local-docker-secret-replace-for-any-shared-deploy" ]]; then
+      return 0
+    fi
+  fi
+
+  local secret=""
+  if command -v openssl >/dev/null 2>&1; then
+    secret="$(openssl rand -hex 32)"
+  elif command -v python3 >/dev/null 2>&1; then
+    secret="$(python3 - <<'PY'
+import secrets
+print(secrets.token_hex(32))
+PY
+)"
+  else
+    # Last resort: still better than empty; user should replace.
+    secret="$(date +%s%N)-$(hostname)"
+  fi
+
+  if grep -q '^SESSION_SECRET=' .env 2>/dev/null; then
+    sed -i "s/^SESSION_SECRET=.*/SESSION_SECRET=$secret/" .env
+  else
+    echo "SESSION_SECRET=$secret" >> .env
+  fi
+  echo "==> Set SESSION_SECRET in .env"
+}
+
+ensure_session_secret
 
 echo "==> Pulling published images (redis, anvil, foundry)…"
 docker_cmd compose pull redis anvil 2>/dev/null || docker_cmd compose pull
