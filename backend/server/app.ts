@@ -30,14 +30,18 @@ function parseOptionalImageUrl(
     if (s.length > 512 || s.includes('..') || /[\s<>"'`]/.test(s)) {
       return { ok: false, error: 'Invalid image path' };
     }
-    if (!/^\/[\w./-]+\.[A-Za-z0-9]+$/.test(s)) {
-      return { ok: false, error: 'image path must look like /folder/file.svg' };
+    if (!/^\/[\w./-]+\.[A-Za-z0-9]+$/i.test(s)) {
+      return { ok: false, error: 'image path must look like /folder/file.jpg' };
     }
     return { ok: true, value: s };
   }
+  let candidate = s;
+  if (!/^https?:\/\//i.test(candidate)) {
+    candidate = `https://${candidate}`;
+  }
   let u: URL;
   try {
-    u = new URL(s);
+    u = new URL(candidate);
   } catch {
     return { ok: false, error: 'Invalid imageUrl' };
   }

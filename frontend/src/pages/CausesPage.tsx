@@ -205,6 +205,7 @@ function CauseCard({
             key={displayHero}
             src={displayHero}
             alt=""
+            referrerPolicy="no-referrer"
             className="h-full w-full object-cover"
             onError={() => {
               if (heroSrc && displayHero === heroSrc) setFailedHeroKey(heroFailureKey);
@@ -349,19 +350,46 @@ function AddCauseCard({ isLightMode }: { isLightMode: boolean }) {
 type ApiCauseRow = {
   id: number;
   title: string;
+  description: string;
   goal_eth: number;
   disbursed_eth: number;
   image_url: string | null;
 };
 
+const SHOWCASE_BY_TITLE = new Map(causes.map((cause) => [cause.apiTitle, cause]));
+
 /** Prefer the canonical (lowest-id) row when duplicate titles exist in the API. */
-function activeCauseByTitle(rows: ApiCauseRow[], title: string): ApiCauseRow | undefined {
-  let best: ApiCauseRow | undefined;
+function dedupeActiveCauses(rows: ApiCauseRow[]): ApiCauseRow[] {
+  const byTitle = new Map<string, ApiCauseRow>();
   for (const row of rows) {
-    if (row.title !== title) continue;
-    if (!best || row.id < best.id) best = row;
+    const existing = byTitle.get(row.title);
+    if (!existing || row.id < existing.id) byTitle.set(row.title, row);
   }
-  return best;
+  return [...byTitle.values()].sort((a, b) => b.id - a.id);
+}
+
+function apiRowToShowcaseCause(row: ApiCauseRow, index: number): ShowcaseCause {
+  const description = row.description.trim();
+  const storyTitle =
+    description.split(/[.!?]/)[0]?.trim().slice(0, 56) || row.title;
+
+  return {
+    apiTitle: row.title,
+    section: 'urgent',
+    sectionLabel: 'Active',
+    storyTitle,
+    storyBody: description,
+    title: row.title,
+    subtitle: description,
+    donors: 0,
+    daysLeft: 30,
+    locationTag: 'Community',
+    categoryTag: 'Fundraising',
+    progressPct: 0,
+    progressLabel: '0%',
+    amountLabel: `0.00 ETH disbursed of ${row.goal_eth.toFixed(2)} ETH goal`,
+    accent: index % 2 === 0 ? 'green' : 'orange',
+  };
 }
 
 export function CausesPage() {
@@ -417,12 +445,11 @@ export function CausesPage() {
       </div>
 
       <div className="mt-8 space-y-6">
-        {causes
-          .map((cause) => ({ cause, match: activeCauseByTitle(apiCauses, cause.apiTitle) }))
-          .filter((entry): entry is { cause: ShowcaseCause; match: ApiCauseRow } => entry.match != null)
-          .map(({ cause, match }) => (
+        {dedupeActiveCauses(apiCauses).map((match, index) => {
+          const cause = SHOWCASE_BY_TITLE.get(match.title) ?? apiRowToShowcaseCause(match, index);
+          return (
             <CauseCard
-              key={`${cause.section}-${cause.apiTitle}`}
+              key={match.id}
               cause={cause}
               isLightMode={isLightMode}
               isAdmin={isAdmin}
@@ -431,7 +458,8 @@ export function CausesPage() {
               disbursedEth={match.disbursed_eth}
               goalEth={match.goal_eth}
             />
-          ))}
+          );
+        })}
         {isAdmin ? <AddCauseCard isLightMode={isLightMode} /> : null}
       </div>
     </div>

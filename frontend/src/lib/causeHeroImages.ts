@@ -18,7 +18,5 @@ export function resolveCauseHeroUrl(title: string, imageUrl?: string | null): st
   const photosHero = CAUSE_HERO_BY_TITLE[title];
   if (photosHero) return photosHero;
   const url = imageUrl?.trim();
-  if (!url) return null;
-  if (url.endsWith('.svg')) return null;
-  return url;
+  return url || null;
 }

@@ -65,6 +65,11 @@ export function Layout() {
                 <div className="vtx-glass-popover absolute right-0 top-[calc(100%+8px)] z-20 min-w-44 p-2">
                   <NavPill to="/admin/users" label="Users" active={loc.pathname === '/admin/users'} />
                   <NavPill
+                    to="/admin/causes"
+                    label="Manage causes"
+                    active={loc.pathname === '/admin/causes'}
+                  />
+                  <NavPill
                     to="/admin/causes/new"
                     label="New cause"
                     active={loc.pathname === '/admin/causes/new'}

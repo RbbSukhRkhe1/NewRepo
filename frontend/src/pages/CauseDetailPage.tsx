@@ -442,6 +442,7 @@ export function CauseDetailPage() {
           <img
             src={heroSrc}
             alt=""
+            referrerPolicy="no-referrer"
             className="h-full w-full object-cover"
             onError={() => setFailedHeroKey(heroFailureKey)}
           />
