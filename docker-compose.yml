@@ -30,6 +30,10 @@ services:
     # Image default ENTRYPOINT is `sh -c` — a JSON-array command does not become one shell string, so
     # `--host` was dropped and Anvil listened on 127.0.0.1 only (other containers could not reach it).
     entrypoint: ["anvil"]
+    # The Foundry image runs as a non-root user (`foundry`). Our persisted volume
+    # is owned by root by default, so Anvil can't write state.json unless we
+    # run this container as root (or chown in an init step).
+    user: "0:0"
     command:
       [
         "--host",
