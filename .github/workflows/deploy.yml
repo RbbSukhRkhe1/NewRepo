@@ -67,8 +67,8 @@ jobs:
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           port: ${{ secrets.DEPLOY_SSH_PORT != '' && secrets.DEPLOY_SSH_PORT || 22 }}
           envs: DEPLOY_PATH,DIAGNOSE_ONLY
+          debug: true
           script_stop: true
-          script_stderr: true
           command_timeout: 45m
           script: |
             set -eo pipefail
