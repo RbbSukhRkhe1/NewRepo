@@ -241,7 +241,7 @@ const HOW_IT_WORKS_STEPS: {
     body: 'Follow your gift on the ledger.',
     to: '/ledger',
     tone: 'lime',
-    iconD: 'M4 4h16v2H4zm2 4h12v12H6zm3 7h2v3H9zm4-4h2v7h-2z',
+    iconD: 'M4 7h16v2H4zm0 5h16v2H4zm0 5h16v2H4z',
     demoPill: 'Live ledger',
     demoMain: 'Impact: active',
     demoSub: 'Live updates',
@@ -304,17 +304,11 @@ export function HomePage() {
     return () => observer.disconnect();
   }, []);
 
-  useEffect(() => {
-    const root = document.documentElement;
-    root.setAttribute('data-home-snap', 'true');
-    return () => root.removeAttribute('data-home-snap');
-  }, []);
-
   const goNext = () => setActiveSlide((prev) => (prev + 1) % heroSlides.length);
   const goPrev = () => setActiveSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length);
 
   return (
-    <div className="relative w-full overflow-x-hidden bg-[var(--bg-base)]">
+    <div className="relative h-full min-h-0 w-full snap-y snap-mandatory overflow-y-scroll overflow-x-hidden bg-[var(--bg-base)] scroll-smooth overscroll-y-contain">
       <div className="absolute inset-0 z-0 min-h-full bg-[var(--bg-base)]" />
       <div className="pointer-events-none absolute inset-0 z-0 bg-[linear-gradient(rgba(126,149,182,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(126,149,182,0.08)_1px,transparent_1px)] bg-[size:68px_68px] [mask-image:radial-gradient(ellipse_at_center,black_26%,transparent_78%)] opacity-35" />
       <div className="pointer-events-none absolute -left-24 top-8 z-0 h-72 w-72 motion-safe:animate-[pulse_9s_ease-in-out_infinite] rounded-full bg-teal-400/10 blur-3xl motion-reduce:animate-none" />
@@ -326,7 +320,7 @@ export function HomePage() {
 
         <section
           id="hero"
-          className={`home-snap-section relative mx-auto max-w-4xl overflow-hidden rounded-[30px] px-5 pb-7 pt-5 backdrop-blur-xl sm:px-8 sm:pb-8 sm:pt-6 md:px-10 md:pb-8 md:pt-6 ${
+          className={`home-snap-section relative mx-auto min-h-full snap-start snap-always max-w-4xl overflow-hidden rounded-[30px] px-5 pb-7 pt-5 backdrop-blur-xl sm:px-8 sm:pb-8 sm:pt-6 md:px-10 md:pb-8 md:pt-6 ${
             isLightMode
               ? 'border border-[rgba(165,185,211,0.38)] bg-[linear-gradient(155deg,rgba(236,244,252,0.94),rgba(224,236,250,0.88))] shadow-[0_18px_34px_rgba(76,103,136,0.14)]'
               : 'border border-white/[0.07] bg-[linear-gradient(155deg,rgba(8,14,24,0.88),rgba(4,8,16,0.82))] shadow-[0_18px_42px_rgba(0,0,0,0.42),0_0_36px_rgba(45,245,173,0.08)]'
@@ -619,7 +613,7 @@ export function HomePage() {
 
         <section
           id="how-it-works"
-          className="home-snap-section relative mx-auto mt-12 max-w-5xl px-0 sm:px-1 md:mt-0"
+          className="home-snap-section relative mx-auto min-h-full snap-start snap-always max-w-5xl px-0 pt-10 sm:px-1 sm:pt-12 md:pt-8"
           aria-labelledby="how-it-works-heading"
         >
           <div
@@ -629,8 +623,8 @@ export function HomePage() {
                 : 'border-white/[0.08] bg-gradient-to-b from-slate-950/78 via-slate-950/62 to-[rgba(3,7,14,0.82)] shadow-[0_24px_60px_rgba(0,4,18,0.68)] backdrop-blur-xl'
             }`}
           >
-            <div className="grid gap-10 lg:grid-cols-[0.95fr_1.55fr] lg:items-start lg:gap-10">
-              <div className="text-left">
+            <div className="grid gap-11 lg:grid-cols-2 lg:items-start lg:gap-x-12 lg:gap-y-10 xl:gap-x-14">
+              <div className="text-left lg:max-w-lg lg:justify-self-end lg:pr-2 xl:pr-4">
                 <p
                   className={`inline-flex items-center rounded-full px-3.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.24em] ${
                     isLightMode
@@ -655,9 +649,10 @@ export function HomePage() {
                 >
                   Simple, transparent giving—from cause to ledger.
                 </p>
-                <ul className="mt-7 space-y-4">
-                  {HOW_IT_WORKS_TRUST_POINTS.map((point) => {
+                <ul className="mt-8 space-y-5">
+                  {HOW_IT_WORKS_TRUST_POINTS.map((point, idx) => {
                     const m = miniBenefitStyles[point.tone];
+                    const showRule = idx < HOW_IT_WORKS_TRUST_POINTS.length - 1;
                     return (
                       <li key={point.title} className="space-y-3">
                         <div className="flex items-start gap-3.5">
@@ -676,15 +671,17 @@ export function HomePage() {
                             <p className={`mt-1 text-sm leading-snug ${isLightMode ? m.blurbLight : m.blurbDark}`}>{point.body}</p>
                           </div>
                         </div>
-                        <div className={`h-px w-full ${isLightMode ? 'bg-slate-200/80' : 'bg-white/[0.08]'}`} aria-hidden />
+                        {showRule ? (
+                          <div className={`h-px w-full ${isLightMode ? 'bg-slate-200/80' : 'bg-white/[0.08]'}`} aria-hidden />
+                        ) : null}
                       </li>
                     );
                   })}
                 </ul>
               </div>
 
-              <div className="space-y-6">
-                <div className="relative hidden px-2 md:block" aria-hidden>
+              <div className="flex min-w-0 flex-col gap-10 lg:justify-self-start">
+                <div className="relative hidden px-1 md:block" aria-hidden>
                   <svg viewBox="0 0 680 88" className="h-[88px] w-full">
                     <path
                       d="M48 45 C130 18, 190 70, 260 45 S410 18, 478 45 S620 70, 650 45"
@@ -714,27 +711,35 @@ export function HomePage() {
                   <span className={`absolute left-[68.8%] top-1/2 z-10 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-xs font-bold ${isLightMode ? 'bg-white text-slate-500 ring-1 ring-slate-200/80' : 'bg-white/[0.07] text-slate-300 ring-1 ring-white/[0.1]'}`}>›</span>
                 </div>
 
-                <div className="grid gap-6 md:grid-cols-3">
+                <div className="grid gap-10 sm:gap-8 md:grid-cols-3 md:gap-6 lg:gap-8">
                   {HOW_IT_WORKS_STEPS.map((step) => {
                     const m = miniBenefitStyles[step.tone];
                     return (
-                      <Link key={step.id} to={step.to} className="group text-center md:text-center">
-                        <span className={`mx-auto flex h-14 w-14 items-center justify-center rounded-full ${isLightMode ? m.iconLight : m.iconDark}`}>
+                      <Link
+                        key={step.id}
+                        to={step.to}
+                        className="group flex h-full min-h-0 flex-col items-center text-center motion-safe:transition-transform motion-safe:duration-300 motion-safe:ease-out hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+                      >
+                        <span
+                          className={`mx-auto flex h-14 w-14 shrink-0 items-center justify-center rounded-full ${isLightMode ? m.iconLight : m.iconDark}`}
+                        >
                           <svg viewBox="0 0 24 24" className={`h-6 w-6 fill-current ${isLightMode ? m.svgLight : m.svgDark}`}>
                             <path d={step.iconD} />
                           </svg>
                         </span>
-                        <p className={`mt-4 text-[1.55rem] font-extrabold tracking-[-0.03em] ${isLightMode ? m.titleLight : m.titleDark}`}>
+                        <p
+                          className={`mt-5 text-[1.5rem] font-extrabold leading-tight tracking-[-0.03em] sm:text-[1.55rem] ${isLightMode ? m.titleLight : m.titleDark}`}
+                        >
                           {step.title}
                         </p>
-                        <p className={`mx-auto mt-2 max-w-[15rem] text-sm leading-snug ${isLightMode ? m.blurbLight : m.blurbDark}`}>
+                        <p className={`mx-auto mt-2.5 max-w-[15rem] text-sm leading-relaxed md:flex-1 ${isLightMode ? m.blurbLight : m.blurbDark}`}>
                           {step.body}
                         </p>
                         <div
-                          className={`mx-auto mt-4 w-full max-w-[16rem] rounded-xl border px-3 py-3 text-left ${
+                          className={`mx-auto mt-6 w-full max-w-[16rem] rounded-xl border px-3.5 py-3.5 text-left motion-safe:transition-[box-shadow,transform] motion-safe:duration-300 ${
                             isLightMode
-                              ? 'border-slate-200/90 bg-white/92 shadow-[0_6px_18px_rgba(15,41,77,0.08)]'
-                              : 'border-white/[0.1] bg-white/[0.03]'
+                              ? 'border-slate-200/90 bg-white/92 shadow-[0_6px_18px_rgba(15,41,77,0.08)] group-hover:shadow-[0_12px_32px_rgba(15,41,77,0.14)]'
+                              : 'border-white/[0.1] bg-white/[0.03] group-hover:shadow-[0_14px_36px_rgba(0,0,0,0.45)]'
                           }`}
                         >
                           <p className={`text-[10px] font-semibold uppercase tracking-[0.09em] ${isLightMode ? 'text-slate-500' : 'text-slate-400'}`}>
@@ -795,7 +800,7 @@ export function HomePage() {
 
         <section
           id="join-the-vault"
-          className="home-snap-section relative mx-auto mt-10 max-w-5xl px-0 sm:px-1 md:mt-12"
+          className="home-snap-section relative mx-auto min-h-full snap-start snap-always max-w-5xl px-0 pt-8 sm:px-1 sm:pt-10 md:pt-8"
           aria-labelledby="join-vault-heading"
         >
           <div

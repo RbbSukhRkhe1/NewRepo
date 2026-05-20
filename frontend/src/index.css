@@ -177,25 +177,6 @@ html {
   scroll-behavior: smooth;
 }
 
-html[data-home-snap='true'],
-html[data-home-snap='true'] body {
-  height: 100vh;
-  overflow-y: scroll;
-}
-
-html[data-home-snap='true'] {
-  scroll-behavior: smooth;
-  scroll-snap-type: y mandatory;
-  scroll-padding-top: 84px;
-}
-
-html[data-home-snap='true'] .home-snap-section {
-  min-height: calc(100vh - 84px);
-  scroll-snap-align: start;
-  scroll-snap-stop: always;
-}
-
-
 @keyframes vtx-float {
   0%,
   100% {

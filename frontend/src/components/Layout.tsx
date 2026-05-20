@@ -65,11 +65,6 @@ export function Layout() {
                 <div className="vtx-glass-popover absolute right-0 top-[calc(100%+8px)] z-20 min-w-44 p-2">
                   <NavPill to="/admin/users" label="Users" active={loc.pathname === '/admin/users'} />
                   <NavPill
-                    to="/admin/causes"
-                    label="Causes"
-                    active={loc.pathname.startsWith('/admin/causes')}
-                  />
-                  <NavPill
                     to="/admin/causes/new"
                     label="New cause"
                     active={loc.pathname === '/admin/causes/new'}
@@ -103,24 +98,26 @@ export function Layout() {
           </nav>
         </div>
       </header>
-      <main className="flex min-h-0 flex-1 flex-col">
+      <main className={`flex min-h-0 flex-1 flex-col ${loc.pathname === '/' ? 'overflow-hidden' : ''}`}>
         <Outlet />
       </main>
-      <footer className="border-t border-[var(--glass-border)] bg-[var(--glass-bg-fallback)] py-6 text-center text-xs text-[var(--text-muted-2)]">
-        Trusted donation platform · Secure giving with on-chain transparency · Verified causes and impact
-        tracking ·{' '}
-        <a href="#" className="text-[var(--text-high-1)]">
-          Contract
-        </a>{' '}
-        ·{' '}
-        <a href="#" className="text-[var(--text-high-1)]">
-          Explorer
-        </a>{' '}
-        ·{' '}
-        <a href="#" className="text-[var(--text-high-1)]">
-          Audit
-        </a>
-      </footer>
+      {loc.pathname !== '/' ? (
+        <footer className="border-t border-[var(--glass-border)] bg-[var(--glass-bg-fallback)] py-6 text-center text-xs text-[var(--text-muted-2)]">
+          Trusted donation platform · Secure giving with on-chain transparency · Verified causes and impact
+          tracking ·{' '}
+          <a href="#" className="text-[var(--text-high-1)]">
+            Contract
+          </a>{' '}
+          ·{' '}
+          <a href="#" className="text-[var(--text-high-1)]">
+            Explorer
+          </a>{' '}
+          ·{' '}
+          <a href="#" className="text-[var(--text-high-1)]">
+            Audit
+          </a>
+        </footer>
+      ) : null}
     </div>
   );
 }
