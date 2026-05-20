@@ -181,7 +181,9 @@ function CauseCard({
     ? detailCauseId != null
       ? `/account?disburseCause=${detailCauseId}`
       : '/account?disburseCause'
-    : '/donate';
+    : detailCauseId != null
+      ? `/donate?causeId=${detailCauseId}`
+      : '/donate';
   const actionLabel = isAdmin ? 'DISBURSE FUND' : 'DONATE NOW';
   const heroSrc = resolveCauseHeroUrl(cause.apiTitle, imageUrl);
   const heroFailureKey = `${detailCauseId ?? ''}:${cause.title}:${heroSrc ?? ''}`;

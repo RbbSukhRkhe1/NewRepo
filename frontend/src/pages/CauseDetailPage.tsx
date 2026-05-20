@@ -12,7 +12,12 @@ type Cause = {
   title: string;
   description: string;
   goal_eth: number;
+  raised_eth: number;
   disbursed_eth: number;
+  donated_eth: number;
+  remaining_eth: number;
+  utilization_pct: number;
+  funds_matched?: boolean;
   image_url?: string | null;
 };
 
@@ -351,12 +356,13 @@ export function CauseDetailPage() {
     );
   }
 
-  const pct = Math.min(100, (cause.disbursed_eth / cause.goal_eth) * 100);
+  const pct = Math.min(100, Math.max(0, cause.utilization_pct ?? 0));
   const heroSrc = resolveCauseHeroUrl(cause.title, cause.image_url);
   const heroFailureKey = `${cause.id}:${heroSrc ?? ''}`;
   const heroFailed = failedHeroKey === heroFailureKey;
   const detailCopy = DETAIL_COPY_BY_TITLE[cause.title];
-  const remainingEth = Math.max(0, cause.goal_eth - cause.disbursed_eth);
+  const remainingEth = Math.max(0, cause.remaining_eth ?? 0);
+  const donatedEth = cause.donated_eth ?? cause.raised_eth ?? 0;
   const parsedAmount = Number.parseFloat(amount || '0');
   const validAmount = Number.isFinite(parsedAmount) && parsedAmount > 0;
   const unitLabel = impactUnitForCause(cause.title);
@@ -1189,7 +1195,7 @@ export function CauseDetailPage() {
                     {pct.toFixed(0)}%
                   </text>
                   <text x="55" y="66" textAnchor="middle" className="fill-[var(--text-muted-1)] text-[0.45rem]">
-                    funded
+                    utilized
                   </text>
                 </svg>
               </div>
@@ -1212,9 +1218,9 @@ export function CauseDetailPage() {
             </div>
             <div className="relative z-[1] mt-4 w-full max-w-[17rem] sm:max-w-none">
               <p className={`mb-1 text-[10px] font-semibold uppercase tracking-[0.14em] ${isLightMode ? 'text-emerald-950/65' : 'text-cyan-200/72'}`}>
-                Disbursed vs goal
+                Disbursed vs donated
               </p>
-              <CauseFundingDonut raisedEth={cause.disbursed_eth} goalEth={cause.goal_eth} isLightMode={isLightMode} />
+              <CauseFundingDonut raisedEth={cause.disbursed_eth} goalEth={donatedEth || 1} isLightMode={isLightMode} />
             </div>
             <p className={`relative z-[1] mt-2 text-[12px] ${isLightMode ? 'text-[var(--text-muted-1)]' : 'text-[var(--text-muted-1)]'}`}>
               Goal: {cause.goal_eth.toFixed(4)} ETH

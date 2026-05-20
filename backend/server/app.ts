@@ -398,7 +398,9 @@ export function createApp() {
     });
   });
 
-  api.get('/causes', (_req, res) => {
+  api.get('/causes', (req, res) => {
+    const statusRaw = typeof req.query.status === 'string' ? req.query.status.trim().toLowerCase() : '';
+    const status = statusRaw === 'completed' || statusRaw === 'active' ? statusRaw : '';
     const rows = db
       .prepare(`SELECT * FROM causes WHERE active = 1 ORDER BY id DESC`)
       .all() as {
@@ -412,20 +414,27 @@ export function createApp() {
     }[];
     const disbursedMap = disbursedEthByCauseId();
     const utilMap = causeUtilizationByCauseId();
-    res.json(
-      rows.map((row) => {
-        const base = attachDisbursedEth(row, disbursedMap);
-        const util = utilMap.get(row.id);
-        return {
-          ...base,
-          donated_eth: util?.donatedEth ?? Number(row.raised_eth) ?? 0,
-          disbursed_eth: util?.disbursedEth ?? base.disbursed_eth ?? 0,
-          remaining_eth: util?.remainingEth ?? Math.max(0, (Number(row.raised_eth) ?? 0) - (base.disbursed_eth ?? 0)),
-          utilization_pct: util?.utilizationPct ?? (Number(row.raised_eth) > 0 ? Math.min(100, ((base.disbursed_eth ?? 0) / Number(row.raised_eth)) * 100) : 0),
-          funds_matched: util != null && util.disbursedEth > 0,
-        };
-      })
-    );
+    const rowsWithUtil = rows.map((row) => {
+      const base = attachDisbursedEth(row, disbursedMap);
+      const util = utilMap.get(row.id);
+      return {
+        ...base,
+        donated_eth: util?.donatedEth ?? Number(row.raised_eth) ?? 0,
+        disbursed_eth: util?.disbursedEth ?? base.disbursed_eth ?? 0,
+        remaining_eth: util?.remainingEth ?? Math.max(0, (Number(row.raised_eth) ?? 0) - (base.disbursed_eth ?? 0)),
+        utilization_pct:
+          util?.utilizationPct ??
+          (Number(row.raised_eth) > 0 ? Math.min(100, ((base.disbursed_eth ?? 0) / Number(row.raised_eth)) * 100) : 0),
+        funds_matched: util != null && util.disbursedEth > 0,
+      };
+    });
+    const filtered =
+      status === 'completed'
+        ? rowsWithUtil.filter((row) => row.goal_eth > 0 && row.raised_eth >= row.goal_eth)
+        : status === 'active'
+          ? rowsWithUtil.filter((row) => row.goal_eth <= 0 || row.raised_eth < row.goal_eth)
+          : rowsWithUtil;
+    res.json(filtered);
   });
 
   api.post('/causes', requireAuth, requireAdmin, (req, res) => {
@@ -529,9 +538,6 @@ export function createApp() {
 
   api.post('/donate', requireAuth, async (req, res) => {
     const u = getUser(req)!;
-    if (u.role === 'admin') {
-      return res.status(403).json({ error: 'Admins disburse from the vault — use Disburse on a cause or Account page' });
-    }
     if (u.anvil_index == null) {
       return res.status(400).json({ error: 'Your account has no Anvil wallet assigned' });
     }

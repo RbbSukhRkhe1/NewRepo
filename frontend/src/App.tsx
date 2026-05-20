@@ -15,6 +15,7 @@ import { LedgerPage } from './pages/LedgerPage';
 import { DonationPage } from './pages/DonationPage';
 import { TxLifecyclePage } from './pages/TxLifecyclePage';
 import { RequireAuth } from './components/RequireAuth';
+import { CompletedCausesPage } from './pages/CompletedCausesPage';
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/causes" element={<CausesPage />} />
+            <Route path="/causes/completed" element={<CompletedCausesPage />} />
             <Route path="/causes/:id" element={<CauseDetailPage />} />
             <Route
               path="/causes/new"

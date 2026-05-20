@@ -2,9 +2,18 @@ import { useEffect, useLayoutEffect, useState } from 'react';
 import { Link, Outlet, useLocation, useNavigationType } from 'react-router-dom';
 import { NavPill, SecondaryButton } from './ui';
 import { useAuth } from '../context/AuthContext';
+import type { AuthUser } from '../context/AuthContext';
 
 type ThemeMode = 'dark' | 'light';
 const THEME_STORAGE_KEY = 'vaultex-theme-mode';
+
+function walletChipLabel(user: AuthUser): string {
+  const raw = (user.address ?? user.addressMasked ?? '').trim();
+  if (!raw) return 'Wallet';
+  // Prefer 0xabcd…1234; tolerate addresses that already include an ellipsis.
+  if (raw.includes('…') || raw.length <= 14) return raw;
+  return `${raw.slice(0, 6)}…${raw.slice(-4)}`;
+}
 
 function readStoredTheme(): ThemeMode {
   if (typeof window === 'undefined') return 'dark';
@@ -52,6 +61,7 @@ export function Layout() {
           <nav className="flex flex-wrap items-center gap-2" aria-label="Primary navigation">
             <NavPill to="/" label="Home" active={loc.pathname === '/'} />
             <NavPill to="/causes" label="Causes" active={loc.pathname === '/causes'} />
+            <NavPill to="/causes/completed" label="Completed" active={loc.pathname === '/causes/completed'} />
             <NavPill to="/ledger" label="Ledger" active={loc.pathname === '/ledger'} />
             <NavPill to="/account" label="Account" active={loc.pathname === '/account'} />
             {user?.role === 'admin' && (
@@ -95,6 +105,31 @@ export function Layout() {
               )}
               {themeMode === 'dark' ? 'Light' : 'Dark'}
             </SecondaryButton>
+            {user && user.anvilIndex != null ? (
+              <span
+                className="ml-1 inline-flex max-w-[11rem] items-center gap-2 rounded-full border border-[var(--border-chrome-3)] bg-[var(--surface-panel-overlay)] px-3 py-1.5 text-[11px] font-mono font-semibold text-[var(--text-high-3)] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-md sm:max-w-[13rem] sm:text-xs"
+                title={user.address ?? user.addressMasked ?? undefined}
+                aria-label={`Wallet connected: ${walletChipLabel(user)}`}
+              >
+                <span
+                  className="h-2 w-2 shrink-0 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.75)]"
+                  aria-hidden
+                />
+                <span className="min-w-0 truncate">{walletChipLabel(user)}</span>
+              </span>
+            ) : null}
+            {user && user.anvilIndex == null ? (
+              <Link
+                to="/account"
+                className="ml-1 inline-flex max-w-[10rem] items-center gap-2 rounded-full border border-amber-400/35 bg-[var(--surface-panel-overlay)] px-3 py-1.5 text-[11px] font-semibold text-[var(--text-muted-1)] backdrop-blur-md transition-colors hover:border-amber-400/55 hover:text-[var(--text-high-3)] sm:text-xs"
+              >
+                <span
+                  className="h-2 w-2 shrink-0 rounded-full bg-amber-400/90 shadow-[0_0_8px_rgba(251,191,36,0.45)]"
+                  aria-hidden
+                />
+                <span className="truncate">No wallet</span>
+              </Link>
+            ) : null}
             {user && (
               <SecondaryButton type="button" onClick={() => void logout()} className="ml-1 px-3">
                 Sign out
@@ -103,10 +138,12 @@ export function Layout() {
           </nav>
         </div>
       </header>
-      <main className={`flex min-h-0 flex-1 flex-col ${loc.pathname === '/' ? 'overflow-hidden' : ''}`}>
+      <main
+        className={`flex min-h-0 flex-1 flex-col ${loc.pathname === '/' || loc.pathname === '/donate' ? 'overflow-hidden' : ''}`}
+      >
         <Outlet />
       </main>
-      {loc.pathname !== '/' ? (
+      {loc.pathname !== '/' && loc.pathname !== '/donate' ? (
         <footer className="border-t border-[var(--glass-border)] bg-[var(--glass-bg-fallback)] py-6 text-center text-xs text-[var(--text-muted-2)]">
           Trusted donation platform · Secure giving with on-chain transparency · Verified causes and impact
           tracking ·{' '}
