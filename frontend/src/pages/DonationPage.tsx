@@ -22,7 +22,7 @@ function shortHash(hash: string): string {
 
 export function DonationPage() {
   const nav = useNavigate();
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const [causes, setCauses] = useState<Cause[]>([]);
   const [selectedCauseId, setSelectedCauseId] = useState<number | null>(null);
   const [amountEth, setAmountEth] = useState('0.1');
@@ -31,6 +31,12 @@ export function DonationPage() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!loading && user?.role === 'admin') {
+      nav('/causes', { replace: true });
+    }
+  }, [loading, user, nav]);
 
   useEffect(() => {
     apiJson<Cause[]>('/causes')
@@ -71,7 +77,9 @@ export function DonationPage() {
   const parsedAmount = Number.parseFloat(amountEth || '0');
   const validAmount = Number.isFinite(parsedAmount) && parsedAmount > 0;
   const impactPeople = Math.max(1, Math.round((validAmount ? parsedAmount : 0.01) * 12));
-  const canSubmit = Boolean(user?.anvilIndex != null && selectedCause && validAmount && !busy);
+  const canSubmit = Boolean(
+    user?.role === 'donor' && user.anvilIndex != null && selectedCause && validAmount && !busy,
+  );
 
   async function onConfirmDonation(e: React.FormEvent) {
     e.preventDefault();
@@ -92,6 +100,10 @@ export function DonationPage() {
     } finally {
       setBusy(false);
     }
+  }
+
+  if (loading || user?.role === 'admin') {
+    return <div className="p-12 text-center text-[var(--text-muted-1)]">Loading…</div>;
   }
 
   return (
@@ -179,9 +191,10 @@ export function DonationPage() {
               </button>
             );
           })}
+          {user?.role === 'admin' ? (
           <button
             type="button"
-            onClick={() => nav('/causes/new')}
+            onClick={() => nav('/admin/causes/new')}
             className={`group rounded-2xl border border-dashed p-3 text-left transition ${
               isLightMode
                 ? 'border-emerald-300/55 bg-white/70 hover:border-emerald-400/70 hover:bg-emerald-50/65'
@@ -196,6 +209,7 @@ export function DonationPage() {
               <p className="mt-0.5 text-xs text-[var(--text-muted-1)]">Create a new fundraising cause</p>
             </div>
           </button>
+          ) : null}
         </div>
       </section>
 
@@ -209,6 +223,12 @@ export function DonationPage() {
         >
           <form onSubmit={(e) => void onConfirmDonation(e)}>
             <h3 className="text-lg font-semibold text-[var(--text-high-3)]">Donation Form</h3>
+            {user?.role === 'admin' ? (
+              <p className="mt-3 rounded-xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+                Admins disburse vault funds from a cause detail page or Account — not through donor donations.
+              </p>
+            ) : (
+            <>
             <p className="mt-1 text-sm text-[var(--text-muted-1)]">
               {selectedCause
                 ? `${selectedCause.title} — ${selectedCause.description}`
@@ -270,6 +290,8 @@ export function DonationPage() {
             <p className="mt-2 text-center text-[11px] text-[var(--text-muted-2)]">
               On-chain confirmation appears after submit.
             </p>
+            </>
+            )}
           </form>
         </SurfaceCard>
 

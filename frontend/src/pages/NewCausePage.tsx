@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { apiJson } from '../lib/api';
 import { PrimaryButton, SectionHeader, SurfaceCard } from '../components/ui';
 
@@ -29,12 +29,36 @@ function normalizeOptionalImageUrl(raw: string): string | null {
 
 export function NewCausePage() {
   const nav = useNavigate();
+  const { id: editIdParam } = useParams();
+  const editId = editIdParam ? Number.parseInt(editIdParam, 10) : null;
+  const isEdit = editId != null && Number.isFinite(editId);
+
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [goalEth, setGoalEth] = useState('10');
   const [imageUrl, setImageUrl] = useState('');
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [loading, setLoading] = useState(isEdit);
+
+  useEffect(() => {
+    if (!isEdit || editId == null) return;
+    setLoading(true);
+    apiJson<{
+      title: string;
+      description: string;
+      goal_eth: number;
+      image_url: string | null;
+    }>(`/admin/causes/${editId}`)
+      .then((row) => {
+        setTitle(row.title);
+        setDescription(row.description);
+        setGoalEth(String(row.goal_eth));
+        setImageUrl(row.image_url ?? '');
+      })
+      .catch((e: Error) => setErr(e.message))
+      .finally(() => setLoading(false));
+  }, [editId, isEdit]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -49,16 +73,25 @@ export function NewCausePage() {
         setBusy(false);
         return;
       }
-      const { id } = await apiJson<{ id: number }>('/causes', {
-        method: 'POST',
-        body: JSON.stringify({
-          title,
-          description,
-          goalEth: parseFloat(goalEth),
-          imageUrl: normalizedImage,
-        }),
-      });
-      nav(`/causes/${id}`);
+      const body = {
+        title,
+        description,
+        goalEth: parseFloat(goalEth),
+        imageUrl: normalizedImage,
+      };
+      if (isEdit && editId != null) {
+        await apiJson<{ id: number }>(`/causes/${editId}`, {
+          method: 'PUT',
+          body: JSON.stringify(body),
+        });
+        nav(`/causes/${editId}`);
+      } else {
+        const { id } = await apiJson<{ id: number }>('/causes', {
+          method: 'POST',
+          body: JSON.stringify(body),
+        });
+        nav(`/causes/${id}`);
+      }
     } catch (e: unknown) {
       setErr(e instanceof Error ? e.message : 'Failed');
     } finally {
@@ -66,9 +99,20 @@ export function NewCausePage() {
     }
   }
 
+  if (loading) {
+    return <div className="vtx-page p-12 text-center text-[var(--text-muted-1)]">Loading…</div>;
+  }
+
   return (
     <div className="vtx-page max-w-lg">
-      <SectionHeader title="New cause" body="Like GoFundMe - goal and raised update from donations." />
+      <SectionHeader
+        title={isEdit ? 'Edit cause' : 'New cause'}
+        body={
+          isEdit
+            ? 'Update title, description, goal, or hero image.'
+            : 'Like GoFundMe - goal and raised update from donations.'
+        }
+      />
       <form onSubmit={(e) => void submit(e)} className="mt-8 space-y-4">
         <SurfaceCard>
           <label className="text-xs uppercase tracking-wider text-[var(--text-muted-1)]">Title</label>
@@ -121,7 +165,7 @@ export function NewCausePage() {
         </SurfaceCard>
         {err && <p className="text-sm text-rose-400">{err}</p>}
         <PrimaryButton type="submit" disabled={busy} className="w-full">
-          {busy ? 'Creating…' : 'Create cause'}
+          {busy ? (isEdit ? 'Saving…' : 'Creating…') : isEdit ? 'Save changes' : 'Create cause'}
         </PrimaryButton>
       </form>
     </div>

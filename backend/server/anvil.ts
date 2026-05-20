@@ -29,6 +29,8 @@ export const VAULTEX_ADMIN_INDEX = 1;
 /** Seeded donor wallets: Haha, Sukhan, Tasin */
 export const SEEDED_DONOR_INDICES = [2, 3, 4] as const;
 export const BENEFICIARY_INDICES = [7, 8, 9] as const;
+/** Dedicated Anvil HD indices for cause treasury wallets (do not overlap users 0–9). */
+export const CAUSE_WALLET_START = 10;
 
 export function anvilWallet(index: number): HDNodeWallet {
   return HDNodeWallet.fromPhrase(

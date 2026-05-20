@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiJson } from '../lib/api';
 import { loadMeHistory, type MeHistoryResponse, type UserHistoryEntry } from '../lib/userHistory';
+import { formatLedgerSummary } from '../lib/ledgerCopy';
 import { PrimaryButton, PrimaryLinkButton, SectionHeader, SurfaceCard } from '../components/ui';
 
 type UserRow = {
@@ -11,6 +12,11 @@ type UserRow = {
   email: string;
   role: string;
   anvilIndex: number | null;
+};
+
+type CauseOption = {
+  id: number;
+  title: string;
 };
 
 const POLL_MS = 6000;
@@ -30,6 +36,7 @@ function WalletMeter({
   const pct = Math.round(summary.fillRatio * 1000) / 10;
   const cur = parseFloat(summary.currentEth);
   const ref = parseFloat(summary.referenceMaxEth);
+  const isVault = summary.isVaultWallet === true;
 
   return (
     <div className="relative overflow-hidden rounded-2xl border border-amber-500/35 bg-gradient-to-b from-amber-950/40 via-[#0c0a06] to-black p-5 shadow-[inset_0_1px_0_rgba(251,191,36,0.12)]">
@@ -39,7 +46,9 @@ function WalletMeter({
       />
       <div className="relative flex items-start justify-between gap-3">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-200/80">Wallet</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-200/80">
+            {isVault ? 'Vault wallet' : 'Wallet'}
+          </p>
           <p className="mt-1 font-mono text-2xl font-bold tabular-nums text-amber-50 sm:text-3xl">
             {cur.toFixed(4)} <span className="text-base font-semibold text-amber-400/90">ETH</span>
           </p>
@@ -51,9 +60,9 @@ function WalletMeter({
 
       <div className="relative mt-5">
         <div className="flex justify-between text-[10px] font-medium uppercase tracking-wider text-[var(--text-muted-1)]">
-          <span>Remaining</span>
+          <span>{isVault ? 'Remaining' : 'Remaining'}</span>
           <span>
-            Pool ~{ref.toFixed(2)} ETH
+            {isVault ? `Received ~${ref.toFixed(2)} ETH` : `Pool ~${ref.toFixed(2)} ETH`}
           </span>
         </div>
         <div className="mt-2 h-4 w-full overflow-hidden rounded-full border border-black/60 bg-zinc-950 shadow-inner ring-1 ring-amber-900/40">
@@ -68,7 +77,18 @@ function WalletMeter({
           />
         </div>
         <p className="mt-2 text-center text-[11px] tabular-nums text-[var(--text-muted-1)]">
-          {role === 'beneficiary' ? (
+          {isVault ? (
+            <>
+              Received (donations):{' '}
+              <span className="text-[var(--text-muted-2)]">{parseFloat(summary.totalReceivedEth).toFixed(4)}</span> ETH
+              {' · '}
+              Disbursed:{' '}
+              <span className="text-[var(--text-muted-2)]">
+                {parseFloat(summary.totalDisbursedEth ?? '0').toFixed(4)}
+              </span>{' '}
+              ETH
+            </>
+          ) : role === 'beneficiary' ? (
             <>
               Received (ledger):{' '}
               <span className="text-[var(--text-muted-2)]">{parseFloat(summary.totalReceivedEth).toFixed(4)}</span> ETH
@@ -99,15 +119,24 @@ function HistoryRow({ e }: { e: UserHistoryEntry }) {
       </div>
       <div className="min-w-0">
         <p className="truncate text-[var(--text-high-1)]">
-          {e.kind === 'donation_in'
-            ? incoming
-              ? `${e.fromDisplayName} → you`
-              : `You → ${e.toDisplayName}`
-            : incoming
-              ? `${e.fromDisplayName} → you`
-              : `You → ${e.toDisplayName}`}
+          {e.kind === 'disbursement_out'
+            ? formatLedgerSummary(e)
+            : e.kind === 'donation_in'
+              ? incoming
+                ? `${e.fromDisplayName} → you`
+                : `You → ${e.toDisplayName}`
+              : incoming
+                ? `${e.fromDisplayName} → you`
+                : `You → ${e.toDisplayName}`}
         </p>
-        {e.causeName && <p className="truncate text-xs text-[var(--text-muted-1)]">{e.causeName}</p>}
+        {e.kind === 'disbursement_out' && e.toDisplayName ? (
+          <p className="truncate text-xs text-[var(--text-muted-1)]">
+            Recipient: {e.toDisplayName}
+            {e.memo?.trim() ? ` · Cause: ${e.memo.trim()}` : ''}
+          </p>
+        ) : e.causeName && e.kind === 'donation_in' ? (
+          <p className="truncate text-xs text-[var(--text-muted-1)]">{e.causeName}</p>
+        ) : null}
         <p className="mt-0.5 font-mono text-[10px] text-[var(--text-muted-3)]">{shortHash(e.txHash)}</p>
       </div>
       <div className="font-mono text-right text-base font-semibold tabular-nums text-amber-100 sm:text-lg">
@@ -120,18 +149,31 @@ function HistoryRow({ e }: { e: UserHistoryEntry }) {
 
 export function AccountPage() {
   const { user, loading } = useAuth();
+  const [searchParams] = useSearchParams();
+  const disburseCauseParam = searchParams.get('disburseCause');
+  const scrolledToDisburseRef = useRef(false);
   const [eth, setEth] = useState<string | null>(null);
   const [beneficiaries, setBeneficiaries] = useState<UserRow[]>([]);
   const [beneficiaryId, setBeneficiaryId] = useState('');
-  const [disburseAmount, setDisburseAmount] = useState('1');
-  const [causeNote, setCauseNote] = useState('Education');
-  const [msg, setMsg] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [causeDisburseAmount, setCauseDisburseAmount] = useState('1');
+  const [beneficiaryDisburseAmount, setBeneficiaryDisburseAmount] = useState('1');
+  const [causeDisburseMessage, setCauseDisburseMessage] = useState('');
+  const [beneficiaryDisburseMessage, setBeneficiaryDisburseMessage] = useState('');
+  const [causeId, setCauseId] = useState('');
+  const [causes, setCauses] = useState<CauseOption[]>([]);
+  const [causeDisburseMsg, setCauseDisburseMsg] = useState<string | null>(null);
+  const [beneficiaryDisburseMsg, setBeneficiaryDisburseMsg] = useState<string | null>(null);
+  const [busyCause, setBusyCause] = useState(false);
+  const [busyBeneficiary, setBusyBeneficiary] = useState(false);
   const [history, setHistory] = useState<MeHistoryResponse | null>(null);
   const [historyErr, setHistoryErr] = useState<string | null>(null);
 
   const refreshHistory = useCallback(() => {
-    if (!user || user.anvilIndex == null) {
+    if (!user) {
+      setHistory(null);
+      return;
+    }
+    if (user.role !== 'admin' && user.anvilIndex == null) {
       setHistory(null);
       return;
     }
@@ -158,37 +200,83 @@ export function AccountPage() {
 
   useEffect(() => {
     queueMicrotask(() => refreshHistory());
-    if (!user?.anvilIndex) return;
+    if (!user) return;
+    if (user.role !== 'admin' && !user.anvilIndex) return;
     const t = setInterval(refreshHistory, POLL_MS);
     return () => clearInterval(t);
-  }, [refreshHistory, user?.anvilIndex]);
+  }, [refreshHistory, user]);
 
   useEffect(() => {
     if (user?.role !== 'admin') return;
     apiJson<UserRow[]>('/users')
       .then((rows) => setBeneficiaries(rows.filter((r) => r.role === 'beneficiary')))
       .catch(() => setBeneficiaries([]));
-  }, [user?.role]);
+    apiJson<CauseOption[]>('/causes')
+      .then((rows) => {
+        setCauses(rows);
+        const preselect = disburseCauseParam ?? (rows.length > 0 ? String(rows[0].id) : '');
+        if (preselect && rows.some((c) => String(c.id) === preselect)) {
+          setCauseId(preselect);
+        } else if (rows.length > 0) {
+          setCauseId(String(rows[0].id));
+        }
+      })
+      .catch(() => setCauses([]));
+  }, [user?.role, disburseCauseParam]);
 
-  async function disburse(e: React.FormEvent) {
+  useEffect(() => {
+    scrolledToDisburseRef.current = false;
+  }, [disburseCauseParam]);
+
+  useEffect(() => {
+    if (user?.role !== 'admin' || !disburseCauseParam || scrolledToDisburseRef.current) return;
+    if (causeId !== disburseCauseParam) return;
+    const el = document.getElementById('disburse-cause');
+    if (!el) return;
+    scrolledToDisburseRef.current = true;
+    window.requestAnimationFrame(() => {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }, [user?.role, disburseCauseParam, causeId]);
+
+  async function disburseForCause(e: React.FormEvent) {
     e.preventDefault();
-    setMsg(null);
-    setBusy(true);
+    if (!causeId) return;
+    setCauseDisburseMsg(null);
+    setBusyCause(true);
+    try {
+      const r = await apiJson<{ txHash: string }>(`/causes/${causeId}/disburse`, {
+        method: 'POST',
+        body: JSON.stringify({ amountEth: causeDisburseAmount, message: causeDisburseMessage }),
+      });
+      setCauseDisburseMsg(`Disbursed to cause · ${r.txHash.slice(0, 16)}…`);
+      refreshHistory();
+    } catch (err: unknown) {
+      setCauseDisburseMsg(err instanceof Error ? err.message : 'Failed');
+    } finally {
+      setBusyCause(false);
+    }
+  }
+
+  async function disburseToBeneficiary(e: React.FormEvent) {
+    e.preventDefault();
+    setBeneficiaryDisburseMsg(null);
+    setBusyBeneficiary(true);
     try {
       const r = await apiJson<{ txHash: string }>('/disburse', {
         method: 'POST',
         body: JSON.stringify({
           beneficiaryUserId: parseInt(beneficiaryId, 10),
-          amountEth: disburseAmount,
-          causeName: causeNote,
+          amountEth: beneficiaryDisburseAmount,
+          message: beneficiaryDisburseMessage,
         }),
       });
-      setMsg(`Disbursed · ${r.txHash.slice(0, 16)}…`);
+      setBeneficiaryDisburseMsg(`Disbursed to beneficiary · ${r.txHash.slice(0, 16)}…`);
       refreshHistory();
     } catch (err: unknown) {
-      setMsg(err instanceof Error ? err.message : 'Failed');
+      setBeneficiaryDisburseMsg(err instanceof Error ? err.message : 'Failed');
     } finally {
-      setBusy(false);
+      setBusyBeneficiary(false);
     }
   }
 
@@ -237,7 +325,7 @@ export function AccountPage() {
         )}
       </SurfaceCard>
 
-      {user.anvilIndex != null && (
+      {user.anvilIndex != null || user.role === 'admin' ? (
         <>
           {history?.summary && (
             <div className="mt-8">
@@ -265,13 +353,59 @@ export function AccountPage() {
             )}
           </section>
         </>
-      )}
+      ) : null}
 
       {user.role === 'admin' && (
-        <form onSubmit={(e) => void disburse(e)} className="mt-8 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-6">
-          <h2 className="text-lg font-semibold text-amber-200">Disburse from vault</h2>
+        <>
+        <form
+          id="disburse-cause"
+          onSubmit={(e) => void disburseForCause(e)}
+          className="mt-8 scroll-mt-24 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-6"
+        >
+          <h2 className="text-lg font-semibold text-amber-200">Disburse for cause</h2>
           <p className="mt-1 text-xs text-[var(--text-muted-1)]">
-            Sends ETH from Vaultex vault (#0) to a beneficiary wallet. Logged as disbursement.
+            Sends ETH from the Vaultex vault directly to the selected cause treasury wallet.
+          </p>
+          <div className="mt-4 space-y-3">
+            <select
+              value={causeId}
+              onChange={(e) => setCauseId(e.target.value)}
+              required
+              className="vtx-input w-full px-4 py-3"
+            >
+              <option value="">Select cause</option>
+              {causes.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.title}
+                </option>
+              ))}
+            </select>
+            <input
+              type="text"
+              value={causeDisburseAmount}
+              onChange={(e) => setCauseDisburseAmount(e.target.value)}
+              placeholder="ETH amount"
+              className="vtx-input w-full px-4 py-3 font-mono"
+            />
+            <input
+              type="text"
+              value={causeDisburseMessage}
+              onChange={(e) => setCauseDisburseMessage(e.target.value.slice(0, 40))}
+              maxLength={40}
+              placeholder="Message (optional, max 40 chars)"
+              className="vtx-input w-full px-4 py-3"
+            />
+          </div>
+          <PrimaryButton type="submit" disabled={busyCause || !causeId} className="mt-4 px-6 py-2">
+            {busyCause ? 'Sending…' : 'Disburse to cause'}
+          </PrimaryButton>
+          {causeDisburseMsg && <p className="mt-3 text-sm text-amber-200">{causeDisburseMsg}</p>}
+        </form>
+
+        <form onSubmit={(e) => void disburseToBeneficiary(e)} className="mt-6 rounded-2xl border border-white/10 bg-white/[0.02] p-6">
+          <h2 className="text-lg font-semibold text-[var(--text-high-3)]">Disburse to beneficiary</h2>
+          <p className="mt-1 text-xs text-[var(--text-muted-1)]">
+            Pays a beneficiary organization directly from the vault (separate from cause treasury).
           </p>
           <div className="mt-4 space-y-3">
             <select
@@ -289,24 +423,26 @@ export function AccountPage() {
             </select>
             <input
               type="text"
-              value={disburseAmount}
-              onChange={(e) => setDisburseAmount(e.target.value)}
+              value={beneficiaryDisburseAmount}
+              onChange={(e) => setBeneficiaryDisburseAmount(e.target.value)}
               placeholder="ETH amount"
               className="vtx-input w-full px-4 py-3 font-mono"
             />
             <input
               type="text"
-              value={causeNote}
-              onChange={(e) => setCauseNote(e.target.value)}
-              placeholder="Cause / memo"
+              value={beneficiaryDisburseMessage}
+              onChange={(e) => setBeneficiaryDisburseMessage(e.target.value.slice(0, 40))}
+              maxLength={40}
+              placeholder="Message (optional, max 40 chars)"
               className="vtx-input w-full px-4 py-3"
             />
           </div>
-          {msg && <p className="mt-3 text-sm text-amber-200">{msg}</p>}
-          <PrimaryButton type="submit" disabled={busy || !beneficiaryId} className="mt-4 px-6 py-2">
-            {busy ? 'Sending…' : 'Send to beneficiary'}
+          {beneficiaryDisburseMsg && <p className="mt-3 text-sm text-amber-200">{beneficiaryDisburseMsg}</p>}
+          <PrimaryButton type="submit" disabled={busyBeneficiary || !beneficiaryId} className="mt-4 px-6 py-2">
+            {busyBeneficiary ? 'Sending…' : 'Send to beneficiary'}
           </PrimaryButton>
         </form>
+        </>
       )}
     </div>
   );

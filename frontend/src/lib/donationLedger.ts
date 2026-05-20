@@ -9,6 +9,7 @@ export interface DonationLedgerEntry {
   toMasked: string;
   amountEth: string;
   causeName: string;
+  memo?: string;
   txHash: string;
   recordedAt: string;
 }

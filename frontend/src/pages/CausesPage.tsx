@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { apiJson } from '../lib/api';
 import { resolveCauseHeroUrl } from '../lib/causeHeroImages';
 import { useIsLightMode } from '../lib/useIsLightMode';
+import { useAuth } from '../context/AuthContext';
 import { CauseFundingDonut } from '../components/CauseFundingDonut';
 
 const SAMPLE_HERO_PLACEHOLDER = '/samples/placeholder.svg';
@@ -136,29 +137,31 @@ function tagStyle(accent: ShowcaseCause['accent'], kind: 'frame' | 'story' | 'pr
 function CauseCard({
   cause,
   isLightMode,
+  isAdmin,
   detailCauseId,
   imageUrl,
-  raisedEth,
+  disbursedEth,
   goalEth,
 }: {
   cause: ShowcaseCause;
   isLightMode: boolean;
+  isAdmin?: boolean;
   /** Backend cause id — links to Cause detail when present; otherwise buttons fall back to /donate */
   detailCauseId?: number;
   imageUrl?: string | null;
-  raisedEth?: number;
+  disbursedEth?: number;
   goalEth?: number;
 }) {
   const [failedHeroKey, setFailedHeroKey] = useState<string | null>(null);
 
-  const hasLiveStats = raisedEth != null && goalEth != null && goalEth > 0;
-  const livePct = hasLiveStats ? Math.min(100, ((raisedEth as number) / (goalEth as number)) * 100) : null;
+  const hasLiveStats = disbursedEth != null && goalEth != null && goalEth > 0;
+  const livePct = hasLiveStats ? Math.min(100, ((disbursedEth as number) / (goalEth as number)) * 100) : null;
   const progressPct = livePct ?? cause.progressPct;
   const progressLabel =
     livePct != null ? `${livePct.toFixed(0)}%` : cause.progressLabel;
   const amountLabel =
     hasLiveStats
-      ? `${(raisedEth as number).toFixed(2)} ETH raised of ${(goalEth as number).toFixed(2)} ETH goal`
+      ? `${(disbursedEth as number).toFixed(2)} ETH disbursed of ${(goalEth as number).toFixed(2)} ETH goal`
       : cause.amountLabel;
 
   const accentText =
@@ -171,6 +174,12 @@ function CauseCard({
         : 'text-emerald-300';
 
   const detailHref = detailCauseId != null ? `/causes/${detailCauseId}` : '/causes';
+  const actionHref = isAdmin
+    ? detailCauseId != null
+      ? `/account?disburseCause=${detailCauseId}`
+      : '/account?disburseCause'
+    : '/donate';
+  const actionLabel = isAdmin ? 'DISBURSE FUND' : 'DONATE NOW';
   const heroSrc = resolveCauseHeroUrl(cause.apiTitle, imageUrl);
   const heroFailureKey = `${detailCauseId ?? ''}:${cause.title}:${heroSrc ?? ''}`;
   const heroFailed = failedHeroKey === heroFailureKey;
@@ -265,7 +274,7 @@ function CauseCard({
           {hasLiveStats ? (
             <div className="mt-4 max-w-[14rem]">
               <CauseFundingDonut
-                raisedEth={raisedEth as number}
+                raisedEth={disbursedEth as number}
                 goalEth={goalEth as number}
                 isLightMode={isLightMode}
                 compact
@@ -275,10 +284,10 @@ function CauseCard({
 
           <div className="mt-5 flex flex-wrap items-center gap-3">
             <Link
-              to="/donate"
+              to={actionHref}
               className="inline-flex min-h-11 items-center rounded-full border border-emerald-300/70 bg-[linear-gradient(180deg,#3dffc4,#23d78f)] px-6 py-2 text-sm font-semibold text-[#032316] shadow-[0_0_22px_rgba(51,255,178,0.28)]"
             >
-              DONATE NOW
+              {actionLabel}
             </Link>
             <Link
               to={detailHref}
@@ -313,7 +322,7 @@ function CauseCard({
 function AddCauseCard({ isLightMode }: { isLightMode: boolean }) {
   return (
     <Link
-      to="/causes/new"
+      to="/admin/causes/new"
       className={`group flex w-full flex-col items-center justify-center rounded-3xl border-2 border-dashed px-6 py-14 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl transition hover:-translate-y-0.5 hover:brightness-[1.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/55 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] ${
         isLightMode
           ? 'border-emerald-600/45 bg-[linear-gradient(162deg,rgba(236,252,246,0.95),rgba(220,246,236,0.88))] shadow-[0_10px_32px_rgba(16,120,90,0.12)] hover:border-emerald-600/58 hover:shadow-[0_14px_40px_rgba(16,120,90,0.16)]'
@@ -341,12 +350,25 @@ type ApiCauseRow = {
   id: number;
   title: string;
   goal_eth: number;
-  raised_eth: number;
+  disbursed_eth: number;
   image_url: string | null;
 };
 
+/** Prefer the canonical (lowest-id) row when duplicate titles exist in the API. */
+function activeCauseByTitle(rows: ApiCauseRow[], title: string): ApiCauseRow | undefined {
+  let best: ApiCauseRow | undefined;
+  for (const row of rows) {
+    if (row.title !== title) continue;
+    if (!best || row.id < best.id) best = row;
+  }
+  return best;
+}
+
 export function CausesPage() {
   const isLightMode = useIsLightMode();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
+  const location = useLocation();
   const [apiCauses, setApiCauses] = useState<ApiCauseRow[]>([]);
 
   useEffect(() => {
@@ -362,7 +384,7 @@ export function CausesPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [location.pathname]);
 
   return (
     <div className="vtx-page max-w-6xl">
@@ -395,21 +417,22 @@ export function CausesPage() {
       </div>
 
       <div className="mt-8 space-y-6">
-        {causes.map((cause) => {
-          const match = apiCauses.find((r) => r.title === cause.apiTitle);
-          return (
-          <CauseCard
-            key={`${cause.section}-${cause.apiTitle}`}
-            cause={cause}
-            isLightMode={isLightMode}
-            detailCauseId={match?.id}
-            imageUrl={match?.image_url}
-            raisedEth={match?.raised_eth}
-            goalEth={match?.goal_eth}
-          />
-          );
-        })}
-        <AddCauseCard isLightMode={isLightMode} />
+        {causes
+          .map((cause) => ({ cause, match: activeCauseByTitle(apiCauses, cause.apiTitle) }))
+          .filter((entry): entry is { cause: ShowcaseCause; match: ApiCauseRow } => entry.match != null)
+          .map(({ cause, match }) => (
+            <CauseCard
+              key={`${cause.section}-${cause.apiTitle}`}
+              cause={cause}
+              isLightMode={isLightMode}
+              isAdmin={isAdmin}
+              detailCauseId={match.id}
+              imageUrl={match.image_url}
+              disbursedEth={match.disbursed_eth}
+              goalEth={match.goal_eth}
+            />
+          ))}
+        {isAdmin ? <AddCauseCard isLightMode={isLightMode} /> : null}
       </div>
     </div>
   );

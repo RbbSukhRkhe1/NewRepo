@@ -12,7 +12,7 @@ type Cause = {
   title: string;
   description: string;
   goal_eth: number;
-  raised_eth: number;
+  disbursed_eth: number;
   image_url?: string | null;
 };
 
@@ -250,6 +250,7 @@ export function CauseDetailPage() {
   const [cause, setCause] = useState<Cause | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [amount, setAmount] = useState('0.1');
+  const [disburseMessage, setDisburseMessage] = useState('');
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [activeSlice, setActiveSlice] = useState<number | null>(null);
@@ -295,8 +296,8 @@ export function CauseDetailPage() {
       .catch((e: Error) => setErr(e.message));
   }, [id]);
 
-  const canDonate =
-    user && (user.role === 'donor' || user.role === 'admin') && user.anvilIndex != null;
+  const isAdmin = user?.role === 'admin';
+  const canDonate = user?.role === 'donor' && user.anvilIndex != null;
 
   async function donate(e: React.FormEvent) {
     e.preventDefault();
@@ -318,6 +319,26 @@ export function CauseDetailPage() {
     }
   }
 
+  async function disburse(e: React.FormEvent) {
+    e.preventDefault();
+    if (!cause || !validAmount) return;
+    setMsg(null);
+    setBusy(true);
+    try {
+      const r = await apiJson<{ txHash: string }>(`/causes/${cause.id}/disburse`, {
+        method: 'POST',
+        body: JSON.stringify({ amountEth: amount, message: disburseMessage }),
+      });
+      setMsg(`Disbursed · ${r.txHash.slice(0, 14)}…`);
+      const updated = await apiJson<Cause>(`/causes/${cause.id}`);
+      setCause(updated);
+    } catch (e: unknown) {
+      setMsg(e instanceof Error ? e.message : 'Failed');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   if (err || !cause) {
     return (
       <div className="px-4 py-12 text-center text-[var(--text-muted-2)]">
@@ -329,12 +350,12 @@ export function CauseDetailPage() {
     );
   }
 
-  const pct = Math.min(100, (cause.raised_eth / cause.goal_eth) * 100);
+  const pct = Math.min(100, (cause.disbursed_eth / cause.goal_eth) * 100);
   const heroSrc = resolveCauseHeroUrl(cause.title, cause.image_url);
   const heroFailureKey = `${cause.id}:${heroSrc ?? ''}`;
   const heroFailed = failedHeroKey === heroFailureKey;
   const detailCopy = DETAIL_COPY_BY_TITLE[cause.title];
-  const remainingEth = Math.max(0, cause.goal_eth - cause.raised_eth);
+  const remainingEth = Math.max(0, cause.goal_eth - cause.disbursed_eth);
   const parsedAmount = Number.parseFloat(amount || '0');
   const validAmount = Number.isFinite(parsedAmount) && parsedAmount > 0;
   const unitLabel = impactUnitForCause(cause.title);
@@ -957,9 +978,69 @@ export function CauseDetailPage() {
                 isLightMode ? 'text-[11px] text-emerald-900/72' : 'text-xs text-[var(--text-muted-2)]'
               }`}
             >
-              Donor action
+              {isAdmin ? 'Admin action' : 'Donor action'}
             </p>
-            {canDonate ? (
+            {isAdmin ? (
+              <form onSubmit={(e) => void disburse(e)} className="relative z-[1] mt-3 sm:mt-3.5">
+                <h2
+                  className={`font-semibold text-[var(--text-high-3)] ${isLightMode ? 'text-xl tracking-tight text-amber-950' : 'text-lg text-amber-100'}`}
+                >
+                  Disburse for {cause.title}
+                </h2>
+                <p
+                  className={`mt-1.5 text-[var(--text-muted-1)] ${isLightMode ? 'max-w-xl text-[13px] leading-relaxed text-amber-950/80' : 'text-xs text-amber-100/75'}`}
+                >
+                  Sends ETH from the Vaultex vault directly to this cause&apos;s treasury wallet. Logged as a disbursement.
+                </p>
+                <div className="mt-3.5 space-y-2.5">
+                  <input
+                    type="text"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    className={`vtx-input w-full px-4 py-2 font-mono sm:w-40 ${isLightMode ? 'border-amber-300/50 bg-amber-50/60' : ''}`}
+                    placeholder="Amount"
+                  />
+                  <input
+                    type="text"
+                    value={disburseMessage}
+                    onChange={(e) => setDisburseMessage(e.target.value.slice(0, 40))}
+                    maxLength={40}
+                    className={`vtx-input w-full px-4 py-2 ${isLightMode ? 'border-amber-300/50 bg-amber-50/60' : ''}`}
+                    placeholder="Message (optional, max 40 chars)"
+                  />
+                  <PrimaryButton
+                    type="submit"
+                    disabled={busy || !validAmount}
+                    className={
+                      isLightMode
+                        ? 'min-w-[7.5rem] bg-amber-600 px-6 py-2.5 shadow-[0_12px_44px_-10px_rgba(180,83,9,0.45)] hover:bg-amber-700'
+                        : 'min-w-[7.5rem] bg-amber-600 px-6 py-2.5 hover:bg-amber-500'
+                    }
+                  >
+                    {busy ? 'Sending…' : 'Disburse'}
+                  </PrimaryButton>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {QUICK_AMOUNTS.map((v) => (
+                    <button
+                      key={v}
+                      type="button"
+                      onClick={() => setAmount(v)}
+                      className={`rounded-full border px-3 py-1.5 font-semibold transition-[border-color,box-shadow,background-color] duration-150 ${
+                        isLightMode
+                          ? 'border-amber-400/50 bg-amber-100/90 text-[13px] text-amber-950 hover:border-amber-500/60 hover:bg-amber-200/80'
+                          : 'border-amber-500/30 bg-amber-500/10 text-xs text-amber-100 hover:border-amber-400/45'
+                      }`}
+                    >
+                      {v} ETH
+                    </button>
+                  ))}
+                </div>
+                {msg && (
+                  <p className={`mt-3 text-sm ${isLightMode ? 'text-amber-900' : 'text-amber-200'}`}>{msg}</p>
+                )}
+              </form>
+            ) : canDonate ? (
               <form onSubmit={(e) => void donate(e)} className="relative z-[1] mt-3 sm:mt-3.5">
                 <h2
                   className={`font-semibold text-[var(--text-high-3)] ${isLightMode ? 'text-xl tracking-tight' : 'text-lg'}`}
@@ -1112,9 +1193,9 @@ export function CauseDetailPage() {
               </div>
               <div className="min-w-0 flex-1 space-y-1.5">
                 <p className={`text-[10px] uppercase tracking-[0.1em] ${isLightMode ? 'text-emerald-950/70' : 'text-cyan-200/78'}`}>
-                  Raised
+                  Disbursed
                 </p>
-                <p className={`font-mono text-[0.95rem] font-semibold ${isLightMode ? 'text-[var(--text-high-3)]' : 'text-cyan-50'}`}>{cause.raised_eth.toFixed(4)} ETH</p>
+                <p className={`font-mono text-[0.95rem] font-semibold ${isLightMode ? 'text-[var(--text-high-3)]' : 'text-cyan-50'}`}>{cause.disbursed_eth.toFixed(4)} ETH</p>
                 <p className={`pt-0.5 text-[10px] uppercase tracking-[0.1em] ${isLightMode ? 'text-emerald-950/70' : 'text-cyan-200/78'}`}>
                   Remaining
                 </p>
@@ -1129,9 +1210,9 @@ export function CauseDetailPage() {
             </div>
             <div className="relative z-[1] mt-4 w-full max-w-[17rem] sm:max-w-none">
               <p className={`mb-1 text-[10px] font-semibold uppercase tracking-[0.14em] ${isLightMode ? 'text-emerald-950/65' : 'text-cyan-200/72'}`}>
-                Raised vs goal
+                Disbursed vs goal
               </p>
-              <CauseFundingDonut raisedEth={cause.raised_eth} goalEth={cause.goal_eth} isLightMode={isLightMode} />
+              <CauseFundingDonut raisedEth={cause.disbursed_eth} goalEth={cause.goal_eth} isLightMode={isLightMode} />
             </div>
             <p className={`relative z-[1] mt-2 text-[12px] ${isLightMode ? 'text-[var(--text-muted-1)]' : 'text-[var(--text-muted-1)]'}`}>
               Goal: {cause.goal_eth.toFixed(4)} ETH

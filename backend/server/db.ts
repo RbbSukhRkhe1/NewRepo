@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS ledger_entries (
   from_display_name TEXT,
   to_display_name TEXT,
   cause_name TEXT,
+  memo TEXT,
   recorded_at TEXT NOT NULL DEFAULT (datetime('now')),
   FOREIGN KEY (cause_id) REFERENCES causes(id)
 );
@@ -60,6 +61,19 @@ const causesColumns = db.prepare(`PRAGMA table_info(causes)`).all() as { name: s
 if (!causesColumns.some((c) => c.name === 'image_url')) {
   db.exec(`ALTER TABLE causes ADD COLUMN image_url TEXT`);
   console.log('[db] added causes.image_url');
+}
+if (!causesColumns.some((c) => c.name === 'anvil_index')) {
+  db.exec(`ALTER TABLE causes ADD COLUMN anvil_index INTEGER`);
+  db.exec(
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_causes_anvil_index ON causes(anvil_index) WHERE anvil_index IS NOT NULL`
+  );
+  console.log('[db] added causes.anvil_index');
+}
+
+const ledgerColumns = db.prepare(`PRAGMA table_info(ledger_entries)`).all() as { name: string }[];
+if (!ledgerColumns.some((c) => c.name === 'memo')) {
+  db.exec(`ALTER TABLE ledger_entries ADD COLUMN memo TEXT`);
+  console.log('[db] added ledger_entries.memo');
 }
 
 // One-time migration for dev DBs created with role 'hospital'.

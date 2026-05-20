@@ -45,8 +45,8 @@ export function startChainWatcher(wsUrl: string): () => void {
   const insert = db.prepare(`
     INSERT OR IGNORE INTO ledger_entries (
       tx_hash, block_number, from_addr, to_addr, value_eth, kind,
-      cause_id, from_display_name, to_display_name, cause_name
-    ) VALUES (?,?,?,?,?,?,?,?,?,?)
+      cause_id, from_display_name, to_display_name, cause_name, memo
+    ) VALUES (?,?,?,?,?,?,?,?,?,?,?)
   `);
 
   const onBlock = async (blockNumber: number) => {
@@ -85,7 +85,8 @@ export function startChainWatcher(wsUrl: string): () => void {
           null,
           labelForAddress(tx.from, book),
           tx.to ? labelForAddress(tx.to, book) : 'Contract',
-          ''
+          '',
+          null
         );
       }
     } catch (e) {

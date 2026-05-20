@@ -5,6 +5,7 @@ import {
   type DonationLedgerEntry,
   type DonationLedgerKind,
 } from '../lib/donationLedger';
+import { formatLedgerSummary } from '../lib/ledgerCopy';
 import { EyebrowLabel, SectionHeader, SurfaceCard } from '../components/ui';
 
 const ROW_HEIGHT = 152;
@@ -41,10 +42,7 @@ function timeAgo(iso: string): string {
 }
 
 function summaryLine(entry: DonationLedgerEntry): string {
-  if (entry.kind === 'donation_in') {
-    return `${entry.fromDisplayName} donated ${entry.amountEth} ETH to ${entry.toDisplayName}`;
-  }
-  return `${entry.fromDisplayName} sent ${entry.amountEth} ETH to ${entry.toDisplayName}`;
+  return formatLedgerSummary(entry);
 }
 
 type Tab = 'all' | DonationLedgerKind;
@@ -325,7 +323,17 @@ export function LedgerPage() {
                             {shortHash(entry.txHash)}
                           </button>
                           <span className="hidden sm:inline">·</span>
-                          <span>Cause: {entry.causeName || '—'}</span>
+                          <span>
+                            {entry.kind === 'disbursement_out' && entry.toDisplayName
+                              ? `Recipient: ${entry.toDisplayName}`
+                              : `Cause: ${entry.causeName || '—'}`}
+                          </span>
+                          {entry.kind === 'disbursement_out' ? (
+                            <>
+                              <span className="hidden sm:inline">·</span>
+                              <span>Cause: {entry.memo?.trim() || '—'}</span>
+                            </>
+                          ) : null}
                           <span className="hidden sm:inline">·</span>
                           <span>{shortAddress(entry.fromMasked)} → {shortAddress(entry.toMasked)}</span>
                         </p>

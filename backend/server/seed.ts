@@ -7,6 +7,7 @@ import {
   SUPER_RICH_INDEX,
   anvilAddress,
 } from './anvil.js';
+import { ensureCauseWallets } from './causeWallets.js';
 
 /** Shared demo password for every seeded account (capstone only). */
 export const DEMO_PASSWORD = 'demo123';
@@ -87,43 +88,52 @@ function seedUsersIfEmpty(): boolean {
 
 /**
  * Ensure the 5 “marketing” causes exist even when the DB already has users/causes.
- * This keeps `/causes/:id` details aligned with the Causes page prompts without requiring manual DB resets.
+ * Uses title as the stable key: one row per seeded title, preserves admin active/inactive,
+ * and merges duplicate rows created by older seed logic.
  */
 export function seedCausesUpsert(): void {
-  const existing = db
-    .prepare(`SELECT id, title FROM causes WHERE active = 1 ORDER BY id ASC`)
-    .all() as { id: number; title: string }[];
-
-  const desiredTitles = new Set(SEEDED_CAUSES.map((c) => c.title));
-  const existingDesired = new Set(existing.map((c) => c.title).filter((t) => desiredTitles.has(t)));
-
-  // Reuse existing non-desired causes by rewriting them into missing desired causes (preserves ids for links).
-  const reusable = existing.filter((c) => !desiredTitles.has(c.title));
-  const missing = SEEDED_CAUSES.filter((c) => !existingDesired.has(c.title));
-
-  const update = db.prepare(
-    `UPDATE causes SET title = ?, description = ?, goal_eth = ?, raised_eth = ?, image_url = ?, active = 1 WHERE id = ?`
+  const selectByTitle = db.prepare(
+    `SELECT id, active FROM causes WHERE title = ? ORDER BY id ASC`,
   );
-  let reused = 0;
-  for (let i = 0; i < Math.min(reusable.length, missing.length); i++) {
-    const row = reusable[i]!;
-    const m = missing[i]!;
-    update.run(m.title, m.description, m.goalEth, m.raisedEth, m.imageUrl ?? null, row.id);
-    reused++;
-  }
-
-  // Insert any remaining missing causes.
+  const updateCanonical = db.prepare(
+    `UPDATE causes SET description = ?, goal_eth = ?, image_url = ? WHERE id = ?`,
+  );
   const insert = db.prepare(
-    `INSERT INTO causes (title, description, goal_eth, raised_eth, image_url, active) VALUES (?,?,?,?,?,1)`
+    `INSERT INTO causes (title, description, goal_eth, raised_eth, image_url, active) VALUES (?,?,?,?,?,1)`,
   );
-  for (const m of missing.slice(reused)) {
-    insert.run(m.title, m.description, m.goalEth, m.raisedEth, m.imageUrl ?? null);
+  const migrateLedger = db.prepare(`UPDATE ledger_entries SET cause_id = ? WHERE cause_id = ?`);
+  const mergeRaisedEth = db.prepare(
+    `UPDATE causes SET raised_eth = raised_eth + ? WHERE id = ?`,
+  );
+  const readRaisedEth = db.prepare(`SELECT raised_eth FROM causes WHERE id = ?`);
+  const deleteCause = db.prepare(`DELETE FROM causes WHERE id = ?`);
+
+  for (const seed of SEEDED_CAUSES) {
+    const rows = selectByTitle.all(seed.title) as { id: number; active: number }[];
+
+    if (rows.length === 0) {
+      insert.run(seed.title, seed.description, seed.goalEth, seed.raisedEth, seed.imageUrl ?? null);
+      continue;
+    }
+
+    const canonical = rows[0]!;
+    updateCanonical.run(seed.description, seed.goalEth, seed.imageUrl ?? null, canonical.id);
+
+    for (const dup of rows.slice(1)) {
+      migrateLedger.run(canonical.id, dup.id);
+      const raised = readRaisedEth.get(dup.id) as { raised_eth: number } | undefined;
+      if (raised && raised.raised_eth > 0) {
+        mergeRaisedEth.run(raised.raised_eth, canonical.id);
+      }
+      deleteCause.run(dup.id);
+    }
   }
 
   const pushSeedHeroes = db.prepare(`UPDATE causes SET image_url = ? WHERE title = ?`);
   for (const c of SEEDED_CAUSES) {
     if (c.imageUrl) pushSeedHeroes.run(c.imageUrl, c.title);
   }
+  ensureCauseWallets();
 }
 
 export function seedIfEmpty(): void {

@@ -12,6 +12,7 @@ import {
 import { getRpcHttpUrl, chainId, network } from './config.js';
 import { maskAddr } from './resolve.js';
 import { publishEvent } from './lib/redis.js';
+import { ensureCauseWallets, nextCauseAnvilIndex } from './causeWallets.js';
 
 const vaultLower = () => anvilAddress(SUPER_RICH_INDEX).toLowerCase();
 
@@ -63,10 +64,37 @@ type LedgerDbRow = {
   value_eth: string;
   kind: string;
   cause_name: string | null;
+  memo: string | null;
   from_display_name: string | null;
   to_display_name: string | null;
   recorded_at: string;
 };
+
+function parseDisburseMessage(
+  raw: unknown,
+): { ok: true; value: string | null } | { ok: false; error: string } {
+  if (raw == null || raw === '') return { ok: true, value: null };
+  const s = String(raw).trim();
+  if (!s) return { ok: true, value: null };
+  if (s.length > 40) return { ok: false, error: 'Message must be at most 40 characters' };
+  return { ok: true, value: s };
+}
+
+function disbursedEthByCauseId(): Map<number, number> {
+  const rows = db
+    .prepare(
+      `SELECT cause_id, COALESCE(SUM(CAST(value_eth AS REAL)), 0) AS total
+       FROM ledger_entries
+       WHERE kind = 'disbursement_out' AND cause_id IS NOT NULL
+       GROUP BY cause_id`
+    )
+    .all() as { cause_id: number; total: number }[];
+  return new Map(rows.map((r) => [r.cause_id, Number(r.total) || 0]));
+}
+
+function attachDisbursedEth<T extends { id: number }>(row: T, map: Map<number, number>) {
+  return { ...row, disbursed_eth: map.get(row.id) ?? 0 };
+}
 
 function mapLedgerRowToApi(r: LedgerDbRow, vaultLowerStr: string) {
   let kind: 'donation_in' | 'disbursement_out' = 'donation_in';
@@ -92,6 +120,7 @@ function mapLedgerRowToApi(r: LedgerDbRow, vaultLowerStr: string) {
     toMasked: maskAddr(r.to_addr),
     amountEth: r.value_eth,
     causeName: r.cause_name ?? '',
+    memo: r.memo ?? '',
     txHash: r.tx_hash,
     recordedAt: new Date(r.recorded_at + 'Z').toISOString(),
   };
@@ -336,7 +365,8 @@ export function createApp() {
         }
       | undefined;
     if (!row) return res.status(404).json({ error: 'Cause not found' });
-    res.json(row);
+    const disbursedMap = disbursedEthByCauseId();
+    res.json(attachDisbursedEth(row, disbursedMap));
   });
 
   api.get('/causes', (_req, res) => {
@@ -351,7 +381,8 @@ export function createApp() {
       image_url: string | null;
       created_at: string;
     }[];
-    res.json(rows);
+    const disbursedMap = disbursedEthByCauseId();
+    res.json(rows.map((row) => attachDisbursedEth(row, disbursedMap)));
   });
 
   api.post('/causes', requireAuth, requireAdmin, (req, res) => {
@@ -368,14 +399,96 @@ export function createApp() {
     if (!img.ok) return res.status(400).json({ error: img.error });
     const r = db
       .prepare(
-        `INSERT INTO causes (title, description, goal_eth, raised_eth, image_url, active) VALUES (?,?,?,?,?,1)`
+        `INSERT INTO causes (title, description, goal_eth, raised_eth, image_url, active, anvil_index) VALUES (?,?,?,?,?,1,?)`
       )
-      .run(title.trim(), description.trim(), goalEth, 0, img.value);
+      .run(title.trim(), description.trim(), goalEth, 0, img.value, nextCauseAnvilIndex());
     res.status(201).json({ id: Number(r.lastInsertRowid) });
+  });
+
+  api.get('/admin/causes', requireAuth, requireAdmin, (_req, res) => {
+    const rows = db
+      .prepare(`SELECT * FROM causes ORDER BY id DESC`)
+      .all() as {
+      id: number;
+      title: string;
+      description: string;
+      goal_eth: number;
+      raised_eth: number;
+      image_url: string | null;
+      active: number;
+      created_at: string;
+    }[];
+    const disbursedMap = disbursedEthByCauseId();
+    res.json(rows.map((row) => attachDisbursedEth(row, disbursedMap)));
+  });
+
+  api.get('/admin/causes/:id', requireAuth, requireAdmin, (req, res) => {
+    const row = db.prepare(`SELECT * FROM causes WHERE id = ?`).get(req.params.id) as
+      | {
+          id: number;
+          title: string;
+          description: string;
+          goal_eth: number;
+          raised_eth: number;
+          image_url: string | null;
+          active: number;
+          created_at: string;
+        }
+      | undefined;
+    if (!row) return res.status(404).json({ error: 'Cause not found' });
+    const disbursedMap = disbursedEthByCauseId();
+    res.json(attachDisbursedEth(row, disbursedMap));
+  });
+
+  api.put('/causes/:id', requireAuth, requireAdmin, (req, res) => {
+    const { title, description, goalEth, imageUrl } = req.body as {
+      title?: string;
+      description?: string;
+      goalEth?: number;
+      imageUrl?: string | null;
+    };
+    if (!title?.trim() || !description?.trim() || goalEth == null || goalEth <= 0) {
+      return res.status(400).json({ error: 'title, description, goalEth (>0) required' });
+    }
+    const img = parseOptionalImageUrl(imageUrl);
+    if (!img.ok) return res.status(400).json({ error: img.error });
+    const existing = db.prepare(`SELECT id FROM causes WHERE id = ?`).get(req.params.id) as
+      | { id: number }
+      | undefined;
+    if (!existing) return res.status(404).json({ error: 'Cause not found' });
+    db.prepare(
+      `UPDATE causes SET title = ?, description = ?, goal_eth = ?, image_url = ? WHERE id = ?`
+    ).run(title.trim(), description.trim(), goalEth, img.value, req.params.id);
+    res.json({ id: Number(req.params.id) });
+  });
+
+  api.delete('/causes/:id', requireAuth, requireAdmin, (req, res) => {
+    const existing = db.prepare(`SELECT id FROM causes WHERE id = ?`).get(req.params.id) as
+      | { id: number }
+      | undefined;
+    if (!existing) return res.status(404).json({ error: 'Cause not found' });
+    db.prepare(`UPDATE causes SET active = 0 WHERE id = ?`).run(req.params.id);
+    res.json({ ok: true });
+  });
+
+  api.patch('/causes/:id/active', requireAuth, requireAdmin, (req, res) => {
+    const { active } = req.body as { active?: boolean };
+    if (active !== true && active !== false) {
+      return res.status(400).json({ error: 'active (boolean) required' });
+    }
+    const existing = db.prepare(`SELECT id FROM causes WHERE id = ?`).get(req.params.id) as
+      | { id: number }
+      | undefined;
+    if (!existing) return res.status(404).json({ error: 'Cause not found' });
+    db.prepare(`UPDATE causes SET active = ? WHERE id = ?`).run(active ? 1 : 0, req.params.id);
+    res.json({ id: Number(req.params.id), active: active ? 1 : 0 });
   });
 
   api.post('/donate', requireAuth, async (req, res) => {
     const u = getUser(req)!;
+    if (u.role === 'admin') {
+      return res.status(403).json({ error: 'Admins disburse from the vault — use Disburse on a cause or Account page' });
+    }
     if (u.anvil_index == null) {
       return res.status(400).json({ error: 'Your account has no Anvil wallet assigned' });
     }
@@ -407,8 +520,8 @@ export function createApp() {
       db.prepare(
         `INSERT INTO ledger_entries (
           tx_hash, block_number, from_addr, to_addr, value_eth, kind,
-          cause_id, from_display_name, to_display_name, cause_name
-        ) VALUES (?,?,?,?,?,?,?,?,?,?)
+          cause_id, from_display_name, to_display_name, cause_name, memo
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?)
         ON CONFLICT(tx_hash) DO UPDATE SET
           block_number = excluded.block_number,
           from_addr = excluded.from_addr,
@@ -418,7 +531,8 @@ export function createApp() {
           cause_id = excluded.cause_id,
           from_display_name = excluded.from_display_name,
           to_display_name = excluded.to_display_name,
-          cause_name = excluded.cause_name`
+          cause_name = excluded.cause_name,
+          memo = excluded.memo`
       ).run(
         tx.hash,
         receipt?.blockNumber ?? null,
@@ -429,7 +543,8 @@ export function createApp() {
         cause.id,
         u.name,
         'Vaultex',
-        cause.title
+        cause.title,
+        null
       );
       db.prepare(`UPDATE causes SET raised_eth = raised_eth + ? WHERE id = ?`).run(
         parseFloat(valueEthStr),
@@ -448,19 +563,110 @@ export function createApp() {
     }
   });
 
+  api.post('/causes/:id/disburse', requireAuth, requireAdmin, async (req, res) => {
+    const cause = db
+      .prepare(`SELECT id, title, anvil_index FROM causes WHERE id = ? AND active = 1`)
+      .get(req.params.id) as { id: number; title: string; anvil_index: number | null } | undefined;
+    if (!cause) return res.status(404).json({ error: 'Cause not found' });
+    if (cause.anvil_index == null) {
+      ensureCauseWallets();
+      const refreshed = db
+        .prepare(`SELECT id, title, anvil_index FROM causes WHERE id = ?`)
+        .get(req.params.id) as { id: number; title: string; anvil_index: number | null };
+      if (refreshed.anvil_index == null) {
+        return res.status(500).json({ error: 'Cause wallet not configured' });
+      }
+      cause.anvil_index = refreshed.anvil_index;
+    }
+
+    const { amountEth, message } = req.body as { amountEth?: string; message?: string };
+    if (!amountEth) return res.status(400).json({ error: 'amountEth required' });
+    const msgParsed = parseDisburseMessage(message);
+    if (!msgParsed.ok) return res.status(400).json({ error: msgParsed.error });
+
+    let value: bigint;
+    try {
+      value = ethers.parseEther(String(amountEth));
+    } catch {
+      return res.status(400).json({ error: 'Invalid amount' });
+    }
+    if (value <= 0n) return res.status(400).json({ error: 'Amount must be positive' });
+
+    try {
+      const provider = rpcProvider();
+      const signer = connectWallet(SUPER_RICH_INDEX, provider);
+      const to = anvilAddress(cause.anvil_index);
+      const tx = await signer.sendTransaction({ to, value });
+      const receipt = await tx.wait();
+      const valueEthStr = ethers.formatEther(value);
+      db.prepare(
+        `INSERT INTO ledger_entries (
+          tx_hash, block_number, from_addr, to_addr, value_eth, kind,
+          cause_id, from_display_name, to_display_name, cause_name, memo
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?)
+        ON CONFLICT(tx_hash) DO UPDATE SET
+          block_number = excluded.block_number,
+          from_addr = excluded.from_addr,
+          to_addr = excluded.to_addr,
+          value_eth = excluded.value_eth,
+          kind = excluded.kind,
+          cause_id = excluded.cause_id,
+          from_display_name = excluded.from_display_name,
+          to_display_name = excluded.to_display_name,
+          cause_name = excluded.cause_name,
+          memo = excluded.memo`
+      ).run(
+        tx.hash,
+        receipt?.blockNumber ?? null,
+        signer.address,
+        to,
+        valueEthStr,
+        'disbursement_out',
+        cause.id,
+        'Vaultex',
+        cause.title,
+        cause.title,
+        msgParsed.value
+      );
+      void publishEvent('disbursement.created', {
+        txHash: tx.hash,
+        amountEth: valueEthStr,
+        causeId: cause.id,
+        causeName: cause.title,
+      });
+      res.json({ txHash: tx.hash, amountEth: valueEthStr, causeId: cause.id });
+    } catch (e: unknown) {
+      console.error(e);
+      res.status(500).json({ error: e instanceof Error ? e.message : 'Cause disbursement failed' });
+    }
+  });
+
   api.post('/disburse', requireAuth, requireAdmin, async (req, res) => {
-    const { beneficiaryUserId, amountEth, causeName } = req.body as {
+    const { beneficiaryUserId, amountEth, causeId, causeName, message } = req.body as {
       beneficiaryUserId?: number;
       amountEth?: string;
+      causeId?: number;
       causeName?: string;
+      message?: string;
     };
     if (beneficiaryUserId == null || !amountEth) {
       return res.status(400).json({ error: 'beneficiaryUserId and amountEth required' });
     }
+    const msgParsed = parseDisburseMessage(message);
+    if (!msgParsed.ok) return res.status(400).json({ error: msgParsed.error });
     const beneficiary = db
       .prepare(`SELECT * FROM users WHERE id = ? AND role = 'beneficiary'`)
       .get(beneficiaryUserId) as UserRow | undefined;
     if (!beneficiary?.anvil_index) return res.status(404).json({ error: 'Beneficiary user not found' });
+
+    let causeRow: { id: number; title: string } | undefined;
+    if (causeId != null) {
+      causeRow = db
+        .prepare(`SELECT id, title FROM causes WHERE id = ? AND active = 1`)
+        .get(causeId) as { id: number; title: string } | undefined;
+      if (!causeRow) return res.status(404).json({ error: 'Cause not found' });
+    }
+
     let value: bigint;
     try {
       value = ethers.parseEther(String(amountEth));
@@ -474,12 +680,13 @@ export function createApp() {
       const tx = await signer.sendTransaction({ to, value });
       const receipt = await tx.wait();
       const valueEthStr = ethers.formatEther(value);
-      const cn = causeName?.trim() || 'General allocation';
+      const cn = causeRow?.title ?? (causeName?.trim() || 'General allocation');
+      const cid = causeRow?.id ?? null;
       db.prepare(
         `INSERT INTO ledger_entries (
           tx_hash, block_number, from_addr, to_addr, value_eth, kind,
-          cause_id, from_display_name, to_display_name, cause_name
-        ) VALUES (?,?,?,?,?,?,?,?,?,?)
+          cause_id, from_display_name, to_display_name, cause_name, memo
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?)
         ON CONFLICT(tx_hash) DO UPDATE SET
           block_number = excluded.block_number,
           from_addr = excluded.from_addr,
@@ -489,7 +696,8 @@ export function createApp() {
           cause_id = excluded.cause_id,
           from_display_name = excluded.from_display_name,
           to_display_name = excluded.to_display_name,
-          cause_name = excluded.cause_name`
+          cause_name = excluded.cause_name,
+          memo = excluded.memo`
       ).run(
         tx.hash,
         receipt?.blockNumber ?? null,
@@ -497,15 +705,17 @@ export function createApp() {
         to,
         valueEthStr,
         'disbursement_out',
-        null,
+        cid,
         'Vaultex',
         beneficiary.name,
-        cn
+        cn,
+        msgParsed.value
       );
       void publishEvent('disbursement.created', {
         txHash: tx.hash,
         amountEth: valueEthStr,
         beneficiaryUserId: beneficiary.id,
+        causeId: cid,
         causeName: cn,
       });
       res.json({ txHash: tx.hash, amountEth: valueEthStr });
@@ -527,11 +737,13 @@ export function createApp() {
 
   api.get('/me/history', requireAuth, async (req, res) => {
     const u = getUser(req)!;
-    if (u.anvil_index == null) {
+    const isVaultView = u.role === 'admin';
+    if (!isVaultView && u.anvil_index == null) {
       return res.json({ entries: [], summary: null });
     }
 
-    const addr = anvilAddress(u.anvil_index);
+    const walletIndex = isVaultView ? SUPER_RICH_INDEX : u.anvil_index!;
+    const addr = anvilAddress(walletIndex);
     const addrLower = addr.toLowerCase();
     const vl = vaultLower();
 
@@ -549,17 +761,35 @@ export function createApp() {
       flow: (r.from_addr.toLowerCase() === addrLower ? 'sent' : 'received') as 'sent' | 'received',
     }));
 
-    const agg = db
-      .prepare(
-        `SELECT
-          COALESCE(SUM(CASE WHEN lower(from_addr) = ? AND kind = 'donation_in' THEN CAST(value_eth AS REAL) ELSE 0 END), 0) AS total_sent,
-          COALESCE(SUM(CASE WHEN lower(to_addr) = ? AND kind = 'disbursement_out' THEN CAST(value_eth AS REAL) ELSE 0 END), 0) AS total_received
-         FROM ledger_entries`
-      )
-      .get(addrLower, addrLower) as { total_sent: number; total_received: number };
+    let totalSent: number;
+    let totalReceived: number;
+    let totalDisbursed: number;
 
-    const totalSent = Number(agg.total_sent) || 0;
-    const totalReceived = Number(agg.total_received) || 0;
+    if (isVaultView) {
+      const vaultAgg = db
+        .prepare(
+          `SELECT
+            COALESCE(SUM(CASE WHEN lower(to_addr) = ? AND kind = 'donation_in' THEN CAST(value_eth AS REAL) ELSE 0 END), 0) AS total_received,
+            COALESCE(SUM(CASE WHEN lower(from_addr) = ? AND kind = 'disbursement_out' THEN CAST(value_eth AS REAL) ELSE 0 END), 0) AS total_disbursed
+           FROM ledger_entries`
+        )
+        .get(vl, vl) as { total_received: number; total_disbursed: number };
+      totalReceived = Number(vaultAgg.total_received) || 0;
+      totalDisbursed = Number(vaultAgg.total_disbursed) || 0;
+      totalSent = totalDisbursed;
+    } else {
+      const agg = db
+        .prepare(
+          `SELECT
+            COALESCE(SUM(CASE WHEN lower(from_addr) = ? AND kind = 'donation_in' THEN CAST(value_eth AS REAL) ELSE 0 END), 0) AS total_sent,
+            COALESCE(SUM(CASE WHEN lower(to_addr) = ? AND kind = 'disbursement_out' THEN CAST(value_eth AS REAL) ELSE 0 END), 0) AS total_received
+           FROM ledger_entries`
+        )
+        .get(addrLower, addrLower) as { total_sent: number; total_received: number };
+      totalSent = Number(agg.total_sent) || 0;
+      totalReceived = Number(agg.total_received) || 0;
+      totalDisbursed = 0;
+    }
 
     try {
       const provider = rpcProvider();
@@ -569,7 +799,9 @@ export function createApp() {
 
       const isBeneficiary = u.role === 'beneficiary';
       let refMax: number;
-      if (isBeneficiary) {
+      if (isVaultView) {
+        refMax = Math.max(totalReceived, cur, 100, 1e-12);
+      } else if (isBeneficiary) {
         refMax =
           totalReceived > 0 ? Math.max(totalReceived, cur, 1e-12) : Math.max(100, cur, 1e-12);
       } else {
@@ -585,6 +817,8 @@ export function createApp() {
           fillRatio,
           totalSentEth: totalSent.toFixed(6),
           totalReceivedEth: totalReceived.toFixed(6),
+          totalDisbursedEth: totalDisbursed.toFixed(6),
+          isVaultWallet: isVaultView,
         },
       });
     } catch (e: unknown) {

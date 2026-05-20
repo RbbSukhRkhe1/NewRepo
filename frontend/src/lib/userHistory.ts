@@ -12,6 +12,7 @@ export interface UserHistoryEntry {
   toMasked: string;
   amountEth: string;
   causeName: string;
+  memo?: string;
   txHash: string;
   recordedAt: string;
 }
@@ -22,6 +23,8 @@ export interface UserWalletSummary {
   fillRatio: number;
   totalSentEth: string;
   totalReceivedEth: string;
+  totalDisbursedEth?: string;
+  isVaultWallet?: boolean;
 }
 
 export interface MeHistoryResponse {
