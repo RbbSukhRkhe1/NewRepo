@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useLayoutEffect, useMemo, useCallback } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { ethers } from 'ethers';
+import { formatEther, parseEther } from '../lib/ethWei';
 import { loadLedgerV2, loadLedgerV2Detail, loadLedgerV2Tags, type LedgerV2Entry, type LedgerV2Kind } from '../lib/ledgerV2';
 import { formatLedgerSummary } from '../lib/ledgerCopy';
 import { EyebrowLabel, SectionHeader, SurfaceCard } from '../components/ui';
@@ -12,14 +12,14 @@ const POLL_MS = 4000;
 
 function weiFromEthString(amountEth: string): bigint {
   try {
-    return ethers.parseEther(amountEth);
+    return parseEther(amountEth);
   } catch {
     return 0n;
   }
 }
 
 function formatEth(wei: bigint, decimals = 6): string {
-  const s = ethers.formatEther(wei);
+  const s = formatEther(wei);
   const [i, f = ''] = s.split('.');
   if (decimals <= 0) return i;
   return `${i}.${f.padEnd(decimals, '0').slice(0, decimals)}`.replace(/\.?0+$/, '');
