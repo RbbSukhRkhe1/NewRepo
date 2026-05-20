@@ -51,6 +51,93 @@ function applySqlMigrations() {
   apply();
 }
 
+function ledgerColumnNames(): Set<string> {
+  const rows = db.prepare(`PRAGMA table_info(ledger_entries)`).all() as { name: string }[];
+  return new Set(rows.map((r) => r.name));
+}
+
+/** Idempotent ledger v2 schema (safe on partial/failed prior deploys). */
+function ensureLedgerV2Schema() {
+  const cols = ledgerColumnNames();
+  const addCol = (name: string, ddl: string) => {
+    if (!cols.has(name)) {
+      db.exec(ddl);
+      cols.add(name);
+      console.log('[db] added ledger_entries.' + name);
+    }
+  };
+  addCol('tags', `ALTER TABLE ledger_entries ADD COLUMN tags TEXT`);
+  addCol('reference', `ALTER TABLE ledger_entries ADD COLUMN reference TEXT`);
+  addCol('narrative', `ALTER TABLE ledger_entries ADD COLUMN narrative TEXT`);
+  addCol('linked_tx_ids', `ALTER TABLE ledger_entries ADD COLUMN linked_tx_ids TEXT`);
+  addCol('aggregated_from', `ALTER TABLE ledger_entries ADD COLUMN aggregated_from TEXT`);
+
+  db.exec(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_ledger_reference_unique
+      ON ledger_entries(reference)
+      WHERE reference IS NOT NULL AND reference <> '';
+    CREATE INDEX IF NOT EXISTS idx_ledger_cause_kind_time
+      ON ledger_entries(cause_id, kind, recorded_at DESC);
+  `);
+
+  const fts = db
+    .prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='ledger_entries_fts'`)
+    .get() as { name: string } | undefined;
+
+  if (!fts) {
+    db.exec(`
+      CREATE VIRTUAL TABLE ledger_entries_fts
+        USING fts5(
+          narrative,
+          reference,
+          tags,
+          cause_name,
+          from_display_name,
+          to_display_name,
+          tx_hash,
+          content='ledger_entries',
+          content_rowid='id'
+        );
+      CREATE TRIGGER IF NOT EXISTS ledger_entries_ai
+      AFTER INSERT ON ledger_entries
+      BEGIN
+        INSERT INTO ledger_entries_fts(rowid, narrative, reference, tags, cause_name, from_display_name, to_display_name, tx_hash)
+        VALUES (new.id, COALESCE(new.narrative,''), COALESCE(new.reference,''), COALESCE(new.tags,''), COALESCE(new.cause_name,''), COALESCE(new.from_display_name,''), COALESCE(new.to_display_name,''), COALESCE(new.tx_hash,''));
+      END;
+      CREATE TRIGGER IF NOT EXISTS ledger_entries_ad
+      AFTER DELETE ON ledger_entries
+      BEGIN
+        INSERT INTO ledger_entries_fts(ledger_entries_fts, rowid, narrative, reference, tags, cause_name, from_display_name, to_display_name, tx_hash)
+        VALUES('delete', old.id, '', '', '', '', '', '', '');
+      END;
+      CREATE TRIGGER IF NOT EXISTS ledger_entries_au
+      AFTER UPDATE ON ledger_entries
+      BEGIN
+        INSERT INTO ledger_entries_fts(ledger_entries_fts, rowid, narrative, reference, tags, cause_name, from_display_name, to_display_name, tx_hash)
+        VALUES('delete', old.id, '', '', '', '', '', '', '');
+        INSERT INTO ledger_entries_fts(rowid, narrative, reference, tags, cause_name, from_display_name, to_display_name, tx_hash)
+        VALUES (new.id, COALESCE(new.narrative,''), COALESCE(new.reference,''), COALESCE(new.tags,''), COALESCE(new.cause_name,''), COALESCE(new.from_display_name,''), COALESCE(new.to_display_name,''), COALESCE(new.tx_hash,''));
+      END;
+    `);
+    console.log('[db] created ledger_entries_fts');
+  }
+
+  db.exec(`
+    INSERT INTO ledger_entries_fts(rowid, narrative, reference, tags, cause_name, from_display_name, to_display_name, tx_hash)
+    SELECT
+      id,
+      COALESCE(narrative,''),
+      COALESCE(reference,''),
+      COALESCE(tags,''),
+      COALESCE(cause_name,''),
+      COALESCE(from_display_name,''),
+      COALESCE(to_display_name,''),
+      COALESCE(tx_hash,'')
+    FROM ledger_entries
+    WHERE id NOT IN (SELECT rowid FROM ledger_entries_fts);
+  `);
+}
+
 db.exec(`
 CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -95,6 +182,7 @@ CREATE INDEX IF NOT EXISTS idx_users_anvil ON users(anvil_index);
 `);
 
 applySqlMigrations();
+ensureLedgerV2Schema();
 
 const causesColumns = db.prepare(`PRAGMA table_info(causes)`).all() as { name: string }[];
 if (!causesColumns.some((c) => c.name === 'image_url')) {

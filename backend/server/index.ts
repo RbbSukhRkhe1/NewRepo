@@ -10,10 +10,20 @@ import { subscribeToEvents } from './lib/redis.js';
 
 let stopWatcher: () => void = () => {};
 
+function runDeferredLedgerMaintenance() {
+  setImmediate(() => {
+    try {
+      backfillLedgerV2Defaults();
+      recomputeAllDisbursementLinks();
+      console.log('[ledger] deferred maintenance complete');
+    } catch (e) {
+      console.error('[ledger] deferred maintenance failed:', e);
+    }
+  });
+}
+
 async function main() {
   seedIfEmpty();
-  backfillLedgerV2Defaults();
-  recomputeAllDisbursementLinks();
 
   const app = createApp();
   app.get('/health', (_req, res) => res.json({ ok: true }));
@@ -50,13 +60,21 @@ async function main() {
     );
   });
 
-  try {
-    await subscribeToEvents((envelope) => {
+  runDeferredLedgerMaintenance();
+
+  const subscribeWithTimeout = Promise.race([
+    subscribeToEvents((envelope) => {
       const payload = JSON.stringify({ type: 'event', envelope });
       for (const client of wss.clients) {
         if (client.readyState === client.OPEN) client.send(payload);
       }
-    });
+    }),
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('redis subscribe timeout')), 8000)
+    ),
+  ]);
+  try {
+    await subscribeWithTimeout;
   } catch (e) {
     console.warn('[ws] Redis subscribe unavailable — realtime bridge disabled:', e);
   }

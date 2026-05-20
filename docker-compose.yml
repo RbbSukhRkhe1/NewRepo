@@ -111,7 +111,7 @@ services:
       interval: 10s
       timeout: 8s
       retries: 10
-      start_period: 60s
+      start_period: 90s
     restart: unless-stopped
 
   frontend:
