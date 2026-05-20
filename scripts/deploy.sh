@@ -5,6 +5,14 @@ set -euo pipefail
 APP_DIR="${VAULTEX_HOME:-${DEPLOY_PATH:-/opt/vaultex}}"
 cd "$APP_DIR"
 
+docker_cmd() {
+  if docker version >/dev/null 2>&1; then
+    docker "$@"
+    return 0
+  fi
+  sudo docker "$@"
+}
+
 if [[ ! -f docker-compose.yml ]]; then
   echo "docker-compose.yml not found in $APP_DIR" >&2
   exit 1
@@ -16,16 +24,16 @@ if [[ ! -f .env ]]; then
 fi
 
 echo "==> Pulling published images (redis, anvil, foundry)…"
-docker compose pull redis anvil 2>/dev/null || docker compose pull
+docker_cmd compose pull redis anvil 2>/dev/null || docker_cmd compose pull
 
 echo "==> Building and starting stack…"
-docker compose up -d --build --remove-orphans
+docker_cmd compose up -d --build --remove-orphans
 
 echo "==> Service status"
-docker compose ps
+docker_cmd compose ps
 
 echo "==> Pruning dangling images (optional cleanup)…"
-docker image prune -f >/dev/null 2>&1 || true
+docker_cmd image prune -f >/dev/null 2>&1 || true
 
 PORT="$(grep -E '^WEB_HOST_PORT=' .env 2>/dev/null | cut -d= -f2- | tr -d '\r' || true)"
 PORT="${PORT:-8080}"

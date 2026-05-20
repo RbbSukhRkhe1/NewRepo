@@ -24,19 +24,18 @@ require_cmd() {
 
 echo "==> Preflight"
 require_cmd git
-require_cmd node
-require_cmd npm
 require_cmd sudo
+require_cmd docker
 
-if [[ ! -f /etc/vaultex/api.env ]] || [[ ! -f /etc/systemd/system/vaultex-anvil.service ]]; then
-  echo "==> Bootstrap (first-time native stack)…"
-  bash "$SCRIPT_DIR/server-bootstrap-native.sh"
+if ! docker version >/dev/null 2>&1 && ! sudo docker version >/dev/null 2>&1; then
+  echo "==> Bootstrap (first-time Docker stack)…"
+  bash "$SCRIPT_DIR/server-bootstrap.sh"
 fi
 
-echo "==> Native deploy…"
+echo "==> Docker deploy…"
 set -o pipefail
-if ! bash "$SCRIPT_DIR/deploy-native.sh" 2>&1 | tee /tmp/vaultex-deploy.log; then
-  echo "DEPLOY FAILED: deploy-native.sh (last 60 log lines):" >&2
+if ! bash "$SCRIPT_DIR/deploy.sh" 2>&1 | tee /tmp/vaultex-deploy.log; then
+  echo "DEPLOY FAILED: deploy.sh (last 60 log lines):" >&2
   tail -60 /tmp/vaultex-deploy.log >&2 || true
   exit 1
 fi

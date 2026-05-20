@@ -25,14 +25,36 @@ services:
     restart: unless-stopped
 
   anvil:
-    image: ghcr.io/foundry-rs/foundry:latest
+    # Pin to an immutable Foundry release tag (NO :latest) for reproducible Anvil behavior.
+    image: ghcr.io/foundry-rs/foundry:v1.5.1
     # Image default ENTRYPOINT is `sh -c` — a JSON-array command does not become one shell string, so
     # `--host` was dropped and Anvil listened on 127.0.0.1 only (other containers could not reach it).
     entrypoint: ["anvil"]
-    command: ["--host", "0.0.0.0", "--port", "8545"]
+    command:
+      [
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8545",
+        "--chain-id",
+        "${ANVIL_CHAIN_ID:-31337}",
+        "--mnemonic",
+        "${ANVIL_MNEMONIC:-test test test test test test test test test test test junk}",
+        "--accounts",
+        "${ANVIL_ACCOUNTS:-10}",
+        # Persist the chain so Anvil can restart without losing any transactions.
+        # `--state` loads from the file if present and dumps back to it (atomic, on interval + exit).
+        "--state",
+        "/data/state.json",
+        "--state-interval",
+        "${ANVIL_STATE_INTERVAL_SECS:-5}",
+        "--preserve-historical-states",
+      ]
     networks: [vaultex]
     ports:
       - "${ANVIL_HOST_PORT:-8545}:8545"
+    volumes:
+      - vaultex_anvil_data:/data
     healthcheck:
       test: ["CMD", "cast", "block-number", "--rpc-url", "http://127.0.0.1:8545"]
       interval: 5s
@@ -122,3 +144,5 @@ volumes:
     name: vaultex_sqlite_data
   vaultex_redis_data:
     name: vaultex_redis_data
+  vaultex_anvil_data:
+    name: vaultex_anvil_data
