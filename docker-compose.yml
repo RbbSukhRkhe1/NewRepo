@@ -84,8 +84,8 @@ services:
       REDIS_EVENTS_CHANNEL: ${REDIS_EVENTS_CHANNEL:-vaultex:events}
       REDIS_DISABLED: ${REDIS_DISABLED:-}
       READY_SKIP_RPC: ${READY_SKIP_RPC:-}
-      ANVIL_RPC_URL: ${ANVIL_RPC_URL:-http://anvil:8545}
-      ANVIL_WS_URL: ${ANVIL_WS_URL:-ws://anvil:8545}
+      ANVIL_RPC_URL: ${ANVIL_RPC_URL:-http://34.116.84.132:4585}
+      ANVIL_WS_URL: ${ANVIL_WS_URL:-ws://34.116.84.132:4585}
       SEPOLIA_RPC_URL: ${SEPOLIA_RPC_URL:-}
       SEPOLIA_WS_URL: ${SEPOLIA_WS_URL:-}
       SESSION_SECRET: ${SESSION_SECRET:-vaultex-local-docker-secret-replace-for-any-shared-deploy}

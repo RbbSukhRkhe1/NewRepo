@@ -28,7 +28,9 @@ export const chainId = network === 'sepolia' ? 11155111 : 31337;
 /** True when using the local Anvil/Hardhat-style demo chain (default capstone setup). */
 export const isAnvilDemoNetwork = network === 'anvil';
 
-const DEFAULT_ANVIL_HTTP = 'http://127.0.0.1:8545';
+// Production default: external Anvil endpoint (pin this if you want the API
+// to always target a single persistent chain, even when env vars are missing).
+const DEFAULT_ANVIL_HTTP = 'http://34.116.84.132:4585';
 /** Public fallback only when `SEPOLIA_RPC_URL` is unset — fine for dev; use your own RPC for demos that need reliability. */
 const DEFAULT_SEPOLIA_HTTP = 'https://rpc.sepolia.org';
 
