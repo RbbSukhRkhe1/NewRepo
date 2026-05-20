@@ -49,21 +49,30 @@ function TypewriterHeading({
   active: boolean;
   className?: string;
 }) {
-  const [shown, setShown] = useState(text);
+  const [shown, setShown] = useState('');
+  const intervalRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (!active) {
-      setShown(text);
-      return;
-    }
-    setShown('');
-    let i = 0;
-    const id = window.setInterval(() => {
-      i += 1;
-      setShown(text.slice(0, i));
-      if (i >= text.length) window.clearInterval(id);
-    }, 16);
-    return () => window.clearInterval(id);
+    if (!active) return;
+    const startId = window.setTimeout(() => {
+      setShown('');
+      let i = 0;
+      intervalRef.current = window.setInterval(() => {
+        i += 1;
+        setShown(text.slice(0, i));
+        if (i >= text.length && intervalRef.current != null) {
+          window.clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+      }, 16);
+    }, 0);
+    return () => {
+      window.clearTimeout(startId);
+      if (intervalRef.current != null) {
+        window.clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
   }, [text, active]);
 
   const display = active ? shown : text;
@@ -88,11 +97,15 @@ export function TxLifecyclePage() {
   const [autoOn, setAutoOn] = useState(true);
 
   const load = useCallback(() => {
-    if (!txHash) return;
-    setErr(null);
+    if (!txHash) return Promise.resolve();
     return apiJson<LifecycleResponse>(`/ledger/v2/lifecycle/${txHash}`)
-      .then(setData)
-      .catch((e: unknown) => setErr(e instanceof Error ? e.message : 'Failed to load lifecycle'));
+      .then((res) => {
+        setErr(null);
+        setData(res);
+      })
+      .catch((e: unknown) =>
+        setErr(e instanceof Error ? e.message : 'Failed to load lifecycle')
+      );
   }, [txHash]);
 
   useEffect(() => {
@@ -138,9 +151,15 @@ export function TxLifecyclePage() {
     ];
   }, [data]);
 
+  const lifecycleResetKey = data
+    ? `${data.donation.id}:${data.linkedDisbursements.length}`
+    : '';
+
   useEffect(() => {
-    setStepIdx(0);
-  }, [data?.donation.id, data?.linkedDisbursements.length]);
+    if (!lifecycleResetKey) return;
+    const t = window.setTimeout(() => setStepIdx(0), 0);
+    return () => window.clearTimeout(t);
+  }, [lifecycleResetKey]);
 
   useEffect(() => {
     if (!autoOn || !data || steps.length === 0) return;

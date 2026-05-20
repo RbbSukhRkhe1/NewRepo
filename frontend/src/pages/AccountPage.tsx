@@ -254,15 +254,28 @@ export function AccountPage() {
   }, [refreshHistory, user]);
 
   useEffect(() => {
+    let cancelled = false;
     if (!user) {
-      setBadges([]);
-      return;
+      const t = window.setTimeout(() => {
+        if (!cancelled) setBadges([]);
+      }, 0);
+      return () => {
+        cancelled = true;
+        window.clearTimeout(t);
+      };
     }
     apiJson<{ badges: { causeId: number | null; causeName: string; donations: number; totalEth: number; tier: string }[] }>(
       '/me/badges'
     )
-      .then((r) => setBadges(r.badges ?? []))
-      .catch(() => setBadges([]));
+      .then((r) => {
+        if (!cancelled) setBadges(r.badges ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setBadges([]);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [user]);
 
   useEffect(() => {
