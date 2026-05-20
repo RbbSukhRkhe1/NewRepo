@@ -43,21 +43,32 @@ export function NewCausePage() {
 
   useEffect(() => {
     if (!isEdit || editId == null) return;
-    setLoading(true);
-    apiJson<{
-      title: string;
-      description: string;
-      goal_eth: number;
-      image_url: string | null;
-    }>(`/admin/causes/${editId}`)
-      .then((row) => {
+    let cancelled = false;
+    void Promise.resolve().then(async () => {
+      if (cancelled) return;
+      setLoading(true);
+      try {
+        const row = await apiJson<{
+          title: string;
+          description: string;
+          goal_eth: number;
+          image_url: string | null;
+        }>(`/admin/causes/${editId}`);
+        if (cancelled) return;
         setTitle(row.title);
         setDescription(row.description);
         setGoalEth(String(row.goal_eth));
         setImageUrl(row.image_url ?? '');
-      })
-      .catch((e: Error) => setErr(e.message))
-      .finally(() => setLoading(false));
+      } catch (e: unknown) {
+        if (cancelled) return;
+        setErr(e instanceof Error ? e.message : 'Failed to load cause');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [editId, isEdit]);
 
   async function submit(e: React.FormEvent) {
