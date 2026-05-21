@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { LedgerV2Entry } from '../lib/ledgerV2';
 import {
   formatEth,
@@ -49,17 +49,16 @@ export function LedgerAccountabilityGrid({ entries, isLoading, loadError, isLigh
     return causeOptions.filter((c) => c.toLowerCase().includes(q));
   }, [causeOptions, causeSearch]);
 
-  useEffect(() => {
-    if (selectedCause) return;
-    if (causeOptions.length === 0) return;
-    setSelectedCause(causeOptions[0]);
-  }, [causeOptions, selectedCause]);
+  const activeCause = useMemo(() => {
+    if (selectedCause && causeOptions.includes(selectedCause)) return selectedCause;
+    return causeOptions[0] ?? '';
+  }, [selectedCause, causeOptions]);
 
   const selectedCauseEntries = useMemo(() => {
-    const c = selectedCause.trim();
+    const c = activeCause.trim();
     if (!c) return [];
     return entries.filter((e) => (e.cause_name || '').trim() === c);
-  }, [entries, selectedCause]);
+  }, [entries, activeCause]);
 
   const donationsForCause = useMemo(
     () => selectedCauseEntries.filter((e) => e.kind === 'donation_in'),
@@ -125,7 +124,7 @@ export function LedgerAccountabilityGrid({ entries, isLoading, loadError, isLigh
               className="vtx-input w-full px-4 py-2.5 text-sm sm:w-[260px]"
             />
             <select
-              value={selectedCause}
+              value={activeCause}
               onChange={(e) => setSelectedCause(e.target.value)}
               className="vtx-input w-full px-4 py-2.5 text-sm sm:w-[320px]"
               disabled={causeOptions.length === 0}
@@ -153,7 +152,7 @@ export function LedgerAccountabilityGrid({ entries, isLoading, loadError, isLigh
               <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted-2)]">Inflow</p>
               <p className="mt-0.5 text-sm font-semibold text-[var(--text-high-3)]">Donations log</p>
             </div>
-            <p className="truncate text-xs text-[var(--text-muted-1)]">{selectedCause || 'Select a cause'}</p>
+            <p className="truncate text-xs text-[var(--text-muted-1)]">{activeCause || 'Select a cause'}</p>
           </div>
 
           <div className="overflow-auto">

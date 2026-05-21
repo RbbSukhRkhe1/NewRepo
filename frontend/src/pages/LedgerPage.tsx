@@ -50,8 +50,8 @@ export function LedgerPage() {
   }, [gridSearch, tag]);
 
   useEffect(() => {
-    refresh();
-    const t = setInterval(refresh, POLL_MS);
+    queueMicrotask(() => refresh());
+    const t = setInterval(() => queueMicrotask(() => refresh()), POLL_MS);
     return () => clearInterval(t);
   }, [refresh]);
 
