@@ -7,12 +7,9 @@ import type { AuthUser } from '../context/AuthContext';
 type ThemeMode = 'dark' | 'light';
 const THEME_STORAGE_KEY = 'vaultex-theme-mode';
 
-function walletChipLabel(user: AuthUser): string {
-  const raw = (user.address ?? user.addressMasked ?? '').trim();
-  if (!raw) return 'Wallet';
-  // Prefer 0xabcd…1234; tolerate addresses that already include an ellipsis.
-  if (raw.includes('…') || raw.length <= 14) return raw;
-  return `${raw.slice(0, 6)}…${raw.slice(-4)}`;
+function accountChipLabel(user: AuthUser): string {
+  const name = user.name.trim();
+  return name || user.email.split('@')[0] || 'Account';
 }
 
 function readStoredTheme(): ThemeMode {
@@ -63,7 +60,32 @@ export function Layout() {
             <NavPill to="/causes" label="Causes" active={loc.pathname === '/causes'} />
             <NavPill to="/causes/completed" label="Completed" active={loc.pathname === '/causes/completed'} />
             <NavPill to="/ledger" label="Ledger" active={loc.pathname === '/ledger'} />
-            <NavPill to="/account" label="Account" active={loc.pathname === '/account'} />
+            {user ? (
+              <details className="group relative">
+                <summary
+                  className={`inline-flex min-h-11 cursor-pointer list-none items-center rounded-xl border px-3 py-2 text-sm font-medium transition-colors ${
+                    loc.pathname === '/account'
+                      ? 'border-[var(--border-accent-soft)] bg-[var(--accent-core)] text-[#03130b]'
+                      : 'border-transparent text-[var(--text-muted-1)] hover:border-[var(--border-chrome-2)] hover:text-[var(--text-high-1)]'
+                  }`}
+                  aria-label={`${accountChipLabel(user)} account menu`}
+                >
+                  {accountChipLabel(user)}
+                </summary>
+                <div className="vtx-glass-popover absolute right-0 top-[calc(100%+8px)] z-20 min-w-44 p-2">
+                  <NavPill to="/account" label="Account" active={loc.pathname === '/account'} />
+                  <SecondaryButton
+                    type="button"
+                    onClick={() => void logout()}
+                    className="mt-1 w-full justify-center px-3"
+                  >
+                    Sign out
+                  </SecondaryButton>
+                </div>
+              </details>
+            ) : (
+              <NavPill to="/account" label="Account" active={loc.pathname === '/account'} />
+            )}
             {user?.role === 'admin' && (
               <details className="group relative">
                 <summary
@@ -105,36 +127,6 @@ export function Layout() {
               )}
               {themeMode === 'dark' ? 'Light' : 'Dark'}
             </SecondaryButton>
-            {user && user.anvilIndex != null ? (
-              <span
-                className="ml-1 inline-flex max-w-[11rem] items-center gap-2 rounded-full border border-[var(--border-chrome-3)] bg-[var(--surface-panel-overlay)] px-3 py-1.5 text-[11px] font-mono font-semibold text-[var(--text-high-3)] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-md sm:max-w-[13rem] sm:text-xs"
-                title={user.address ?? user.addressMasked ?? undefined}
-                aria-label={`Wallet connected: ${walletChipLabel(user)}`}
-              >
-                <span
-                  className="h-2 w-2 shrink-0 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.75)]"
-                  aria-hidden
-                />
-                <span className="min-w-0 truncate">{walletChipLabel(user)}</span>
-              </span>
-            ) : null}
-            {user && user.anvilIndex == null ? (
-              <Link
-                to="/account"
-                className="ml-1 inline-flex max-w-[10rem] items-center gap-2 rounded-full border border-amber-400/35 bg-[var(--surface-panel-overlay)] px-3 py-1.5 text-[11px] font-semibold text-[var(--text-muted-1)] backdrop-blur-md transition-colors hover:border-amber-400/55 hover:text-[var(--text-high-3)] sm:text-xs"
-              >
-                <span
-                  className="h-2 w-2 shrink-0 rounded-full bg-amber-400/90 shadow-[0_0_8px_rgba(251,191,36,0.45)]"
-                  aria-hidden
-                />
-                <span className="truncate">No wallet</span>
-              </Link>
-            ) : null}
-            {user && (
-              <SecondaryButton type="button" onClick={() => void logout()} className="ml-1 px-3">
-                Sign out
-              </SecondaryButton>
-            )}
           </nav>
         </div>
       </header>

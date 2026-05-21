@@ -73,7 +73,9 @@ export function CompletedCausesPage() {
             No completed campaigns yet.
           </div>
         ) : (
-          rows.map((cause) => {
+          [...rows]
+            .sort((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: 'base' }))
+            .map((cause) => {
             const pct = cause.goal_eth > 0 ? Math.min(100, (cause.raised_eth / cause.goal_eth) * 100) : 0;
             const hero = resolveCauseHeroUrl(cause.title, cause.image_url) ?? SAMPLE_HERO_PLACEHOLDER;
             return (

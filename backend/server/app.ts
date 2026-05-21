@@ -32,6 +32,17 @@ function rpcProvider() {
   return new ethers.JsonRpcProvider(getRpcHttpUrl());
 }
 
+/** On-chain balance; returns null when JSON-RPC is unreachable (Anvil not running, etc.). */
+async function tryGetBalanceEth(address: string): Promise<string | null> {
+  try {
+    const bal = await rpcProvider().getBalance(address);
+    return ethers.formatEther(bal);
+  } catch (e: unknown) {
+    console.warn('[rpc] getBalance failed:', e instanceof Error ? e.message : e);
+    return null;
+  }
+}
+
 function parseOptionalImageUrl(
   raw: unknown,
 ): { ok: true; value: string | null } | { ok: false; error: string } {
@@ -1277,52 +1288,47 @@ export function createApp() {
       totalDisbursed = 0;
     }
 
-    try {
-      const provider = rpcProvider();
-      const bal = await provider.getBalance(addr);
-      const currentEth = ethers.formatEther(bal);
-      const cur = parseFloat(currentEth);
+    const onChainEth = await tryGetBalanceEth(addr);
+    const chainLive = onChainEth != null;
+    const currentEth = onChainEth ?? '0';
+    const cur = parseFloat(currentEth);
 
-      const isBeneficiary = u.role === 'beneficiary';
-      let refMax: number;
-      if (isVaultView) {
-        refMax = Math.max(totalReceived, cur, 100, 1e-12);
-      } else if (isBeneficiary) {
-        refMax =
-          totalReceived > 0 ? Math.max(totalReceived, cur, 1e-12) : Math.max(100, cur, 1e-12);
-      } else {
-        refMax = Math.max(100, cur + totalSent, 1e-12);
-      }
-      const fillRatio = Math.min(1, Math.max(0, cur / refMax));
-
-      res.json({
-        entries,
-        summary: {
-          currentEth,
-          referenceMaxEth: refMax.toFixed(6),
-          fillRatio,
-          totalSentEth: totalSent.toFixed(6),
-          totalReceivedEth: totalReceived.toFixed(6),
-          totalDisbursedEth: totalDisbursed.toFixed(6),
-          isVaultWallet: isVaultView,
-        },
-      });
-    } catch (e: unknown) {
-      console.error(e);
-      res.status(500).json({ error: e instanceof Error ? e.message : 'history error' });
+    const isBeneficiary = u.role === 'beneficiary';
+    let refMax: number;
+    if (isVaultView) {
+      refMax = Math.max(totalReceived, cur, 100, 1e-12);
+    } else if (isBeneficiary) {
+      refMax =
+        totalReceived > 0 ? Math.max(totalReceived, cur, 1e-12) : Math.max(100, cur, 1e-12);
+    } else {
+      refMax = Math.max(100, cur + totalSent, 1e-12);
     }
+    const fillRatio = Math.min(1, Math.max(0, cur / refMax));
+
+    res.json({
+      entries,
+      summary: {
+        currentEth,
+        referenceMaxEth: refMax.toFixed(6),
+        fillRatio,
+        totalSentEth: totalSent.toFixed(6),
+        totalReceivedEth: totalReceived.toFixed(6),
+        totalDisbursedEth: totalDisbursed.toFixed(6),
+        isVaultWallet: isVaultView,
+        chainLive,
+      },
+    });
   });
 
   api.get('/balance/:anvilIndex', async (req, res) => {
     const idx = parseInt(req.params.anvilIndex, 10);
     if (idx < 0 || idx > 9) return res.status(400).json({ error: 'anvilIndex 0–9' });
-    try {
-      const provider = rpcProvider();
-      const bal = await provider.getBalance(anvilAddress(idx));
-      res.json({ wei: bal.toString(), eth: ethers.formatEther(bal) });
-    } catch (e: unknown) {
-      res.status(500).json({ error: e instanceof Error ? e.message : 'balance error' });
+    const eth = await tryGetBalanceEth(anvilAddress(idx));
+    if (eth == null) {
+      return res.json({ wei: '0', eth: '0', chainLive: false });
     }
+    const wei = ethers.parseEther(eth);
+    res.json({ wei: wei.toString(), eth, chainLive: true });
   });
 
   app.use('/api', api);

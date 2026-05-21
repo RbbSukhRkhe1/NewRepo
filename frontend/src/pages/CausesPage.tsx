@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { apiJson } from '../lib/api';
 import { resolveCauseHeroUrl } from '../lib/causeHeroImages';
@@ -80,23 +80,6 @@ const causes: ShowcaseCause[] = [
     accent: 'orange',
   },
   {
-    apiTitle: 'Hospital',
-    section: 'completed',
-    sectionLabel: 'Completed',
-    storyTitle: 'Care networks',
-    storyBody: 'This completed pool equipped public wards with critical devices and patient-care supplies, then continued funding overflow treatment capacity.',
-    title: 'Hospital',
-    subtitle: 'Medical equipment and patient care funds for overstretched public hospitals.',
-    donors: 512,
-    daysLeft: 0,
-    locationTag: 'National',
-    categoryTag: 'Healthcare',
-    progressPct: 100,
-    progressLabel: '100%',
-    amountLabel: 'GOAL REACHED - EXPANDING IMPACT',
-    accent: 'green',
-  },
-  {
     apiTitle: 'Education',
     section: 'urgent',
     sectionLabel: 'Active',
@@ -143,6 +126,8 @@ function CauseCard({
   disbursedEth,
   donatedEth,
   remainingEth,
+  raisedEth,
+  goalEth,
   utilizationPct,
   fundsMatched,
 }: {
@@ -155,17 +140,36 @@ function CauseCard({
   disbursedEth?: number;
   donatedEth?: number;
   remainingEth?: number;
+  raisedEth?: number;
+  goalEth?: number;
   utilizationPct?: number;
   fundsMatched?: boolean;
 }) {
   const [failedHeroKey, setFailedHeroKey] = useState<string | null>(null);
 
+  const hasFunding =
+    raisedEth != null && goalEth != null && Number.isFinite(raisedEth) && Number.isFinite(goalEth) && goalEth > 0;
+  const fundingPct = hasFunding
+    ? Math.min(100, Math.max(0, (raisedEth / goalEth) * 100))
+    : cause.progressPct;
+  const isFullyFunded = hasFunding && raisedEth >= goalEth;
+
   const hasUtil = utilizationPct != null && donatedEth != null;
-  const progressPct = hasUtil ? Math.min(100, Math.max(0, utilizationPct as number)) : cause.progressPct;
-  const progressLabel = hasUtil ? `${(utilizationPct as number).toFixed(0)}% utilized` : cause.progressLabel;
-  const amountLabel = hasUtil
-    ? `${(disbursedEth ?? 0).toFixed(2)} ETH disbursed of ${(donatedEth ?? 0).toFixed(2)} ETH donated · ${(remainingEth ?? 0).toFixed(2)} ETH remaining`
-    : cause.amountLabel;
+  const progressPct = fundingPct;
+  const progressLabel = isFullyFunded
+    ? cause.section === 'completed'
+      ? cause.progressLabel
+      : '100% funded'
+    : hasFunding
+      ? `${fundingPct.toFixed(0)}% funded`
+      : cause.progressLabel;
+  const amountLabel = isFullyFunded && cause.section === 'completed'
+    ? cause.amountLabel
+    : hasUtil
+      ? `${(disbursedEth ?? 0).toFixed(2)} ETH disbursed of ${(donatedEth ?? 0).toFixed(2)} ETH donated · ${(remainingEth ?? 0).toFixed(2)} ETH remaining`
+      : hasFunding
+        ? `${(raisedEth ?? 0).toFixed(2)} ETH raised of ${(goalEth ?? 0).toFixed(2)} ETH goal`
+        : cause.amountLabel;
 
   const accentText =
     cause.accent === 'orange'
@@ -285,11 +289,11 @@ function CauseCard({
             />
           </div>
 
-          {hasUtil ? (
+          {hasFunding ? (
             <div className="mt-4 max-w-[14rem]">
               <CauseFundingDonut
-                raisedEth={disbursedEth as number}
-                goalEth={(donatedEth as number) || 1}
+                raisedEth={raisedEth as number}
+                goalEth={goalEth as number}
                 isLightMode={isLightMode}
                 compact
               />
@@ -365,6 +369,7 @@ type ApiCauseRow = {
   title: string;
   description: string;
   goal_eth: number;
+  raised_eth: number;
   disbursed_eth: number;
   donated_eth: number;
   remaining_eth: number;
@@ -382,7 +387,7 @@ function dedupeActiveCauses(rows: ApiCauseRow[]): ApiCauseRow[] {
     const existing = byTitle.get(row.title);
     if (!existing || row.id < existing.id) byTitle.set(row.title, row);
   }
-  return [...byTitle.values()].sort((a, b) => b.id - a.id);
+  return [...byTitle.values()].sort((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: 'base' }));
 }
 
 function apiRowToShowcaseCause(row: ApiCauseRow, index: number): ShowcaseCause {
@@ -418,7 +423,7 @@ export function CausesPage() {
 
   useEffect(() => {
     let cancelled = false;
-    apiJson<ApiCauseRow[]>('/causes')
+    apiJson<ApiCauseRow[]>('/causes?status=active')
       .then((rows) => {
         if (cancelled) return;
         setApiCauses(rows);
@@ -430,6 +435,8 @@ export function CausesPage() {
       cancelled = true;
     };
   }, [location.pathname]);
+
+  const activeCauses = useMemo(() => dedupeActiveCauses(apiCauses), [apiCauses]);
 
   return (
     <div className="vtx-page max-w-6xl">
@@ -462,7 +469,24 @@ export function CausesPage() {
       </div>
 
       <div className="mt-8 space-y-6">
-        {dedupeActiveCauses(apiCauses).map((match, index) => {
+        {activeCauses.length === 0 ? (
+          <div
+            className={`rounded-2xl border p-6 text-sm ${
+              isLightMode
+                ? 'border-[rgba(164,184,207,0.45)] bg-white/80 text-[var(--text-muted-1)]'
+                : 'border-white/20 bg-black/25 text-[var(--text-muted-1)]'
+            }`}
+          >
+            <p>No active campaigns right now — every listed cause has reached its funding goal.</p>
+            <Link
+              to="/causes/completed"
+              className="mt-4 inline-flex min-h-10 items-center rounded-full border border-emerald-300/70 bg-[linear-gradient(180deg,#3dffc4,#23d78f)] px-4 py-2 text-xs font-semibold text-[#032316] shadow-[0_0_22px_rgba(51,255,178,0.28)]"
+            >
+              View completed campaigns
+            </Link>
+          </div>
+        ) : null}
+        {activeCauses.map((match, index) => {
           const cause = SHOWCASE_BY_TITLE.get(match.title) ?? apiRowToShowcaseCause(match, index);
           return (
             <CauseCard
@@ -475,6 +499,8 @@ export function CausesPage() {
               disbursedEth={match.disbursed_eth}
               donatedEth={match.donated_eth}
               remainingEth={match.remaining_eth}
+              raisedEth={match.raised_eth}
+              goalEth={match.goal_eth}
               utilizationPct={match.utilization_pct}
               fundsMatched={match.funds_matched}
             />

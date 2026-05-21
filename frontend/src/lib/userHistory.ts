@@ -25,6 +25,8 @@ export interface UserWalletSummary {
   totalReceivedEth: string;
   totalDisbursedEth?: string;
   isVaultWallet?: boolean;
+  /** False when local chain RPC (Anvil) is not reachable — balance may show 0. */
+  chainLive?: boolean;
 }
 
 export interface MeHistoryResponse {
@@ -32,11 +34,24 @@ export interface MeHistoryResponse {
   summary: UserWalletSummary | null;
 }
 
+function parseApiErrorMessage(text: string, status: number): string {
+  try {
+    const data = JSON.parse(text) as { error?: string };
+    if (data.error) return data.error;
+  } catch {
+    /* raw text */
+  }
+  if (/ECONNREFUSED|8545|RPC|fetch failed/i.test(text)) {
+    return 'Local blockchain node is not running. Start Anvil to see live wallet balances.';
+  }
+  return text || `History error ${status}`;
+}
+
 export async function loadMeHistory(): Promise<MeHistoryResponse> {
   const res = await fetch('/api/me/history', { credentials: 'include' });
   if (!res.ok) {
     const t = await res.text();
-    throw new Error(t || `History error ${res.status}`);
+    throw new Error(parseApiErrorMessage(t, res.status));
   }
   return (await res.json()) as MeHistoryResponse;
 }

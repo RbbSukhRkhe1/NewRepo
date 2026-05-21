@@ -85,8 +85,14 @@ function WalletMeter({
             {cur.toFixed(4)} <span className="text-base font-semibold text-amber-400/90">ETH</span>
           </p>
         </div>
-        <div className="rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-emerald-300">
-          Live
+        <div
+          className={`rounded-lg border px-2 py-1 text-[10px] font-semibold uppercase tracking-wider ${
+            summary.chainLive === false
+              ? 'border-amber-500/30 bg-amber-500/10 text-amber-200'
+              : 'border-emerald-500/25 bg-emerald-500/10 text-emerald-300'
+          }`}
+        >
+          {summary.chainLive === false ? 'Chain offline' : 'Live'}
         </div>
       </div>
 
@@ -528,7 +534,17 @@ export function AccountPage() {
             <p className="mt-1 text-xs text-[var(--text-muted-1)]">
               Transfers where your wallet is the sender or recipient (from the app ledger).
             </p>
-            {historyErr && <p className="mt-3 text-sm text-rose-400">{historyErr}</p>}
+            {historyErr && (
+              <p className="mt-3 text-sm text-rose-400" role="alert">
+                {historyErr}
+              </p>
+            )}
+            {!historyErr && history?.summary?.chainLive === false && (
+              <p className="mt-3 text-sm text-amber-200/90">
+                Ledger activity is shown below. Live wallet balance needs Anvil running on port 8545 (
+                <code className="font-mono text-xs">anvil</code>).
+              </p>
+            )}
             {!historyErr && history && history.entries.length === 0 && (
               <p className="mt-6 text-center text-sm text-[var(--text-muted-1)]">No recorded transfers yet.</p>
             )}

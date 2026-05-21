@@ -96,6 +96,7 @@ export function DonationPage() {
   const [causes, setCauses] = useState<Cause[]>([]);
   const [activeCauseId, setActiveCauseId] = useState<number | null>(null);
   const [amountEth, setAmountEth] = useState('0.1');
+  const [showCustomAmount, setShowCustomAmount] = useState(false);
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -109,7 +110,7 @@ export function DonationPage() {
   }, [searchParams]);
 
   useEffect(() => {
-    apiJson<Cause[]>('/causes')
+    apiJson<Cause[]>('/causes?status=active')
       .then((rows) => {
         setCauses(rows);
         setActiveCauseId((prev) => {
@@ -162,6 +163,29 @@ export function DonationPage() {
   const validAmount = Number.isFinite(parsedAmount) && parsedAmount > 0;
   const impactPeople = Math.max(1, Math.round((validAmount ? parsedAmount : 0.01) * 12));
   const canSubmit = Boolean(user?.anvilIndex != null && activeCause && validAmount && !busy);
+
+  const amountInputClass = isLightMode
+    ? 'border-slate-200/90 bg-white/88 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)] focus:border-emerald-400/70 focus:ring-2 focus:ring-emerald-300/35'
+    : 'border-[var(--border-chrome-2)] bg-[var(--surface-panel-overlay)] focus:border-emerald-300/45 focus:ring-2 focus:ring-emerald-300/20';
+
+  const quickAmountButtonClass = (active: boolean) =>
+    `rounded-xl border px-2.5 py-1.5 text-left text-sm font-semibold transition duration-300 hover:scale-[1.02] ${
+      active
+        ? isLightMode
+          ? 'border-emerald-400/70 bg-emerald-100/85 text-emerald-900 shadow-[0_10px_24px_-16px_rgba(5,150,105,0.7)]'
+          : 'border-emerald-300/55 bg-emerald-400/15 text-emerald-100 shadow-[0_12px_24px_-16px_rgba(45,245,173,0.65)]'
+        : isLightMode
+          ? 'border-slate-200/90 bg-white/85 text-slate-700 hover:border-emerald-300/65 hover:bg-emerald-50/90'
+          : 'border-[var(--border-chrome-2)] bg-[var(--surface-panel-overlay)] text-[var(--text-high-3)] hover:border-emerald-300/35 hover:bg-[color:rgb(34_197_94_/_0.1)]'
+    }`;
+
+  const addAmountTileClass = showCustomAmount
+    ? isLightMode
+      ? 'border-emerald-500/70 bg-emerald-100/90 text-emerald-900 shadow-[0_10px_24px_-16px_rgba(5,150,105,0.55)]'
+      : 'border-emerald-400/60 bg-emerald-500/15 text-emerald-100 shadow-[0_12px_24px_-16px_rgba(45,245,173,0.5)]'
+    : isLightMode
+      ? 'border-dashed border-slate-300/90 bg-white/50 text-slate-600 hover:border-emerald-400/55 hover:bg-emerald-50/80 hover:text-emerald-900'
+      : 'border-dashed border-white/25 bg-white/[0.03] text-[var(--text-muted-1)] hover:border-emerald-400/45 hover:bg-emerald-500/10 hover:text-emerald-200';
 
   async function onConfirmDonation(e: React.FormEvent) {
     e.preventDefault();
@@ -349,39 +373,94 @@ export function DonationPage() {
               </label>
               <input
                 value={amountEth}
-                onChange={(e) => setAmountEth(e.target.value)}
-                className={`mt-1.5 w-full rounded-xl border px-4 py-2.5 font-mono text-[var(--text-high-3)] outline-none transition ${
-                  isLightMode
-                    ? 'border-slate-200/90 bg-white/88 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)] focus:border-emerald-400/70 focus:ring-2 focus:ring-emerald-300/35'
-                    : 'border-[var(--border-chrome-2)] bg-[var(--surface-panel-overlay)] focus:border-emerald-300/45 focus:ring-2 focus:ring-emerald-300/20'
-                }`}
+                onChange={(e) => {
+                  setAmountEth(e.target.value);
+                  setShowCustomAmount(false);
+                }}
+                className={`mt-1.5 w-full rounded-xl border px-4 py-2.5 font-mono text-[var(--text-high-3)] outline-none transition ${amountInputClass}`}
                 placeholder="0.10"
               />
 
-              <div className="mt-2 grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+              <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted-2)]">
+                Quick amounts
+              </p>
+              <div className="mt-1.5 grid grid-cols-2 gap-1.5 sm:grid-cols-3">
                 {QUICK_AMOUNTS.map((value) => {
-                  const activeAmount = amountEth === value;
+                  const activeAmount = !showCustomAmount && amountEth === value;
                   return (
                     <button
                       key={value}
                       type="button"
-                      onClick={() => setAmountEth(value)}
-                      className={`rounded-xl border px-2.5 py-1.5 text-left text-sm font-semibold transition duration-300 hover:scale-[1.02] ${
-                        activeAmount
-                          ? isLightMode
-                            ? 'border-emerald-400/70 bg-emerald-100/85 text-emerald-900 shadow-[0_10px_24px_-16px_rgba(5,150,105,0.7)]'
-                            : 'border-emerald-300/55 bg-emerald-400/15 text-emerald-100 shadow-[0_12px_24px_-16px_rgba(45,245,173,0.65)]'
-                          : isLightMode
-                            ? 'border-slate-200/90 bg-white/85 text-slate-700 hover:border-emerald-300/65 hover:bg-emerald-50/90'
-                            : 'border-[var(--border-chrome-2)] bg-[var(--surface-panel-overlay)] text-[var(--text-high-3)] hover:border-emerald-300/35 hover:bg-[color:rgb(34_197_94_/_0.1)]'
-                      }`}
+                      onClick={() => {
+                        setAmountEth(value);
+                        setShowCustomAmount(false);
+                      }}
+                      className={quickAmountButtonClass(activeAmount)}
                     >
                       <span className="block text-[10px] uppercase tracking-[0.09em] opacity-70">Quick Amount</span>
                       <span>{value} ETH</span>
                     </button>
                   );
                 })}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCustomAmount((open) => {
+                      if (!open) setAmountEth('');
+                      return !open;
+                    });
+                  }}
+                  className={`flex min-h-[3.25rem] flex-col items-center justify-center gap-0.5 rounded-xl border-2 px-2 py-2 text-center text-sm font-semibold transition duration-300 hover:scale-[1.02] ${addAmountTileClass}`}
+                  aria-expanded={showCustomAmount}
+                  aria-controls="donation-custom-amount"
+                  aria-label={showCustomAmount ? 'Close custom amount' : 'Add custom amount'}
+                >
+                  <span
+                    className={`flex h-7 w-7 items-center justify-center rounded-full border text-lg font-light leading-none ${
+                      showCustomAmount
+                        ? isLightMode
+                          ? 'border-emerald-600/40 bg-white/90 text-emerald-800'
+                          : 'border-emerald-300/50 bg-emerald-950/40 text-emerald-100'
+                        : isLightMode
+                          ? 'border-slate-300/80 bg-white text-slate-600'
+                          : 'border-white/20 bg-black/20 text-[var(--text-high-2)]'
+                    }`}
+                    aria-hidden
+                  >
+                    {showCustomAmount ? '×' : '+'}
+                  </span>
+                  <span className="text-[11px] leading-tight tracking-tight">
+                    {showCustomAmount ? 'Close' : 'Add amount'}
+                  </span>
+                </button>
               </div>
+
+              {showCustomAmount ? (
+                <div
+                  id="donation-custom-amount"
+                  className={`mt-2 grid gap-1.5 rounded-xl border p-2.5 sm:grid-cols-[minmax(0,7rem)_1fr] sm:items-center ${
+                    isLightMode
+                      ? 'border-emerald-300/70 bg-[linear-gradient(180deg,rgba(236,253,245,0.95),rgba(220,252,236,0.75))]'
+                      : 'border-emerald-400/35 bg-[linear-gradient(160deg,rgba(6,24,18,0.55),rgba(4,14,22,0.45))]'
+                  }`}
+                >
+                  <label
+                    htmlFor="donation-custom-amount-input"
+                    className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted-1)] sm:py-1"
+                  >
+                    Custom (ETH)
+                  </label>
+                  <input
+                    id="donation-custom-amount-input"
+                    value={amountEth}
+                    onChange={(e) => setAmountEth(e.target.value)}
+                    className={`w-full rounded-xl border px-4 py-2.5 font-mono text-[var(--text-high-3)] outline-none transition ${amountInputClass}`}
+                    placeholder="e.g. 2.5"
+                    autoFocus
+                    inputMode="decimal"
+                  />
+                </div>
+              ) : null}
 
               <label className="mt-2.5 block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted-1)]">
                 Optional Message / Note
