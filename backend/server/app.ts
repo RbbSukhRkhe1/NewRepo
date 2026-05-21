@@ -1,6 +1,9 @@
 import express from 'express';
 import cors from 'cors';
 import cookieSession from 'cookie-session';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import { resolveSessionSecret, sessionCookieSecure } from './session.js';
 import bcrypt from 'bcryptjs';
 import { ethers } from 'ethers';
 import { db } from './db.js';
@@ -161,6 +164,12 @@ export function createApp() {
   // Behind nginx: correct client IP and optional X-Forwarded-Proto for cookies / redirects.
   app.set('trust proxy', 1);
   app.use(
+    helmet({
+      contentSecurityPolicy: false,
+      crossOriginEmbedderPolicy: false,
+    })
+  );
+  app.use(
     cors({
       origin: true,
       credentials: true,
@@ -170,14 +179,33 @@ export function createApp() {
   app.use(
     cookieSession({
       name: 'session',
-      keys: [process.env.SESSION_SECRET || 'vaultex-dev-secret-key'],
+      keys: [resolveSessionSecret()],
       maxAge: 7 * 24 * 3600 * 1000,
       sameSite: 'lax',
       httpOnly: true,
+      secure: sessionCookieSecure(),
     }) as express.RequestHandler
   );
 
   const api = express.Router();
+  api.use(
+    rateLimit({
+      windowMs: 60_000,
+      limit: 300,
+      standardHeaders: true,
+      legacyHeaders: false,
+    })
+  );
+  api.use(
+    '/auth/login',
+    rateLimit({
+      windowMs: 15 * 60_000,
+      limit: 30,
+      standardHeaders: true,
+      legacyHeaders: false,
+      message: { error: 'Too many login attempts — try again later' },
+    })
+  );
 
   api.get('/config', (_req, res) => {
     res.json({
@@ -1110,6 +1138,49 @@ export function createApp() {
       donation,
       linkedDisbursements,
       utilization: util,
+    });
+  });
+
+  // Donor impact summary (totals + per-cause breakdown).
+  api.get('/me/impact', requireAuth, (req, res) => {
+    const u = getUser(req)!;
+    if (u.anvil_index == null || u.role !== 'donor') {
+      return res.json({
+        totalDonatedEth: 0,
+        donationCount: 0,
+        causesSupported: 0,
+        byCause: [],
+      });
+    }
+    const addr = anvilAddress(u.anvil_index).toLowerCase();
+    const rows = db
+      .prepare(
+        `SELECT
+          cause_id,
+          COALESCE(cause_name, 'General allocation') AS cause_name,
+          COUNT(*) AS donations,
+          COALESCE(SUM(CAST(value_eth AS REAL)), 0) AS total_eth
+         FROM ledger_entries
+         WHERE kind = 'donation_in' AND lower(from_addr) = ?
+         GROUP BY cause_id, cause_name
+         ORDER BY total_eth DESC`
+      )
+      .all(addr) as { cause_id: number | null; cause_name: string; donations: number; total_eth: number }[];
+
+    const byCause = rows.map((r) => ({
+      causeId: r.cause_id,
+      causeName: r.cause_name,
+      donations: Number(r.donations) || 0,
+      totalEth: Number(r.total_eth) || 0,
+    }));
+    const totalDonatedEth = byCause.reduce((s, c) => s + c.totalEth, 0);
+    const donationCount = byCause.reduce((s, c) => s + c.donations, 0);
+
+    res.json({
+      totalDonatedEth,
+      donationCount,
+      causesSupported: byCause.length,
+      byCause,
     });
   });
 

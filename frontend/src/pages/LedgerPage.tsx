@@ -106,6 +106,8 @@ export function LedgerPage() {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [modalDetail, setModalDetail] = useState<Awaited<ReturnType<typeof loadLedgerV2Detail>> | null>(null);
+  const [liveNotice, setLiveNotice] = useState<string | null>(null);
+  const liveNoticeTimerRef = useRef<number | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const stickToBottomRef = useRef(true);
@@ -297,12 +299,37 @@ export function LedgerPage() {
   }, [entries]);
 
   useEffect(() => {
-    // WebSocket realtime: improves responsiveness, but polling remains the fallback.
+    // WebSocket realtime: refetch on domain events; polling remains the fallback.
     try {
       const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
       const ws = new WebSocket(`${proto}://${window.location.host}/api/ws`);
-      ws.onmessage = () => refresh();
-      return () => ws.close();
+      ws.onmessage = (ev) => {
+        try {
+          const msg = JSON.parse(String(ev.data)) as {
+            type?: string;
+            envelope?: { type?: string };
+          };
+          if (msg.type === 'event' && msg.envelope?.type) {
+            setLiveNotice('New ledger activity');
+            if (liveNoticeTimerRef.current != null) {
+              window.clearTimeout(liveNoticeTimerRef.current);
+            }
+            liveNoticeTimerRef.current = window.setTimeout(() => {
+              setLiveNotice(null);
+              liveNoticeTimerRef.current = null;
+            }, 4000);
+          }
+        } catch {
+          /* ignore malformed frames */
+        }
+        refresh();
+      };
+      return () => {
+        if (liveNoticeTimerRef.current != null) {
+          window.clearTimeout(liveNoticeTimerRef.current);
+        }
+        ws.close();
+      };
     } catch {
       return;
     }
@@ -323,6 +350,15 @@ export function LedgerPage() {
         title="Ledger — Full Accountability Grid"
         body="Absolute transparency: trace inflow vs outflow per cause with totals that balance."
       />
+
+      {liveNotice ? (
+        <div
+          className="mt-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2.5 text-sm font-medium text-emerald-200"
+          role="status"
+        >
+          {liveNotice} — list refreshed
+        </div>
+      ) : null}
 
       <SurfaceCard className="mt-6 overflow-hidden rounded-2xl p-0">
         <div className="border-b border-[var(--glass-border)] px-4 py-4 sm:px-6">

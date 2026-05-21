@@ -155,25 +155,45 @@ async function main() {
   if (adminDonate.status === 403) pass('UC3: Admin blocked from POST /donate');
   else fail('UC3: Admin blocked from POST /donate', `status ${adminDonate.status}`);
 
-  // --- Chain-dependent tests (need Anvil on :8545) ---
+  // --- Chain-dependent tests (Anvil: compose default 4585, bare anvil often 8545) ---
+  const anvilPorts = [];
+  if (process.env.ANVIL_HOST_PORT) anvilPorts.push(process.env.ANVIL_HOST_PORT);
+  if (process.env.ANVIL_RPC_URL) {
+    try {
+      const p = new URL(process.env.ANVIL_RPC_URL).port;
+      if (p) anvilPorts.push(p);
+    } catch {
+      /* ignore */
+    }
+  }
+  for (const p of ['4585', '8545']) {
+    if (!anvilPorts.includes(p)) anvilPorts.push(p);
+  }
   let anvilUp = false;
-  try {
-    const r = await fetch('http://127.0.0.1:8545', {
+  let anvilPortUsed = '';
+  for (const port of anvilPorts) {
+    try {
+      const r = await fetch(`http://127.0.0.1:${port}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ jsonrpc: '2.0', method: 'eth_chainId', params: [], id: 1 }),
     });
-    const j = await r.json();
-    anvilUp = Boolean(j.result);
-  } catch {
-    anvilUp = false;
+      const j = await r.json();
+      if (j.result) {
+        anvilUp = true;
+        anvilPortUsed = port;
+        break;
+      }
+    } catch {
+      /* try next port */
+    }
   }
 
   if (!anvilUp) {
     console.log('\n⚠ Anvil not running — skipping on-chain donate/disburse tests');
-    console.log('  Start Anvil (e.g. `anvil` or docker compose up anvil) and re-run.\n');
+    console.log(`  Tried ports: ${anvilPorts.join(', ')} — start Anvil or docker compose up anvil\n`);
   } else {
-    pass('Anvil RPC reachable');
+    pass('Anvil RPC reachable', `port ${anvilPortUsed}`);
 
     const war = (await req(jar(), 'GET', '/causes')).data?.find((c) => c.title === 'War');
     const disburseCauseId = war?.id ?? causeId;

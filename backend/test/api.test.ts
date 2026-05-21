@@ -57,3 +57,19 @@ test('GET /api/ledger/v2 returns array', async () => {
 test('GET /api/me/badges requires auth', async () => {
   await request(app).get('/api/me/badges').expect(401);
 });
+
+test('GET /api/me/impact for donor returns totals', async () => {
+  const agent = request.agent(app);
+  await agent
+    .post('/api/auth/login')
+    .send({ email: 'tasin@vaultex.local', password: 'demo123' })
+    .expect(200);
+  const res = await agent.get('/api/me/impact').expect(200);
+  assert.ok(typeof res.body.totalDonatedEth === 'number');
+  assert.ok(Array.isArray(res.body.byCause));
+});
+
+test('responses include security headers from helmet', async () => {
+  const res = await request(app).get('/api/config');
+  assert.ok(res.headers['x-content-type-options']);
+});

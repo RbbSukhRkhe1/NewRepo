@@ -83,7 +83,7 @@ API routes are mounted under **`/api`** (see `backend/server/app.ts`).
 
 - **Node.js** 20+ and **npm**
 - **Foundry** (`forge`, `cast`, optional `anvil`) — [installation](https://book.getfoundry.sh/getting-started/installation)
-- **Optional:** run **`anvil`** on `http://127.0.0.1:8545` for chain-linked features and the watcher (without it the API still runs; the watcher may skip or log connection issues).
+- **Optional:** run **`anvil`** for chain-linked features and the watcher. Default JSON-RPC: **`http://127.0.0.1:8545`** (bare Anvil) or **`http://127.0.0.1:4585`** when using Docker Compose (`ANVIL_HOST_PORT`). Without RPC the API still runs; the watcher may skip.
 
 ---
 
@@ -135,7 +135,7 @@ The root **`docker-compose.yml`** runs the **full stack** with health checks and
 | **frontend** | `frontend/Dockerfile` (Vite build + **nginx**) | SPA on port **8080** (default); proxies **`/api`** to the backend (same-origin cookies). |
 | **backend** | `backend/Dockerfile` (Node 20 monolith) | Express API on **3847**; SQLite on a named volume; Redis and Anvil via Compose service DNS. |
 | **redis** | `redis:7-alpine` | AOF persistence on volume **`vaultex_redis_data`**. |
-| **anvil** | `ghcr.io/foundry-rs/foundry:latest` | `anvil --host 0.0.0.0` on **8545** (published for `cast` / tooling). |
+| **anvil** | `ghcr.io/foundry-rs/foundry:v1.5.1` | Internal **8545**; host publish default **4585** (`ANVIL_HOST_PORT`). |
 
 **One command** (from the **repository root**):
 
@@ -153,7 +153,7 @@ Open **http://localhost:8080** (change the host port with **`WEB_HOST_PORT`** in
 |------------------------|-------------------|---------|
 | `WEB_HOST_PORT` | `8080` | Published nginx port |
 | `API_HOST_PORT` | `3847` | Published API (debugging) |
-| `ANVIL_HOST_PORT` | `8545` | Published JSON-RPC |
+| `ANVIL_HOST_PORT` | `4585` | Published JSON-RPC on the host (maps to Anvil **8545** in the container) |
 | `SESSION_SECRET` | dev-only default in compose | **Override** on shared hosts |
 | `REDIS_URL` | `redis://redis:6379` | In-cluster broker |
 | `REDIS_DISABLED` | empty | `1` skips pub/sub |
@@ -215,7 +215,8 @@ Create **`backend/.env`** if you need overrides (loaded via `dotenv` from `backe
 | `REDIS_EVENTS_CHANNEL` | Channel name for `publishEvent` | `vaultex:events` |
 | `REDIS_DISABLED` | Skip Redis (no-op publish) | unset |
 | `READY_SKIP_RPC` | If `1` or `true`, `GET /ready` skips the JSON-RPC ping (`rpc: "skipped"`) | unset |
-| `SESSION_SECRET` | Session cookie signing | dev fallback in code (set in production) |
+| `SESSION_SECRET` | Session cookie signing | Required in production (weak defaults rejected) |
+| `USE_HTTPS` | Set `1` in production behind TLS | Enables `secure` session cookies |
 
 ### Target network (`NETWORK`)
 

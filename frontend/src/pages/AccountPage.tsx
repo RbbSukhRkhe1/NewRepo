@@ -214,6 +214,12 @@ export function AccountPage() {
   const [badges, setBadges] = useState<
     { causeId: number | null; causeName: string; donations: number; totalEth: number; tier: string }[]
   >([]);
+  const [impact, setImpact] = useState<{
+    totalDonatedEth: number;
+    donationCount: number;
+    causesSupported: number;
+    byCause: { causeId: number | null; causeName: string; donations: number; totalEth: number }[];
+  } | null>(null);
 
   const refreshHistory = useCallback(() => {
     if (!user) {
@@ -257,12 +263,33 @@ export function AccountPage() {
     let cancelled = false;
     if (!user) {
       const t = window.setTimeout(() => {
-        if (!cancelled) setBadges([]);
+        if (!cancelled) {
+          setBadges([]);
+          setImpact(null);
+        }
       }, 0);
       return () => {
         cancelled = true;
         window.clearTimeout(t);
       };
+    }
+    if (user.role === 'donor') {
+      apiJson<{
+        totalDonatedEth: number;
+        donationCount: number;
+        causesSupported: number;
+        byCause: { causeId: number | null; causeName: string; donations: number; totalEth: number }[];
+      }>('/me/impact')
+        .then((r) => {
+          if (!cancelled) setImpact(r);
+        })
+        .catch(() => {
+          if (!cancelled) setImpact(null);
+        });
+    } else {
+      queueMicrotask(() => {
+        if (!cancelled) setImpact(null);
+      });
     }
     apiJson<{ badges: { causeId: number | null; causeName: string; donations: number; totalEth: number; tier: string }[] }>(
       '/me/badges'
@@ -404,6 +431,61 @@ export function AccountPage() {
               <WalletMeter summary={history.summary} role={user.role} />
             </div>
           )}
+
+          {user.role === 'donor' && impact ? (
+            <section
+              className="mt-8 rounded-2xl border border-white/10 bg-white/[0.02] p-5 sm:p-6"
+              aria-labelledby="acct-impact"
+            >
+              <h2 id="acct-impact" className="text-lg font-semibold text-[var(--text-high-3)]">
+                Your impact
+              </h2>
+              <p className="mt-1 text-xs text-[var(--text-muted-1)]">
+                Totals from your donations recorded on the ledger.
+              </p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                <div className="vtx-glass-inset px-4 py-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted-2)]">
+                    Total donated
+                  </p>
+                  <p className="mt-1 font-mono text-xl font-semibold text-emerald-300">
+                    {impact.totalDonatedEth.toFixed(4)} ETH
+                  </p>
+                </div>
+                <div className="vtx-glass-inset px-4 py-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted-2)]">
+                    Donations
+                  </p>
+                  <p className="mt-1 font-mono text-xl font-semibold text-[var(--text-high-3)]">
+                    {impact.donationCount}
+                  </p>
+                </div>
+                <div className="vtx-glass-inset px-4 py-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted-2)]">
+                    Causes supported
+                  </p>
+                  <p className="mt-1 font-mono text-xl font-semibold text-[var(--text-high-3)]">
+                    {impact.causesSupported}
+                  </p>
+                </div>
+              </div>
+              {impact.byCause.length > 0 ? (
+                <ul className="mt-4 space-y-2 text-sm">
+                  {impact.byCause.slice(0, 6).map((c) => (
+                    <li
+                      key={`${c.causeId ?? 'g'}-${c.causeName}`}
+                      className="flex justify-between gap-3 border-b border-white/[0.06] py-2 last:border-0"
+                    >
+                      <span className="truncate text-[var(--text-high-2)]">{c.causeName}</span>
+                      <span className="shrink-0 font-mono text-[var(--text-muted-1)]">
+                        {c.totalEth.toFixed(4)} ETH
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </section>
+          ) : null}
 
           {user.role === 'donor' ? (
             <section className="mt-8 rounded-2xl border border-white/10 bg-white/[0.02] p-5 sm:p-6" aria-labelledby="acct-badges">
