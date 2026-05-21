@@ -1,6 +1,6 @@
 # Vaultex — feature inventory (shipped vs roadmap)
 
-This document reflects the **monolith** in `frontend/` + `backend/server/` as of the last manual audit. Update when major behavior changes.
+Updated to match the monolith in `frontend/` + `backend/server/` (May 2026).
 
 ## Shipped — backend (Express, `/api`)
 
@@ -10,17 +10,21 @@ This document reflects the **monolith** in `frontend/` + `backend/server/` as of
 | Overview stats | `GET /overview` — cause aggregates, ledger sums, optional vault balance |
 | Auth | `POST /auth/login`, `POST /auth/logout`, `POST /auth/register`, `GET /auth/me` |
 | Users (admin) | `GET /users` |
-| Causes | `GET /causes`, `GET /causes/:id`, `POST /causes` (admin) |
-| Donate | `POST /donate` (signed-in + Anvil wallet) → chain tx + ledger + cause `raised_eth` |
-| Disburse | `POST /disburse` (admin) → chain tx + ledger |
-| Public ledger | `GET /ledger` (up to 500 rows, masked + display names) |
-| User history | `GET /me/history` — entries involving user address + summary |
+| Causes | `GET /causes`, `GET /causes/:id`, `POST /causes` (admin), admin list/update/delete |
+| Donate | `POST /donate` (signed-in donor) → chain tx + ledger + cause `raised_eth` |
+| Disburse | `POST /causes/:id/disburse`, `POST /disburse` (admin) → chain tx + ledger + FIFO `linked_tx_ids` |
+| Public ledger v1 | `GET /ledger` |
+| **Ledger v2** | `GET /ledger/v2`, tags, detail, verify, search (FTS5) |
+| **Donation lifecycle** | `GET /ledger/v2/lifecycle/:txHash` (auth, donor owns tx) |
+| **Badges** | `GET /me/badges` (per-cause donor totals) |
+| User history | `GET /me/history` |
 | Balance | `GET /balance/:anvilIndex` (0–9) |
-| Health | `GET /health` (root app, not under `/api`) — liveness |
-| Readiness | `GET /ready` (root) — SQLite `quick_check` + optional `eth_chainId` to `ANVIL_RPC_URL` (1.5s); `rpc` is `skipped` if `READY_SKIP_RPC` or if DB check failed first; use for Docker/Kubernetes readiness |
-| Chain watcher | Optional WebSocket ingest → `chain_sync` ledger rows when Anvil up |
-| Seeding | First-run users + `seedCausesUpsert` for five marketing causes |
-| Redis pub/sub | After successful donate/disburse, publishes `donation.created` / `disbursement.created` (see `server/lib/redis.ts`, `docs/REDIS_EVENTS.md`; disable with `REDIS_DISABLED=1`) |
+| Health | `GET /health` (root) |
+| Readiness | `GET /ready` (root) — SQLite + optional RPC |
+| Chain watcher | WebSocket ingest → `chain_sync` when Anvil up |
+| Seeding | Demo users + marketing causes |
+| Redis pub/sub | `donation.created` / `disbursement.created` (disable with `REDIS_DISABLED=1`) |
+| WebSocket | **`/api/ws`** — Redis events bridged to clients (see `server/constants.ts`) |
 
 ## Shipped — frontend (React Router)
 
@@ -28,28 +32,37 @@ This document reflects the **monolith** in `frontend/` + `backend/server/` as of
 |-------|---------|
 | `/` | Home |
 | `/login`, `/register` | Auth |
-| `/causes`, `/causes/:id` | Browse / detail |
-| `/causes/new`, `/admin/causes/new` | New cause (auth / admin) |
+| `/causes`, `/causes/completed`, `/causes/:id` | Browse / completed / detail |
+| `/causes/new`, `/admin/*` | Admin cause & user management |
 | `/donate` | Donation flow |
-| `/ledger` | Public ledger UI |
-| `/account` | Account + admin disburse tooling |
-| `/admin/users` | Admin user list |
+| `/ledger` | Ledger v2 UI (search, modal, polling; WS at `/api/ws`) |
+| `/account` | Wallet, history, badges, admin disburse |
+| `/lifecycle/:txHash` | Donation lifecycle (auth) |
 
-**UX:** Layout nav, dark/light theme persistence, admin dropdown.
+## Automated tests
+
+| Layer | Command |
+|-------|---------|
+| Backend unit + API | `npm run test -w backend` |
+| Frontend unit | `npm run test -w frontend` |
+| Full regression | `npm run regression` (tests + tsc + frontend build) |
+| Live API smoke | `node scripts/integration-smoke.mjs` (API must be running) |
+| Foundry | `forge test` (repo root) |
+
+CI runs workspace `test` scripts when present (see `.github/workflows/ci.yml`).
 
 ## Data model (SQLite)
 
-`users`, `causes`, `ledger_entries` — see `backend/server/db.ts`.
+`users`, `causes`, `ledger_entries` (+ v2 columns, FTS5), `schema_migrations` — see `backend/server/db.ts`.
 
-## Smart contracts (Foundry, repo root)
+## Smart contracts (Foundry)
 
-- **`foundry.toml`** + **`remappings.txt`** at monorepo root; sources under **`blockchain/src/`** (e.g. `VaultexVault.sol`), deploy **`blockchain/script/Deploy.s.sol`**, tests **`blockchain/test/`**, libs **`blockchain/lib/`**.
-- Run **`forge build`** / **`forge test`** from the **repository root**. Build outputs under `blockchain/out/` (gitignored until you compile).
+`VaultexVault.sol` deployable; **API still uses Anvil EOA vault (index 0)**, not the contract.
 
 ## Not shipped (see `CAPSTONE_TASK_TRACKER.csv`)
 
-Examples: journey-by-tx API, strict public masking audit, PDF receipts, WS live ledger, microservices split, CI/CD, E2E tests, MetaMask testnet toggle, NFT receipts, backend wiring to `VAULTEX_VAULT_ADDRESS`, etc.
+PDF receipts, MetaMask/Sepolia user signing, microservices gateway, Playwright E2E, PDF export, email reports, NFT certs, `VAULTEX_VAULT_ADDRESS` API wiring, full public-address privacy audit, etc.
 
-## Architecture and contracts
+## Architecture
 
-For **how pieces fit today** versus the **gateway + services** target, see [ARCHITECTURE.md](./ARCHITECTURE.md). Decisions (strangler ordering, cookies vs JWT at the gateway) live under [ADR/](./ADR/). Placeholder **OpenAPI** contracts for the target split are in [openapi/](./openapi/).
+Target microservices: [ARCHITECTURE.md](./ARCHITECTURE.md), [ADR/](./ADR/), [openapi/](./openapi/) stubs.

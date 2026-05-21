@@ -97,6 +97,15 @@ npm install
 
 Uses **npm workspaces** (`frontend`, `backend`).
 
+## Tests & regression
+
+```bash
+npm run test          # backend + frontend unit/API tests
+npm run regression    # tests + backend tsc + frontend production build
+node scripts/integration-smoke.mjs   # live API (start backend first)
+forge test            # Solidity (repo root)
+```
+
 ---
 
 ## Run (development)

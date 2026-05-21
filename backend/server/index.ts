@@ -7,6 +7,7 @@ import { closeRedis } from './lib/redis.js';
 import { backfillLedgerV2Defaults, recomputeAllDisbursementLinks } from './ledger/LedgerService.js';
 import { WebSocketServer } from 'ws';
 import { subscribeToEvents } from './lib/redis.js';
+import { WS_PATH } from './constants.js';
 
 let stopWatcher: () => void = () => {};
 
@@ -53,7 +54,7 @@ async function main() {
 
   // WebSocket bridge for realtime ledger updates.
   // Uses Redis pub/sub if available; otherwise clients can rely on polling.
-  const wss = new WebSocketServer({ server, path: '/ws' });
+  const wss = new WebSocketServer({ server, path: WS_PATH });
   wss.on('connection', (socket) => {
     socket.send(
       JSON.stringify({ type: 'hello', ts: new Date().toISOString() })
