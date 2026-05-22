@@ -7,6 +7,8 @@ import { useAuth } from '../context/AuthContext';
 import { PrimaryButton, SectionHeader, SurfaceCard } from '../components/ui';
 import { CauseFundingDonut } from '../components/CauseFundingDonut';
 
+type FundCoverLine = { label: string; weight: number };
+
 type Cause = {
   id: number;
   title: string;
@@ -19,13 +21,19 @@ type Cause = {
   utilization_pct: number;
   funds_matched?: boolean;
   image_url?: string | null;
-};
-
-type CauseDetailCopy = {
-  about: string;
-  whatFundsCover: string[];
-  milestones: string[];
-  verification: string[];
+  beneficiary_user_id?: number | null;
+  beneficiary_name?: string | null;
+  impact_story_title?: string;
+  impact_story_body?: string;
+  about_body?: string;
+  funds_cover?: FundCoverLine[];
+  milestones?: string[];
+  verification_points?: string[];
+  category_tag?: string;
+  location_tag?: string;
+  campaign_end_date?: string | null;
+  days_left?: number | null;
+  donor_count?: number;
 };
 
 const QUICK_AMOUNTS = ['0.05', '0.1', '0.25', '0.5'] as const;
@@ -145,109 +153,6 @@ function IconPieTiny({ className }: { className?: string }) {
   );
 }
 
-const DETAIL_COPY_BY_TITLE: Record<string, CauseDetailCopy> = {
-  LGBTQs: {
-    about:
-      'Queer and trans communities deserve fast, practical relief: safe housing, trauma-informed counselling, crisis support, and community mutual aid. Vaultex routes every gift on-chain—so you can trace funding from wallet to outcome, not guesswork.',
-    whatFundsCover: [
-      'Emergency accommodation vouchers and short-term housing support',
-      'Trauma-informed counselling sessions and crisis hotlines',
-      'Legal/admin support for safety planning and identity documentation',
-      'Community mutual-aid grants for food, transport, and essentials',
-    ],
-    milestones: [
-      '50 emergency nights of safe housing funded',
-      '120 counselling sessions with vetted providers',
-      '200 mutual-aid microgrants to verified recipients',
-    ],
-    verification: [
-      'Beneficiary verification before disbursement',
-      'Every donation and payout recorded in the ledger',
-      'Clear monthly recap of allocations and remaining budget',
-    ],
-  },
-  War: {
-    about:
-      'Emergency relief for families under conflict: medical supplies, evacuation help, shelter, and essentials. Aid moves with transparent records—so “black box” logistics give way to accountable, donor-visible support.',
-    whatFundsCover: [
-      'Medical kits, trauma care supplies, and local clinic support',
-      'Shelter and temporary accommodation for displaced families',
-      'Evacuation/transport assistance and family reunification support',
-      'Essential goods: food, water, hygiene, and winter supplies',
-    ],
-    milestones: [
-      'Deliver 500 family relief packs through verified partners',
-      'Support 3 clinics with critical medical restocks',
-      'Provide 200 safe-transport vouchers for displacement routes',
-    ],
-    verification: [
-      'Partner vetting and documented distribution plans',
-      'Ledger-linked disbursements with recipient category labels',
-      'Post-disbursement updates with proof artifacts where safe',
-    ],
-  },
-  Disaster: {
-    about:
-      'When climate and disasters strike, speed matters—shelter, food and water, power where it counts, and early rebuilding. Every deployment pairs rapid assistance with a public ledger you can actually audit.',
-    whatFundsCover: [
-      'Emergency shelter materials and short-term housing support',
-      'Food, clean water, and sanitation supplies',
-      'Power/communications: charging stations, generators, and fuel',
-      'Early recovery: repairs, tools, and rebuilding essentials',
-    ],
-    milestones: [
-      'Deploy a 72-hour rapid-response kit for 1,000 people',
-      'Restore clean water access for 3 affected communities',
-      'Fund 100 home-repair microgrants for immediate recovery',
-    ],
-    verification: [
-      'Pre-approved vendor list and price caps where possible',
-      'Ledger entries tagged by disaster event and category',
-      'Receipts and delivery confirmations attached to updates',
-    ],
-  },
-  Hospital: {
-    about:
-      'Strengthens frontline hospitals: critical equipment, patient transport and care support, and compliance-safe maintenance. Purchasing and payouts stay visible—so donors see shortages addressed with receipts, not rhetoric.',
-    whatFundsCover: [
-      'Critical equipment: monitors, infusion pumps, and consumables',
-      'Patient support funds for essential care and transport',
-      'Staff support resources during surge periods',
-      'Maintenance, calibration, and safety compliance costs',
-    ],
-    milestones: [
-      'Purchase and deploy essential equipment bundles for one ward',
-      'Fund 150 patient transport/support vouchers',
-      'Publish an outcomes recap with procurement list and totals',
-    ],
-    verification: [
-      'Procurement list with unit pricing and supplier details',
-      'Disbursements tied to specific purchase batches',
-      'Quarterly audit-friendly summary (totals + remaining budget)',
-    ],
-  },
-  Education: {
-    about:
-      'Widens access to learning: scholarships, supplies, devices, and connectivity for students who need it most. Budget lines stay explicit—see what was funded, for whom, and when—straight from the ledger.',
-    whatFundsCover: [
-      'Scholarships and fee support for underserved students',
-      'School supplies: books, uniforms, stationery, and devices',
-      'Connectivity: data plans, hotspots, and shared learning labs',
-      'Mentorship and tutoring programs with verified providers',
-    ],
-    milestones: [
-      'Fund 50 school supply bundles for the next term',
-      'Provide 30 devices + connectivity for remote learners',
-      'Sponsor 100 hours of tutoring and mentorship sessions',
-    ],
-    verification: [
-      'Eligibility checks and documented distribution criteria',
-      'Ledger-tracked disbursements by category',
-      'Term-by-term impact recap (recipients served + spend breakdown)',
-    ],
-  },
-};
-
 export function CauseDetailPage() {
   const { id } = useParams();
   const { user } = useAuth();
@@ -301,6 +206,15 @@ export function CauseDetailPage() {
       .then(setCause)
       .catch((e: Error) => setErr(e.message));
   }, [id]);
+
+  useEffect(() => {
+    if (window.location.hash !== '#disburse') return;
+    const el = document.getElementById('disburse');
+    if (!el) return;
+    window.requestAnimationFrame(() => {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }, [cause?.id]);
 
   const isAdmin = user?.role === 'admin';
   const canDonate = user?.role === 'donor' && user.anvilIndex != null;
@@ -360,7 +274,10 @@ export function CauseDetailPage() {
   const heroSrc = resolveCauseHeroUrl(cause.title, cause.image_url);
   const heroFailureKey = `${cause.id}:${heroSrc ?? ''}`;
   const heroFailed = failedHeroKey === heroFailureKey;
-  const detailCopy = DETAIL_COPY_BY_TITLE[cause.title];
+  const fundsCover = cause.funds_cover ?? [];
+  const milestones = cause.milestones ?? [];
+  const verificationPoints = cause.verification_points ?? [];
+  const hasDetailDashboard = fundsCover.length > 0;
   const remainingEth = Math.max(0, cause.remaining_eth ?? 0);
   const donatedEth = cause.donated_eth ?? cause.raised_eth ?? 0;
   const parsedAmount = Number.parseFloat(amount || '0');
@@ -372,10 +289,9 @@ export function CauseDetailPage() {
   const strokeLength = 283;
   const progressStroke = (pct / 100) * strokeLength;
 
-  const chartWeights = [38, 27, 21, 14];
-  const allocationRows = (detailCopy?.whatFundsCover ?? []).map((label, idx) => ({
-    label,
-    pct: chartWeights[idx] ?? 10,
+  const allocationRows = fundsCover.map((item) => ({
+    label: item.label,
+    pct: item.weight,
   }));
   const slicePalette = ['#22c55e', '#06b6d4', '#14b8a6', '#84cc16'];
   const dashboardRows = allocationRows.map((item, i) => {
@@ -472,7 +388,7 @@ export function CauseDetailPage() {
       </div>
       <p className="sr-only">Funding goal visuals and donation actions for {cause.title}</p>
 
-      {detailCopy ? (
+      {hasDetailDashboard ? (
         <div
           className={`relative mt-4 min-w-0 overflow-hidden rounded-2xl border sm:mt-5 ${
             isLightMode
@@ -671,7 +587,7 @@ export function CauseDetailPage() {
                           >
                             <IconShieldCheckTiny className="h-3 w-3 shrink-0 text-current opacity-90" />
                             <span className="min-w-0 truncate">
-                              {truncateChip(detailCopy.verification[activeSlice % detailCopy.verification.length], 30)}
+                              {truncateChip(verificationPoints[activeSlice % verificationPoints.length] ?? '', 30)}
                             </span>
                           </span>
                         </div>
@@ -923,10 +839,10 @@ export function CauseDetailPage() {
                       : 'text-[15px] leading-[1.7] text-cyan-50/[0.94]'
                   }
                 >
-                  {detailCopy.about}
+                  {cause.about_body ?? cause.description}
                 </p>
               </div>
-              {detailCopy.milestones.length > 0 ? (
+              {milestones.length > 0 ? (
                 <div
                   className={`border-t ${
                     isLightMode
@@ -942,7 +858,7 @@ export function CauseDetailPage() {
                     Outcomes this pool is built for
                   </p>
                   <ul className="mt-3.5 list-none space-y-2 p-0 sm:space-y-2.5">
-                    {detailCopy.milestones.map((line, idx) => (
+                    {milestones.map((line, idx) => (
                       <li
                         key={line}
                         className={`group flex items-start gap-2.5 rounded-xl px-2.5 py-2 transition-[background-color,box-shadow,border-color] duration-200 ${
@@ -989,7 +905,7 @@ export function CauseDetailPage() {
               {isAdmin ? 'Admin action' : 'Donor action'}
             </p>
             {isAdmin ? (
-              <form onSubmit={(e) => void disburse(e)} className="relative z-[1] mt-3 sm:mt-3.5">
+              <form id="disburse" onSubmit={(e) => void disburse(e)} className="relative z-[1] mt-3 scroll-mt-24 sm:mt-3.5">
                 <h2
                   className={`font-semibold text-[var(--text-high-3)] ${isLightMode ? 'text-xl tracking-tight text-amber-950' : 'text-lg text-amber-100'}`}
                 >
@@ -998,8 +914,20 @@ export function CauseDetailPage() {
                 <p
                   className={`mt-1.5 text-[var(--text-muted-1)] ${isLightMode ? 'max-w-xl text-[13px] leading-relaxed text-amber-950/80' : 'text-xs text-amber-100/75'}`}
                 >
-                  Sends ETH from the Vaultex vault directly to this cause&apos;s treasury wallet. Logged as a disbursement.
+                  Sends ETH from the Vaultex vault to{' '}
+                  <span className="font-semibold text-[var(--text-high-3)]">{cause.beneficiary_name ?? 'the assigned beneficiary'}</span>.
+                  Cause and recipient are fixed for this action.
                 </p>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  <div className={`rounded-xl border px-3 py-2.5 ${isLightMode ? 'border-amber-300/50 bg-amber-50/60' : 'border-white/10 bg-black/20'}`}>
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted-2)]">Cause</p>
+                    <p className="mt-0.5 text-sm font-semibold text-[var(--text-high-3)]">{cause.title}</p>
+                  </div>
+                  <div className={`rounded-xl border px-3 py-2.5 ${isLightMode ? 'border-amber-300/50 bg-amber-50/60' : 'border-white/10 bg-black/20'}`}>
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted-2)]">Recipient</p>
+                    <p className="mt-0.5 text-sm font-semibold text-[var(--text-high-3)]">{cause.beneficiary_name ?? '—'}</p>
+                  </div>
+                </div>
                 <div className="mt-3.5 space-y-2.5">
                   <input
                     type="text"

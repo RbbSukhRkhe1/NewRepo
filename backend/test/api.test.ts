@@ -36,6 +36,43 @@ test('admin login and donor blocked from POST /causes', async () => {
     .send({ email: 'admin@vaultex.local', password: 'demo123' })
     .expect(200);
   assert.equal(login.body.user.role, 'admin');
+  assert.equal(login.body.user.anvilIndex, 0);
+
+  const users = await agent.get('/api/users').expect(200);
+  const beneficiary = users.body.find((u: { role: string }) => u.role === 'beneficiary');
+  assert.ok(beneficiary?.id);
+
+  const causeDetailFields = {
+    aboutBody: 'Detailed about text for API test cause.',
+    fundsCover: [
+      { label: 'Program A', weight: 60 },
+      { label: 'Program B', weight: 40 },
+    ],
+    milestones: ['First milestone', 'Second milestone'],
+    verificationPoints: ['Ledger tracked', 'Beneficiary verified'],
+    categoryTag: 'Test',
+    locationTag: 'Test Region',
+    campaignEndDate: '2026-12-31',
+  };
+
+  const created = await agent
+    .post('/api/causes')
+    .send({
+      title: 'API Test Cause',
+      description: 'Subtitle',
+      goalEth: 10,
+      beneficiaryUserId: beneficiary.id,
+      impactStoryTitle: 'Impact headline',
+      impactStoryBody: 'Impact body text.',
+      ...causeDetailFields,
+    })
+    .expect(201);
+  assert.ok(created.body.id);
+
+  const detail = await agent.get(`/api/causes/${created.body.id}`).expect(200);
+  assert.equal(detail.body.about_body, causeDetailFields.aboutBody);
+  assert.equal(detail.body.funds_cover.length, 2);
+  assert.equal(detail.body.donor_count, 0);
 
   const donorAgent = request.agent(app);
   await donorAgent
@@ -45,7 +82,14 @@ test('admin login and donor blocked from POST /causes', async () => {
 
   await donorAgent
     .post('/api/causes')
-    .send({ title: 'Nope', description: 'x', goalEth: 1 })
+    .send({
+      title: 'Nope',
+      description: 'x',
+      goalEth: 1,
+      beneficiaryUserId: beneficiary.id,
+      impactStoryTitle: 'x',
+      impactStoryBody: 'x',
+    })
     .expect(403);
 });
 

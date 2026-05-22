@@ -35,3 +35,12 @@ test('sortLedgerEntries by time desc', () => {
   const sorted = sortLedgerEntries(rows, 'time', 'desc');
   assert.equal(sorted[0].id, 2);
 });
+
+test('sortLedgerEntries by donor asc', () => {
+  const rows = [
+    base({ id: 1, recorded_at: '2026-01-01', cause_name: 'A', from_display_name: 'Zara' }),
+    base({ id: 2, recorded_at: '2026-01-02', cause_name: 'B', from_display_name: 'Adam' }),
+  ];
+  const sorted = sortLedgerEntries(rows, 'donor', 'asc');
+  assert.equal(sorted[0].id, 2);
+});

@@ -196,6 +196,36 @@ if (!causesColumns.some((c) => c.name === 'anvil_index')) {
   );
   console.log('[db] added causes.anvil_index');
 }
+const causesColumnsAfter = db.prepare(`PRAGMA table_info(causes)`).all() as { name: string }[];
+if (!causesColumnsAfter.some((c) => c.name === 'beneficiary_user_id')) {
+  db.exec(`ALTER TABLE causes ADD COLUMN beneficiary_user_id INTEGER REFERENCES users(id)`);
+  console.log('[db] added causes.beneficiary_user_id');
+}
+if (!causesColumnsAfter.some((c) => c.name === 'impact_story_title')) {
+  db.exec(`ALTER TABLE causes ADD COLUMN impact_story_title TEXT`);
+  console.log('[db] added causes.impact_story_title');
+}
+if (!causesColumnsAfter.some((c) => c.name === 'impact_story_body')) {
+  db.exec(`ALTER TABLE causes ADD COLUMN impact_story_body TEXT`);
+  console.log('[db] added causes.impact_story_body');
+}
+const detailCols: [string, string][] = [
+  ['about_body', 'TEXT'],
+  ['funds_cover', 'TEXT'],
+  ['milestones', 'TEXT'],
+  ['verification_points', 'TEXT'],
+  ['category_tag', 'TEXT'],
+  ['location_tag', 'TEXT'],
+  ['campaign_end_date', 'TEXT'],
+];
+const causesColumnsDetail = db.prepare(`PRAGMA table_info(causes)`).all() as { name: string }[];
+for (const [name, ddl] of detailCols) {
+  if (!causesColumnsDetail.some((c) => c.name === name)) {
+    db.exec(`ALTER TABLE causes ADD COLUMN ${name} ${ddl}`);
+    console.log('[db] added causes.' + name);
+  }
+}
+db.exec(`CREATE INDEX IF NOT EXISTS idx_causes_beneficiary ON causes(beneficiary_user_id)`);
 
 const ledgerColumns = db.prepare(`PRAGMA table_info(ledger_entries)`).all() as { name: string }[];
 if (!ledgerColumns.some((c) => c.name === 'memo')) {

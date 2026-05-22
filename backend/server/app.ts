@@ -15,7 +15,16 @@ import {
 import { getRpcHttpUrl, chainId, network } from './config.js';
 import { maskAddr } from './resolve.js';
 import { publishEvent } from './lib/redis.js';
-import { ensureCauseWallets, nextCauseAnvilIndex } from './causeWallets.js';
+import {
+  assertBeneficiaryUserId,
+  donorCountByCauseId,
+  enrichCauseRow,
+  parseCauseDetailInput,
+  resolveBeneficiaryForCause,
+  serializeCauseDetailFields,
+  type CauseDbRow,
+} from './causeHelpers.js';
+import { ensureUploadDir, saveCauseImageDataUrl, CAUSE_UPLOAD_DIR } from './causeImageStorage.js';
 import {
   buildNarrative,
   causeUtilizationByCauseId,
@@ -72,6 +81,46 @@ function parseOptionalImageUrl(
     return { ok: false, error: 'imageUrl must use http or https, or a path starting with /' };
   }
   return { ok: true, value: u.href };
+}
+
+function resolveCauseImageInput(
+  imageUrl: unknown,
+  imageDataUrl: unknown,
+): { ok: true; value: string | null } | { ok: false; error: string } {
+  const dataRaw = imageDataUrl != null ? String(imageDataUrl).trim() : '';
+  if (dataRaw.startsWith('data:image/')) {
+    const saved = saveCauseImageDataUrl(dataRaw);
+    if (!saved.ok) return saved;
+    return { ok: true, value: saved.url };
+  }
+  return parseOptionalImageUrl(imageUrl);
+}
+
+function attachCauseUtilization(
+  row: CauseDbRow,
+  disbursedMap: Map<number, number>,
+  utilMap: ReturnType<typeof causeUtilizationByCauseId>,
+  donorMap: Map<number, number>,
+) {
+  const base = attachDisbursedEth(row, disbursedMap);
+  const util = utilMap.get(row.id);
+  return enrichCauseRow(
+    {
+      ...base,
+      donated_eth: util?.donatedEth ?? Number(row.raised_eth) ?? 0,
+      disbursed_eth: util?.disbursedEth ?? base.disbursed_eth ?? 0,
+      remaining_eth:
+        util?.remainingEth ??
+        Math.max(0, (Number(row.raised_eth) ?? 0) - (base.disbursed_eth ?? 0)),
+      utilization_pct:
+        util?.utilizationPct ??
+        (Number(row.raised_eth) > 0
+          ? Math.min(100, ((base.disbursed_eth ?? 0) / Number(row.raised_eth)) * 100)
+          : 0),
+      funds_matched: util != null && util.disbursedEth > 0,
+    },
+    donorMap,
+  );
 }
 
 type UserRow = {
@@ -186,7 +235,7 @@ export function createApp() {
       credentials: true,
     })
   );
-  app.use(express.json({ limit: '512kb' }));
+  app.use(express.json({ limit: '8mb' }));
   app.use(
     cookieSession({
       name: 'session',
@@ -405,36 +454,12 @@ export function createApp() {
   api.get('/causes/:id', (req, res) => {
     const row = db
       .prepare(`SELECT * FROM causes WHERE id = ? AND active = 1`)
-      .get(req.params.id) as
-      | {
-          id: number;
-          title: string;
-          description: string;
-          goal_eth: number;
-          raised_eth: number;
-          image_url: string | null;
-          created_at: string;
-        }
-      | undefined;
+      .get(req.params.id) as CauseDbRow | undefined;
     if (!row) return res.status(404).json({ error: 'Cause not found' });
     const disbursedMap = disbursedEthByCauseId();
     const utilMap = causeUtilizationByCauseId();
-    const base = attachDisbursedEth(row, disbursedMap);
-    const util = utilMap.get(row.id);
-    res.json({
-      ...base,
-      donated_eth: util?.donatedEth ?? Number(row.raised_eth) ?? 0,
-      disbursed_eth: util?.disbursedEth ?? base.disbursed_eth ?? 0,
-      remaining_eth:
-        util?.remainingEth ??
-        Math.max(0, (Number(row.raised_eth) ?? 0) - (base.disbursed_eth ?? 0)),
-      utilization_pct:
-        util?.utilizationPct ??
-        (Number(row.raised_eth) > 0
-          ? Math.min(100, ((base.disbursed_eth ?? 0) / Number(row.raised_eth)) * 100)
-          : 0),
-      funds_matched: util != null && util.disbursedEth > 0,
-    });
+    const donorMap = donorCountByCauseId();
+    res.json(attachCauseUtilization(row, disbursedMap, utilMap, donorMap));
   });
 
   api.get('/causes', (req, res) => {
@@ -442,31 +467,11 @@ export function createApp() {
     const status = statusRaw === 'completed' || statusRaw === 'active' ? statusRaw : '';
     const rows = db
       .prepare(`SELECT * FROM causes WHERE active = 1 ORDER BY id DESC`)
-      .all() as {
-      id: number;
-      title: string;
-      description: string;
-      goal_eth: number;
-      raised_eth: number;
-      image_url: string | null;
-      created_at: string;
-    }[];
+      .all() as CauseDbRow[];
     const disbursedMap = disbursedEthByCauseId();
     const utilMap = causeUtilizationByCauseId();
-    const rowsWithUtil = rows.map((row) => {
-      const base = attachDisbursedEth(row, disbursedMap);
-      const util = utilMap.get(row.id);
-      return {
-        ...base,
-        donated_eth: util?.donatedEth ?? Number(row.raised_eth) ?? 0,
-        disbursed_eth: util?.disbursedEth ?? base.disbursed_eth ?? 0,
-        remaining_eth: util?.remainingEth ?? Math.max(0, (Number(row.raised_eth) ?? 0) - (base.disbursed_eth ?? 0)),
-        utilization_pct:
-          util?.utilizationPct ??
-          (Number(row.raised_eth) > 0 ? Math.min(100, ((base.disbursed_eth ?? 0) / Number(row.raised_eth)) * 100) : 0),
-        funds_matched: util != null && util.disbursedEth > 0,
-      };
-    });
+    const donorMap = donorCountByCauseId();
+    const rowsWithUtil = rows.map((row) => attachCauseUtilization(row, disbursedMap, utilMap, donorMap));
     const filtered =
       status === 'completed'
         ? rowsWithUtil.filter((row) => row.goal_eth > 0 && row.raised_eth >= row.goal_eth)
@@ -477,79 +482,187 @@ export function createApp() {
   });
 
   api.post('/causes', requireAuth, requireAdmin, (req, res) => {
-    const { title, description, goalEth, imageUrl } = req.body as {
+    const {
+      title,
+      description,
+      goalEth,
+      imageUrl,
+      imageDataUrl,
+      beneficiaryUserId,
+      impactStoryTitle,
+      impactStoryBody,
+      aboutBody,
+      fundsCover,
+      milestones,
+      verificationPoints,
+      categoryTag,
+      locationTag,
+      campaignEndDate,
+    } = req.body as {
       title?: string;
       description?: string;
       goalEth?: number;
       imageUrl?: string | null;
+      imageDataUrl?: string | null;
+      beneficiaryUserId?: number;
+      impactStoryTitle?: string;
+      impactStoryBody?: string;
+      aboutBody?: string;
+      fundsCover?: unknown;
+      milestones?: unknown;
+      verificationPoints?: unknown;
+      categoryTag?: string;
+      locationTag?: string;
+      campaignEndDate?: string | null;
     };
     if (!title?.trim() || !description?.trim() || goalEth == null || goalEth <= 0) {
       return res.status(400).json({ error: 'title, description, goalEth (>0) required' });
     }
-    const img = parseOptionalImageUrl(imageUrl);
+    if (!impactStoryTitle?.trim() || !impactStoryBody?.trim()) {
+      return res.status(400).json({ error: 'impactStoryTitle and impactStoryBody required' });
+    }
+    const beneficiary = assertBeneficiaryUserId(beneficiaryUserId);
+    if (!beneficiary.ok) return res.status(400).json({ error: beneficiary.error });
+    const detail = parseCauseDetailInput({
+      aboutBody,
+      fundsCover,
+      milestones,
+      verificationPoints,
+      categoryTag,
+      locationTag,
+      campaignEndDate,
+    });
+    if (!detail.ok) return res.status(400).json({ error: detail.error });
+    const img = resolveCauseImageInput(imageUrl, imageDataUrl);
     if (!img.ok) return res.status(400).json({ error: img.error });
+    const serialized = serializeCauseDetailFields(detail.value);
     const r = db
       .prepare(
-        `INSERT INTO causes (title, description, goal_eth, raised_eth, image_url, active, anvil_index) VALUES (?,?,?,?,?,1,?)`
+        `INSERT INTO causes (
+          title, description, goal_eth, raised_eth, image_url, active,
+          beneficiary_user_id, impact_story_title, impact_story_body,
+          about_body, funds_cover, milestones, verification_points,
+          category_tag, location_tag, campaign_end_date
+        ) VALUES (?,?,?,?,?,1,?,?,?,?,?,?,?,?,?,?)`,
       )
-      .run(title.trim(), description.trim(), goalEth, 0, img.value, nextCauseAnvilIndex());
+      .run(
+        title.trim(),
+        description.trim(),
+        goalEth,
+        0,
+        img.value,
+        beneficiary.value,
+        impactStoryTitle.trim(),
+        impactStoryBody.trim(),
+        serialized.about_body,
+        serialized.funds_cover,
+        serialized.milestones,
+        serialized.verification_points,
+        serialized.category_tag,
+        serialized.location_tag,
+        serialized.campaign_end_date,
+      );
     res.status(201).json({ id: Number(r.lastInsertRowid) });
   });
 
   api.get('/admin/causes', requireAuth, requireAdmin, (_req, res) => {
-    const rows = db
-      .prepare(`SELECT * FROM causes ORDER BY id DESC`)
-      .all() as {
-      id: number;
-      title: string;
-      description: string;
-      goal_eth: number;
-      raised_eth: number;
-      image_url: string | null;
-      active: number;
-      created_at: string;
-    }[];
+    const rows = db.prepare(`SELECT * FROM causes ORDER BY id DESC`).all() as CauseDbRow[];
     const disbursedMap = disbursedEthByCauseId();
-    res.json(rows.map((row) => attachDisbursedEth(row, disbursedMap)));
+    const donorMap = donorCountByCauseId();
+    res.json(rows.map((row) => enrichCauseRow({ ...attachDisbursedEth(row, disbursedMap) }, donorMap)));
   });
 
   api.get('/admin/causes/:id', requireAuth, requireAdmin, (req, res) => {
-    const row = db.prepare(`SELECT * FROM causes WHERE id = ?`).get(req.params.id) as
-      | {
-          id: number;
-          title: string;
-          description: string;
-          goal_eth: number;
-          raised_eth: number;
-          image_url: string | null;
-          active: number;
-          created_at: string;
-        }
-      | undefined;
+    const row = db.prepare(`SELECT * FROM causes WHERE id = ?`).get(req.params.id) as CauseDbRow | undefined;
     if (!row) return res.status(404).json({ error: 'Cause not found' });
     const disbursedMap = disbursedEthByCauseId();
-    res.json(attachDisbursedEth(row, disbursedMap));
+    const donorMap = donorCountByCauseId();
+    res.json(enrichCauseRow({ ...attachDisbursedEth(row, disbursedMap) }, donorMap));
   });
 
   api.put('/causes/:id', requireAuth, requireAdmin, (req, res) => {
-    const { title, description, goalEth, imageUrl } = req.body as {
+    const {
+      title,
+      description,
+      goalEth,
+      imageUrl,
+      imageDataUrl,
+      beneficiaryUserId,
+      impactStoryTitle,
+      impactStoryBody,
+      aboutBody,
+      fundsCover,
+      milestones,
+      verificationPoints,
+      categoryTag,
+      locationTag,
+      campaignEndDate,
+    } = req.body as {
       title?: string;
       description?: string;
       goalEth?: number;
       imageUrl?: string | null;
+      imageDataUrl?: string | null;
+      beneficiaryUserId?: number;
+      impactStoryTitle?: string;
+      impactStoryBody?: string;
+      aboutBody?: string;
+      fundsCover?: unknown;
+      milestones?: unknown;
+      verificationPoints?: unknown;
+      categoryTag?: string;
+      locationTag?: string;
+      campaignEndDate?: string | null;
     };
     if (!title?.trim() || !description?.trim() || goalEth == null || goalEth <= 0) {
       return res.status(400).json({ error: 'title, description, goalEth (>0) required' });
     }
-    const img = parseOptionalImageUrl(imageUrl);
+    if (!impactStoryTitle?.trim() || !impactStoryBody?.trim()) {
+      return res.status(400).json({ error: 'impactStoryTitle and impactStoryBody required' });
+    }
+    const beneficiary = assertBeneficiaryUserId(beneficiaryUserId);
+    if (!beneficiary.ok) return res.status(400).json({ error: beneficiary.error });
+    const detail = parseCauseDetailInput({
+      aboutBody,
+      fundsCover,
+      milestones,
+      verificationPoints,
+      categoryTag,
+      locationTag,
+      campaignEndDate,
+    });
+    if (!detail.ok) return res.status(400).json({ error: detail.error });
+    const img = resolveCauseImageInput(imageUrl, imageDataUrl);
     if (!img.ok) return res.status(400).json({ error: img.error });
     const existing = db.prepare(`SELECT id FROM causes WHERE id = ?`).get(req.params.id) as
       | { id: number }
       | undefined;
     if (!existing) return res.status(404).json({ error: 'Cause not found' });
+    const serialized = serializeCauseDetailFields(detail.value);
     db.prepare(
-      `UPDATE causes SET title = ?, description = ?, goal_eth = ?, image_url = ? WHERE id = ?`
-    ).run(title.trim(), description.trim(), goalEth, img.value, req.params.id);
+      `UPDATE causes SET
+        title = ?, description = ?, goal_eth = ?, image_url = ?,
+        beneficiary_user_id = ?, impact_story_title = ?, impact_story_body = ?,
+        about_body = ?, funds_cover = ?, milestones = ?, verification_points = ?,
+        category_tag = ?, location_tag = ?, campaign_end_date = ?
+       WHERE id = ?`,
+    ).run(
+      title.trim(),
+      description.trim(),
+      goalEth,
+      img.value,
+      beneficiary.value,
+      impactStoryTitle.trim(),
+      impactStoryBody.trim(),
+      serialized.about_body,
+      serialized.funds_cover,
+      serialized.milestones,
+      serialized.verification_points,
+      serialized.category_tag,
+      serialized.location_tag,
+      serialized.campaign_end_date,
+      req.params.id,
+    );
     res.json({ id: Number(req.params.id) });
   });
 
@@ -673,19 +786,9 @@ export function createApp() {
   });
 
   api.post('/causes/:id/disburse', requireAuth, requireAdmin, async (req, res) => {
-    const cause = db
-      .prepare(`SELECT id, title, anvil_index FROM causes WHERE id = ? AND active = 1`)
-      .get(req.params.id) as { id: number; title: string; anvil_index: number | null } | undefined;
-    if (!cause) return res.status(404).json({ error: 'Cause not found' });
-    if (cause.anvil_index == null) {
-      ensureCauseWallets();
-      const refreshed = db
-        .prepare(`SELECT id, title, anvil_index FROM causes WHERE id = ?`)
-        .get(req.params.id) as { id: number; title: string; anvil_index: number | null };
-      if (refreshed.anvil_index == null) {
-        return res.status(500).json({ error: 'Cause wallet not configured' });
-      }
-      cause.anvil_index = refreshed.anvil_index;
+    const resolved = resolveBeneficiaryForCause(Number(req.params.id));
+    if (!resolved) {
+      return res.status(404).json({ error: 'Cause not found or beneficiary not configured' });
     }
 
     const { amountEth, message } = req.body as { amountEth?: string; message?: string };
@@ -704,7 +807,7 @@ export function createApp() {
     try {
       const provider = rpcProvider();
       const signer = connectWallet(SUPER_RICH_INDEX, provider);
-      const to = anvilAddress(cause.anvil_index);
+      const to = anvilAddress(resolved.beneficiary_anvil_index);
       const tx = await signer.sendTransaction({ to, value });
       const receipt = await tx.wait();
       const valueEthStr = ethers.formatEther(value);
@@ -712,9 +815,9 @@ export function createApp() {
       const narrative = buildNarrative({
         kind: 'disbursement_out',
         fromDisplay: 'Vaultex',
-        toDisplay: cause.title,
+        toDisplay: resolved.beneficiary_name,
         amountEth: valueEthStr,
-        causeName: cause.title,
+        causeName: resolved.title,
         utilization: null,
         memo: msgParsed.value,
       });
@@ -747,10 +850,10 @@ export function createApp() {
         to,
         valueEthStr,
         'disbursement_out',
-        cause.id,
+        resolved.id,
         'Vaultex',
-        cause.title,
-        cause.title,
+        resolved.beneficiary_name,
+        resolved.title,
         msgParsed.value,
         reference,
         narrative,
@@ -765,135 +868,24 @@ export function createApp() {
         computeAndStoreDisbursementAggregation({
           ledgerEntryId: leRow.id,
           txHash: tx.hash,
-          causeId: cause.id,
+          causeId: resolved.id,
           amountEth: valueEthStr,
         });
       }
       void publishEvent('disbursement.created', {
         txHash: tx.hash,
         amountEth: valueEthStr,
-        causeId: cause.id,
-        causeName: cause.title,
+        causeId: resolved.id,
+        causeName: resolved.title,
+        beneficiaryUserId: resolved.beneficiary_user_id,
+        beneficiaryName: resolved.beneficiary_name,
       });
-      res.json({ txHash: tx.hash, amountEth: valueEthStr, causeId: cause.id });
-    } catch (e: unknown) {
-      console.error(e);
-      res.status(500).json({ error: e instanceof Error ? e.message : 'Cause disbursement failed' });
-    }
-  });
-
-  api.post('/disburse', requireAuth, requireAdmin, async (req, res) => {
-    const { beneficiaryUserId, amountEth, causeId, causeName, message } = req.body as {
-      beneficiaryUserId?: number;
-      amountEth?: string;
-      causeId?: number;
-      causeName?: string;
-      message?: string;
-    };
-    if (beneficiaryUserId == null || !amountEth) {
-      return res.status(400).json({ error: 'beneficiaryUserId and amountEth required' });
-    }
-    const msgParsed = parseDisburseMessage(message);
-    if (!msgParsed.ok) return res.status(400).json({ error: msgParsed.error });
-    const beneficiary = db
-      .prepare(`SELECT * FROM users WHERE id = ? AND role = 'beneficiary'`)
-      .get(beneficiaryUserId) as UserRow | undefined;
-    if (!beneficiary?.anvil_index) return res.status(404).json({ error: 'Beneficiary user not found' });
-
-    let causeRow: { id: number; title: string } | undefined;
-    if (causeId != null) {
-      causeRow = db
-        .prepare(`SELECT id, title FROM causes WHERE id = ? AND active = 1`)
-        .get(causeId) as { id: number; title: string } | undefined;
-      if (!causeRow) return res.status(404).json({ error: 'Cause not found' });
-    }
-
-    let value: bigint;
-    try {
-      value = ethers.parseEther(String(amountEth));
-    } catch {
-      return res.status(400).json({ error: 'Invalid amount' });
-    }
-    try {
-      const provider = rpcProvider();
-      const signer = connectWallet(SUPER_RICH_INDEX, provider);
-      const to = anvilAddress(beneficiary.anvil_index);
-      const tx = await signer.sendTransaction({ to, value });
-      const receipt = await tx.wait();
-      const valueEthStr = ethers.formatEther(value);
-      const cn = causeRow?.title ?? (causeName?.trim() || 'General allocation');
-      const cid = causeRow?.id ?? null;
-      const reference = ledgerReference('disbursement_out', tx.hash);
-      const narrative = buildNarrative({
-        kind: 'disbursement_out',
-        fromDisplay: 'Vaultex',
-        toDisplay: beneficiary.name,
-        amountEth: valueEthStr,
-        causeName: cn,
-        utilization: null,
-        memo: msgParsed.value,
-      });
-      db.prepare(
-        `INSERT INTO ledger_entries (
-          tx_hash, block_number, from_addr, to_addr, value_eth, kind,
-          cause_id, from_display_name, to_display_name, cause_name, memo,
-          reference, narrative, tags, linked_tx_ids, aggregated_from
-        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-        ON CONFLICT(tx_hash) DO UPDATE SET
-          block_number = excluded.block_number,
-          from_addr = excluded.from_addr,
-          to_addr = excluded.to_addr,
-          value_eth = excluded.value_eth,
-          kind = excluded.kind,
-          cause_id = excluded.cause_id,
-          from_display_name = excluded.from_display_name,
-          to_display_name = excluded.to_display_name,
-          cause_name = excluded.cause_name,
-          memo = excluded.memo,
-          reference = excluded.reference,
-          narrative = excluded.narrative,
-          tags = excluded.tags,
-          linked_tx_ids = excluded.linked_tx_ids,
-          aggregated_from = excluded.aggregated_from`
-      ).run(
-        tx.hash,
-        receipt?.blockNumber ?? null,
-        signer.address,
-        to,
-        valueEthStr,
-        'disbursement_out',
-        cid,
-        'Vaultex',
-        beneficiary.name,
-        cn,
-        msgParsed.value,
-        reference,
-        narrative,
-        JSON.stringify(['disbursement']),
-        null,
-        null
-      );
-      if (cid != null) {
-        const leRow = db.prepare(`SELECT id FROM ledger_entries WHERE tx_hash = ?`).get(tx.hash) as
-          | { id: number }
-          | undefined;
-        if (leRow?.id != null) {
-          computeAndStoreDisbursementAggregation({
-            ledgerEntryId: leRow.id,
-            txHash: tx.hash,
-            causeId: cid,
-            amountEth: valueEthStr,
-          });
-        }
-      }
-      void publishEvent('disbursement.created', {
+      res.json({
         txHash: tx.hash,
         amountEth: valueEthStr,
-        beneficiaryUserId: beneficiary.id,
-        causeId: cid,
-        causeName: cn,
+        causeId: resolved.id,
+        beneficiaryName: resolved.beneficiary_name,
       });
-      res.json({ txHash: tx.hash, amountEth: valueEthStr });
     } catch (e: unknown) {
       console.error(e);
       res.status(500).json({ error: e instanceof Error ? e.message : 'Disbursement failed' });
@@ -1235,11 +1227,11 @@ export function createApp() {
   api.get('/me/history', requireAuth, async (req, res) => {
     const u = getUser(req)!;
     const isVaultView = u.role === 'admin';
-    if (!isVaultView && u.anvil_index == null) {
+    if (u.anvil_index == null) {
       return res.json({ entries: [], summary: null });
     }
 
-    const walletIndex = isVaultView ? SUPER_RICH_INDEX : u.anvil_index!;
+    const walletIndex = u.anvil_index;
     const addr = anvilAddress(walletIndex);
     const addrLower = addr.toLowerCase();
     const vl = vaultLower();
@@ -1330,6 +1322,9 @@ export function createApp() {
     const wei = ethers.parseEther(eth);
     res.json({ wei: wei.toString(), eth, chainLive: true });
   });
+
+  ensureUploadDir();
+  api.use('/uploads', express.static(CAUSE_UPLOAD_DIR));
 
   app.use('/api', api);
   return app;

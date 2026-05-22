@@ -114,11 +114,35 @@ async function main() {
   else fail('UC1: Donor blocked from POST /causes', `status ${donorCreate.status}`);
 
   // --- UC2: admin CRUD ---
+  const usersRes = await req(adminJar, 'GET', '/users');
+  const beneficiary = usersRes.data?.find((u) => u.role === 'beneficiary');
+  if (!beneficiary?.id) {
+    fail('UC2: Beneficiary available for cause create', JSON.stringify(usersRes.data));
+    process.exit(1);
+  }
+
+  const causeDetailFields = {
+    aboutBody: 'Detailed about text for integration test cause.',
+    fundsCover: [
+      { label: 'Program A', weight: 50 },
+      { label: 'Program B', weight: 50 },
+    ],
+    milestones: ['First milestone', 'Second milestone'],
+    verificationPoints: ['Ledger tracked', 'Beneficiary verified'],
+    categoryTag: 'Test',
+    locationTag: 'Test Region',
+    campaignEndDate: '2026-12-31',
+  };
+
   const created = await req(adminJar, 'POST', '/causes', {
     title: `Test Cause ${Date.now()}`,
-    description: 'Integration test cause',
+    description: 'Integration test cause subtitle',
     goalEth: 12,
+    beneficiaryUserId: beneficiary.id,
+    impactStoryTitle: 'Test impact headline',
+    impactStoryBody: 'Integration test impact story body.',
     imageUrl: '/samples/cause-education.svg',
+    ...causeDetailFields,
   });
   if (created.status === 201 && created.data?.id) {
     pass('UC2: Admin create cause', `id=${created.data.id}`);
@@ -137,7 +161,11 @@ async function main() {
     title: `Updated Test ${causeId}`,
     description: 'Updated description',
     goalEth: 15,
+    beneficiaryUserId: beneficiary.id,
+    impactStoryTitle: 'Updated impact title',
+    impactStoryBody: 'Updated impact story body.',
     imageUrl: null,
+    ...causeDetailFields,
   });
   if (updated.status === 200) pass('UC2: PUT /causes/:id');
   else fail('UC2: PUT /causes/:id', JSON.stringify(updated.data));
@@ -210,10 +238,16 @@ async function main() {
 
     const ledger = await req(jar(), 'GET', '/ledger');
     const lastDisb = [...(ledger.data ?? [])].reverse().find((e) => e.kind === 'disbursement_out');
-    if (lastDisb && lastDisb.causeName && lastDisb.toDisplayName === lastDisb.causeName) {
-      pass('UC3: Ledger cause disbursement', `${lastDisb.causeName} ← vault`);
+    const warBeneficiary = war?.beneficiary_name ?? 'Regional Medical Center';
+    if (
+      lastDisb &&
+      lastDisb.causeName &&
+      lastDisb.toDisplayName === warBeneficiary &&
+      lastDisb.toDisplayName !== lastDisb.causeName
+    ) {
+      pass('UC3: Ledger disbursement receiver is beneficiary', `${lastDisb.toDisplayName} · ${lastDisb.causeName}`);
     } else {
-      fail('UC3: Ledger cause disbursement', JSON.stringify(lastDisb));
+      fail('UC3: Ledger disbursement receiver is beneficiary', JSON.stringify(lastDisb));
     }
 
     if (lastDisb?.memo === 'Frontline aid') {

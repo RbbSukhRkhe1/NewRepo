@@ -23,9 +23,8 @@ if (network === 'sepolia') {
 const ANVIL_MNEMONIC =
   'test test test test test test test test test test test junk';
 
+/** Vaultex treasury vault — also the admin account wallet (`users.anvil_index = 0`). */
 export const SUPER_RICH_INDEX = 0;
-/** Single Vaultex admin wallet */
-export const VAULTEX_ADMIN_INDEX = 1;
 /** Seeded donor wallets: Haha, Sukhan, Tasin */
 export const SEEDED_DONOR_INDICES = [2, 3, 4] as const;
 export const BENEFICIARY_INDICES = [7, 8, 9] as const;

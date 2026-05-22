@@ -4,11 +4,15 @@ import {
   amountDisplay,
   donorLabel,
   filterByCauseName,
+  filterByDonorName,
+  filterByReceiverName,
   formatLedgerTime,
   receiverLabel,
   shortAddr,
   sortLedgerEntries,
   uniqueCauseNames,
+  uniqueDonorNames,
+  uniqueReceiverNames,
   type LedgerSortDir,
   type LedgerSortKey,
 } from '../lib/ledgerGrid';
@@ -44,17 +48,23 @@ export function LedgerTransactionsGrid({
   onRowClick,
 }: Props) {
   const [causeFilter, setCauseFilter] = useState('__all__');
+  const [donorFilter, setDonorFilter] = useState('__all__');
+  const [receiverFilter, setReceiverFilter] = useState('__all__');
   const [sortBy, setSortBy] = useState<LedgerSortKey>('time');
   const [sortDir, setSortDir] = useState<LedgerSortDir>('desc');
   const [selected, setSelected] = useState<Set<number>>(new Set());
 
   const causeOptions = useMemo(() => uniqueCauseNames(entries), [entries]);
+  const donorOptions = useMemo(() => uniqueDonorNames(entries), [entries]);
+  const receiverOptions = useMemo(() => uniqueReceiverNames(entries), [entries]);
 
   const gridRows = useMemo(() => {
     const byTab = tab === 'all' ? entries : entries.filter((e) => e.kind === tab);
     const byCause = filterByCauseName(byTab, causeFilter);
-    return sortLedgerEntries(byCause, sortBy, sortDir);
-  }, [entries, tab, causeFilter, sortBy, sortDir]);
+    const byDonor = filterByDonorName(byCause, donorFilter);
+    const byReceiver = filterByReceiverName(byDonor, receiverFilter);
+    return sortLedgerEntries(byReceiver, sortBy, sortDir);
+  }, [entries, tab, causeFilter, donorFilter, receiverFilter, sortBy, sortDir]);
 
   const allVisibleSelected =
     gridRows.length > 0 && gridRows.every((e) => selected.has(e.id));
@@ -133,7 +143,7 @@ export function LedgerTransactionsGrid({
         </div>
       </div>
 
-      <div className="grid gap-3 border-b border-[var(--glass-border)] px-4 py-3 sm:grid-cols-2 lg:grid-cols-4 sm:px-6">
+      <div className="grid gap-3 border-b border-[var(--glass-border)] px-4 py-3 sm:grid-cols-2 lg:grid-cols-6 sm:px-6">
         <input
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
@@ -153,7 +163,33 @@ export function LedgerTransactionsGrid({
             </option>
           ))}
         </select>
-        <div className="flex gap-2">
+        <select
+          value={donorFilter}
+          onChange={(e) => setDonorFilter(e.target.value)}
+          className="vtx-input w-full px-4 py-2.5 text-sm"
+          aria-label="Filter by donor"
+        >
+          <option value="__all__">All donors</option>
+          {donorOptions.map((d) => (
+            <option key={d} value={d}>
+              {d}
+            </option>
+          ))}
+        </select>
+        <select
+          value={receiverFilter}
+          onChange={(e) => setReceiverFilter(e.target.value)}
+          className="vtx-input w-full px-4 py-2.5 text-sm"
+          aria-label="Filter by receiver"
+        >
+          <option value="__all__">All receivers</option>
+          {receiverOptions.map((r) => (
+            <option key={r} value={r}>
+              {r}
+            </option>
+          ))}
+        </select>
+        <div className="flex gap-2 lg:col-span-2">
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as LedgerSortKey)}
@@ -162,6 +198,8 @@ export function LedgerTransactionsGrid({
           >
             <option value="time">Sort: Time</option>
             <option value="cause">Sort: Cause</option>
+            <option value="donor">Sort: Donor</option>
+            <option value="receiver">Sort: Receiver</option>
           </select>
           <SecondaryButton
             type="button"

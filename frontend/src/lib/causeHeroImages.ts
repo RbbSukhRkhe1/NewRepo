@@ -13,10 +13,10 @@ export const CAUSE_HERO_BY_TITLE: Record<string, string> = {
 /** @deprecated alias for seed / docs */
 export const CAUSE_HERO_PUBLIC_PATH = CAUSE_HERO_BY_TITLE;
 
-/** Prefer Photos folder heroes; use API URL only for custom causes. */
+/** Prefer API-uploaded or seeded image_url; legacy title map is fallback only. */
 export function resolveCauseHeroUrl(title: string, imageUrl?: string | null): string | null {
-  const photosHero = CAUSE_HERO_BY_TITLE[title];
-  if (photosHero) return photosHero;
   const url = imageUrl?.trim();
-  return url || null;
+  if (url) return url;
+  const photosHero = CAUSE_HERO_BY_TITLE[title];
+  return photosHero ?? null;
 }

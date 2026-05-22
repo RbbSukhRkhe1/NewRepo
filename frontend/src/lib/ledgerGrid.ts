@@ -1,6 +1,6 @@
 import type { LedgerV2Entry } from './ledgerV2';
 
-export type LedgerSortKey = 'time' | 'cause';
+export type LedgerSortKey = 'time' | 'cause' | 'donor' | 'receiver';
 export type LedgerSortDir = 'asc' | 'desc';
 
 export function donorLabel(e: LedgerV2Entry): string {
@@ -46,6 +46,14 @@ export function sortLedgerEntries(
       const c = ca.localeCompare(cb);
       if (c !== 0) return c * dir;
     }
+    if (sortBy === 'donor') {
+      const c = donorLabel(a).localeCompare(donorLabel(b), undefined, { sensitivity: 'base' });
+      if (c !== 0) return c * dir;
+    }
+    if (sortBy === 'receiver') {
+      const c = receiverLabel(a).localeCompare(receiverLabel(b), undefined, { sensitivity: 'base' });
+      if (c !== 0) return c * dir;
+    }
     const ta = new Date(a.recorded_at.includes('T') ? a.recorded_at : `${a.recorded_at}Z`).getTime();
     const tb = new Date(b.recorded_at.includes('T') ? b.recorded_at : `${b.recorded_at}Z`).getTime();
     return (ta - tb) * dir;
@@ -58,10 +66,40 @@ export function filterByCauseName(rows: LedgerV2Entry[], causeName: string): Led
   return rows.filter((e) => (e.cause_name || '').trim() === c);
 }
 
+export function filterByDonorName(rows: LedgerV2Entry[], donorName: string): LedgerV2Entry[] {
+  const d = donorName.trim();
+  if (!d || d === '__all__') return rows;
+  return rows.filter((e) => donorLabel(e) === d);
+}
+
+export function filterByReceiverName(rows: LedgerV2Entry[], receiverName: string): LedgerV2Entry[] {
+  const r = receiverName.trim();
+  if (!r || r === '__all__') return rows;
+  return rows.filter((e) => receiverLabel(e) === r);
+}
+
 export function uniqueCauseNames(rows: LedgerV2Entry[]): string[] {
   const set = new Set<string>();
   for (const e of rows) {
     const n = (e.cause_name || '').trim();
+    if (n) set.add(n);
+  }
+  return [...set].sort((a, b) => a.localeCompare(b));
+}
+
+export function uniqueDonorNames(rows: LedgerV2Entry[]): string[] {
+  const set = new Set<string>();
+  for (const e of rows) {
+    const n = donorLabel(e);
+    if (n) set.add(n);
+  }
+  return [...set].sort((a, b) => a.localeCompare(b));
+}
+
+export function uniqueReceiverNames(rows: LedgerV2Entry[]): string[] {
+  const set = new Set<string>();
+  for (const e of rows) {
+    const n = receiverLabel(e);
     if (n) set.add(n);
   }
   return [...set].sort((a, b) => a.localeCompare(b));

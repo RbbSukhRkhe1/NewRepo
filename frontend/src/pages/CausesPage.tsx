@@ -9,94 +9,18 @@ import { CauseFundingDonut } from '../components/CauseFundingDonut';
 const SAMPLE_HERO_PLACEHOLDER = '/samples/placeholder.svg';
 
 type ShowcaseCause = {
-  /** Must equal `causes.title` in the DB so View Details resolves the correct `/causes/:id` */
   apiTitle: string;
-  section: 'urgent' | 'completed';
   sectionLabel: string;
   storyTitle: string;
   storyBody: string;
   title: string;
   subtitle: string;
   donors: number;
-  daysLeft: number;
+  daysLeft: number | null;
   locationTag: string;
   categoryTag: string;
-  progressPct: number;
-  progressLabel: string;
-  amountLabel: string;
   accent: 'orange' | 'green';
 };
-
-const causes: ShowcaseCause[] = [
-  {
-    apiTitle: 'LGBTQs',
-    section: 'urgent',
-    sectionLabel: 'Urgent',
-    storyTitle: 'Community first',
-    storyBody: 'Local partners provide safe shelter and trauma-informed counseling while every disbursement stays visible on-chain for community oversight.',
-    title: 'LGBTQs',
-    subtitle: 'Safe housing, counselling, and mutual aid for queer and trans communities.',
-    donors: 174,
-    daysLeft: 5,
-    locationTag: 'Sydney, AU',
-    categoryTag: 'Community',
-    progressPct: 0,
-    progressLabel: '0%',
-    amountLabel: '0.00 ETH raised of 25.00 ETH goal',
-    accent: 'orange',
-  },
-  {
-    apiTitle: 'War',
-    section: 'urgent',
-    sectionLabel: 'Urgent',
-    storyTitle: 'Relief corridors',
-    storyBody: 'Donations route to vetted frontline responders delivering medical kits, evacuation transport, and essential family support in active conflict zones.',
-    title: 'War',
-    subtitle: 'Emergency relief, medical supplies, and resettlement support for conflict-affected families.',
-    donors: 228,
-    daysLeft: 4,
-    locationTag: 'Regional',
-    categoryTag: 'Humanitarian',
-    progressPct: 0,
-    progressLabel: '0%',
-    amountLabel: '0.00 ETH raised of 50.00 ETH goal',
-    accent: 'green',
-  },
-  {
-    apiTitle: 'Disaster',
-    section: 'urgent',
-    sectionLabel: 'Urgent',
-    storyTitle: 'Rapid response',
-    storyBody: 'Emergency wallets release rapid aid for shelter, food, and clean water after floods and storms, with proof-backed spending published in real time.',
-    title: 'Disaster',
-    subtitle: 'Shelters, food, and rebuilding after earthquakes, floods, and climate shocks.',
-    donors: 341,
-    daysLeft: 8,
-    locationTag: 'Pacific region',
-    categoryTag: 'Disaster Relief',
-    progressPct: 0,
-    progressLabel: '0%',
-    amountLabel: '0.00 ETH raised of 40.00 ETH goal',
-    accent: 'orange',
-  },
-  {
-    apiTitle: 'Education',
-    section: 'urgent',
-    sectionLabel: 'Active',
-    storyTitle: 'Every learner',
-    storyBody: 'Funds cover tuition gaps, learning kits, and connected devices so students in underserved regions can stay in class and finish terms.',
-    title: 'Education',
-    subtitle: 'Scholarships, supplies, and digital access where school budgets fall short.',
-    donors: 198,
-    daysLeft: 14,
-    locationTag: 'Remote AU',
-    categoryTag: 'Education',
-    progressPct: 30,
-    progressLabel: '30%',
-    amountLabel: '9.00 ETH raised of 30.00 ETH goal',
-    accent: 'green',
-  },
-];
 
 function tagStyle(accent: ShowcaseCause['accent'], kind: 'frame' | 'story' | 'progress', isLightMode: boolean) {
   if (accent === 'orange') {
@@ -126,7 +50,6 @@ function CauseCard({
   disbursedEth,
   donatedEth,
   remainingEth,
-  raisedEth,
   goalEth,
   utilizationPct,
   fundsMatched,
@@ -134,42 +57,25 @@ function CauseCard({
   cause: ShowcaseCause;
   isLightMode: boolean;
   isAdmin?: boolean;
-  /** Backend cause id — links to Cause detail when present; otherwise buttons fall back to /donate */
   detailCauseId?: number;
   imageUrl?: string | null;
   disbursedEth?: number;
   donatedEth?: number;
   remainingEth?: number;
-  raisedEth?: number;
   goalEth?: number;
   utilizationPct?: number;
   fundsMatched?: boolean;
 }) {
   const [failedHeroKey, setFailedHeroKey] = useState<string | null>(null);
 
-  const hasFunding =
-    raisedEth != null && goalEth != null && Number.isFinite(raisedEth) && Number.isFinite(goalEth) && goalEth > 0;
-  const fundingPct = hasFunding
-    ? Math.min(100, Math.max(0, (raisedEth / goalEth) * 100))
-    : cause.progressPct;
-  const isFullyFunded = hasFunding && raisedEth >= goalEth;
-
   const hasUtil = utilizationPct != null && donatedEth != null;
-  const progressPct = fundingPct;
-  const progressLabel = isFullyFunded
-    ? cause.section === 'completed'
-      ? cause.progressLabel
-      : '100% funded'
-    : hasFunding
-      ? `${fundingPct.toFixed(0)}% funded`
-      : cause.progressLabel;
-  const amountLabel = isFullyFunded && cause.section === 'completed'
-    ? cause.amountLabel
-    : hasUtil
-      ? `${(disbursedEth ?? 0).toFixed(2)} ETH disbursed of ${(donatedEth ?? 0).toFixed(2)} ETH donated · ${(remainingEth ?? 0).toFixed(2)} ETH remaining`
-      : hasFunding
-        ? `${(raisedEth ?? 0).toFixed(2)} ETH raised of ${(goalEth ?? 0).toFixed(2)} ETH goal`
-        : cause.amountLabel;
+  const progressPct = hasUtil
+    ? Math.min(100, Math.max(0, utilizationPct))
+    : 0;
+  const progressLabel = hasUtil ? `${progressPct.toFixed(0)}% utilized` : '0% utilized';
+  const amountLabel = hasUtil
+    ? `${(disbursedEth ?? 0).toFixed(2)} ETH disbursed of ${(donatedEth ?? 0).toFixed(2)} ETH donated · ${(remainingEth ?? 0).toFixed(2)} ETH remaining`
+    : `${(goalEth ?? 0).toFixed(2)} ETH goal`;
 
   const accentText =
     cause.accent === 'orange'
@@ -183,8 +89,8 @@ function CauseCard({
   const detailHref = detailCauseId != null ? `/causes/${detailCauseId}` : '/causes';
   const actionHref = isAdmin
     ? detailCauseId != null
-      ? `/account?disburseCause=${detailCauseId}`
-      : '/account?disburseCause'
+      ? `/causes/${detailCauseId}#disburse`
+      : '/causes'
     : detailCauseId != null
       ? `/donate?causeId=${detailCauseId}`
       : '/donate';
@@ -199,35 +105,22 @@ function CauseCard({
     <article
       className={`vtx-surface rounded-3xl border p-6 md:p-7 ${tagStyle(cause.accent, 'frame', isLightMode)}`}
     >
-      <div className="mb-4 flex items-center justify-between">
-        <p className={`text-[10px] font-semibold uppercase tracking-[0.25em] ${accentText}`}>{cause.sectionLabel}</p>
-        {fundsMatched ? (
-          <span
-            className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${
-              isLightMode ? 'border border-emerald-600/25 bg-emerald-600/10 text-emerald-800' : 'border border-emerald-400/25 bg-emerald-400/10 text-emerald-200'
-            }`}
-          >
-            Funds Matched
-          </span>
-        ) : cause.section === 'completed' ? (
-          <button type="button" className="text-xs text-[var(--text-muted-2)] hover:text-[var(--text-high-1)]">
-            Delete
-          </button>
-        ) : null}
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-[minmax(0,11rem)_minmax(0,230px)_1fr] md:gap-6">
-        <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-[var(--glass-border)] bg-[var(--overlay-surface-soft)] md:aspect-auto md:min-h-[11rem]">
+      <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] md:items-start">
+        <div className="relative overflow-hidden rounded-2xl border border-[var(--border-chrome-2)] bg-black/20">
           <img
-            key={displayHero}
             src={displayHero}
             alt=""
             referrerPolicy="no-referrer"
-            className="h-full w-full object-cover"
-            onError={() => {
-              if (heroSrc && displayHero === heroSrc) setFailedHeroKey(heroFailureKey);
-            }}
+            className="aspect-[4/3] w-full object-cover"
+            onError={() => setFailedHeroKey(heroFailureKey)}
           />
+          <span
+            className={`absolute left-3 top-3 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] ${
+              isLightMode ? 'bg-white/90 text-emerald-900' : 'bg-black/55 text-emerald-200'
+            }`}
+          >
+            {cause.sectionLabel}
+          </span>
         </div>
 
         <div className={`vtx-glass-inset p-5 ${tagStyle(cause.accent, 'story', isLightMode)}`}>
@@ -247,17 +140,19 @@ function CauseCard({
                   : 'border border-[var(--glass-border)] bg-[var(--overlay-surface-soft)] text-[var(--text-muted-2)]'
               }`}
             >
-              {cause.donors} donors
+              {cause.donors} donor{cause.donors === 1 ? '' : 's'}
             </span>
-            <span
-              className={`rounded-full px-2.5 py-1 ${
-                isLightMode
-                  ? 'border border-[var(--glass-border)] bg-white/60 text-[var(--text-muted-1)]'
-                  : 'border border-[var(--glass-border)] bg-[var(--overlay-surface-soft)] text-[var(--text-muted-2)]'
-              }`}
-            >
-              {cause.daysLeft} days left
-            </span>
+            {cause.daysLeft != null ? (
+              <span
+                className={`rounded-full px-2.5 py-1 ${
+                  isLightMode
+                    ? 'border border-[var(--glass-border)] bg-white/60 text-[var(--text-muted-1)]'
+                    : 'border border-[var(--glass-border)] bg-[var(--overlay-surface-soft)] text-[var(--text-muted-2)]'
+                }`}
+              >
+                {cause.daysLeft} days left
+              </span>
+            ) : null}
             <span
               className={`rounded-full px-2.5 py-1 ${
                 isLightMode
@@ -289,11 +184,11 @@ function CauseCard({
             />
           </div>
 
-          {hasFunding ? (
+          {hasUtil ? (
             <div className="mt-4 max-w-[14rem]">
               <CauseFundingDonut
-                raisedEth={raisedEth as number}
-                goalEth={goalEth as number}
+                raisedEth={disbursedEth as number}
+                goalEth={Math.max(donatedEth ?? 0, 0.0001)}
                 isLightMode={isLightMode}
                 compact
               />
@@ -327,9 +222,19 @@ function CauseCard({
                   : 'border border-emerald-400/30 bg-emerald-500/10 text-emerald-300'
               }`}
             >
-              Verified
+              Goal {goalEth?.toFixed(2) ?? '0.00'} ETH
             </span>
-            <span className="text-[var(--text-muted-2)]">Secure donation via blockchain</span>
+            {fundsMatched ? (
+              <span
+                className={`rounded-full px-2 py-1 ${
+                  isLightMode
+                    ? 'border border-cyan-600/30 bg-cyan-600/10 text-cyan-800'
+                    : 'border border-cyan-400/30 bg-cyan-500/10 text-cyan-200'
+                }`}
+              >
+                Funds matched on-chain
+              </span>
+            ) : null}
           </div>
         </div>
       </div>
@@ -340,13 +245,12 @@ function CauseCard({
 function AddCauseCard({ isLightMode }: { isLightMode: boolean }) {
   return (
     <Link
-      to="/admin/causes/new"
-      className={`group flex w-full flex-col items-center justify-center rounded-3xl border-2 border-dashed px-6 py-14 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl transition hover:-translate-y-0.5 hover:brightness-[1.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/55 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] ${
+      to="/causes/new"
+      className={`flex min-h-[18rem] flex-col items-center justify-center rounded-3xl border border-dashed p-8 text-center transition-[border-color,background-color,box-shadow] duration-200 ${
         isLightMode
-          ? 'border-emerald-600/45 bg-[linear-gradient(162deg,rgba(236,252,246,0.95),rgba(220,246,236,0.88))] shadow-[0_10px_32px_rgba(16,120,90,0.12)] hover:border-emerald-600/58 hover:shadow-[0_14px_40px_rgba(16,120,90,0.16)]'
-          : 'border-emerald-500/28 bg-[linear-gradient(168deg,rgba(6,24,18,0.72),rgba(4,14,22,0.68))] shadow-[0_0_40px_rgba(16,185,129,0.12),inset_0_0_0_1px_rgba(52,211,153,0.08)] hover:border-emerald-400/42 hover:shadow-[0_0_48px_rgba(45,245,180,0.18)]'
+          ? 'border-emerald-500/45 bg-emerald-50/40 hover:border-emerald-600/55 hover:bg-emerald-50/70'
+          : 'border-emerald-400/35 bg-emerald-500/[0.04] hover:border-emerald-400/55 hover:bg-emerald-500/[0.08]'
       }`}
-      aria-label="Add cause — Create a new fundraising cause"
     >
       <span
         className={`flex h-14 w-14 items-center justify-center rounded-full border-2 text-3xl font-light leading-none ${
@@ -376,9 +280,15 @@ type ApiCauseRow = {
   utilization_pct: number;
   funds_matched: boolean;
   image_url: string | null;
+  beneficiary_user_id: number | null;
+  beneficiary_name: string | null;
+  impact_story_title: string;
+  impact_story_body: string;
+  category_tag: string;
+  location_tag: string;
+  days_left: number | null;
+  donor_count: number;
 };
-
-const SHOWCASE_BY_TITLE = new Map(causes.map((cause) => [cause.apiTitle, cause]));
 
 /** Prefer the canonical (lowest-id) row when duplicate titles exist in the API. */
 function dedupeActiveCauses(rows: ApiCauseRow[]): ApiCauseRow[] {
@@ -391,25 +301,18 @@ function dedupeActiveCauses(rows: ApiCauseRow[]): ApiCauseRow[] {
 }
 
 function apiRowToShowcaseCause(row: ApiCauseRow, index: number): ShowcaseCause {
-  const description = row.description.trim();
-  const storyTitle =
-    description.split(/[.!?]/)[0]?.trim().slice(0, 56) || row.title;
-
+  const urgent = row.days_left != null && row.days_left <= 7;
   return {
     apiTitle: row.title,
-    section: 'urgent',
-    sectionLabel: 'Active',
-    storyTitle,
-    storyBody: description,
+    sectionLabel: urgent ? 'Urgent' : 'Active',
+    storyTitle: row.impact_story_title,
+    storyBody: row.impact_story_body,
     title: row.title,
-    subtitle: description,
-    donors: 0,
-    daysLeft: 30,
-    locationTag: 'Community',
-    categoryTag: 'Fundraising',
-    progressPct: 0,
-    progressLabel: '0%',
-    amountLabel: `0.00 ETH disbursed of ${row.goal_eth.toFixed(2)} ETH goal`,
+    subtitle: row.description.trim(),
+    donors: row.donor_count,
+    daysLeft: row.days_left,
+    locationTag: row.location_tag,
+    categoryTag: row.category_tag,
     accent: index % 2 === 0 ? 'green' : 'orange',
   };
 }
@@ -487,7 +390,7 @@ export function CausesPage() {
           </div>
         ) : null}
         {activeCauses.map((match, index) => {
-          const cause = SHOWCASE_BY_TITLE.get(match.title) ?? apiRowToShowcaseCause(match, index);
+          const cause = apiRowToShowcaseCause(match, index);
           return (
             <CauseCard
               key={match.id}
@@ -499,7 +402,6 @@ export function CausesPage() {
               disbursedEth={match.disbursed_eth}
               donatedEth={match.donated_eth}
               remainingEth={match.remaining_eth}
-              raisedEth={match.raised_eth}
               goalEth={match.goal_eth}
               utilizationPct={match.utilization_pct}
               fundsMatched={match.funds_matched}

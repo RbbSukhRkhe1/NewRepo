@@ -1,23 +1,10 @@
-import { useCallback, useEffect, useId, useRef, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useCallback, useEffect, useId, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiJson } from '../lib/api';
 import { loadMeHistory, type MeHistoryResponse, type UserHistoryEntry } from '../lib/userHistory';
 import { formatLedgerSummary } from '../lib/ledgerCopy';
-import { PrimaryButton, PrimaryLinkButton, SectionHeader, SurfaceCard } from '../components/ui';
-
-type UserRow = {
-  id: number;
-  name: string;
-  email: string;
-  role: string;
-  anvilIndex: number | null;
-};
-
-type CauseOption = {
-  id: number;
-  title: string;
-};
+import { PrimaryLinkButton, SectionHeader, SurfaceCard } from '../components/ui';
 
 const POLL_MS = 6000;
 
@@ -199,22 +186,7 @@ function HistoryRow({ e }: { e: UserHistoryEntry }) {
 
 export function AccountPage() {
   const { user, loading } = useAuth();
-  const [searchParams] = useSearchParams();
-  const disburseCauseParam = searchParams.get('disburseCause');
-  const scrolledToDisburseRef = useRef(false);
   const [eth, setEth] = useState<string | null>(null);
-  const [beneficiaries, setBeneficiaries] = useState<UserRow[]>([]);
-  const [beneficiaryId, setBeneficiaryId] = useState('');
-  const [causeDisburseAmount, setCauseDisburseAmount] = useState('1');
-  const [beneficiaryDisburseAmount, setBeneficiaryDisburseAmount] = useState('1');
-  const [causeDisburseMessage, setCauseDisburseMessage] = useState('');
-  const [beneficiaryDisburseMessage, setBeneficiaryDisburseMessage] = useState('');
-  const [causeId, setCauseId] = useState('');
-  const [causes, setCauses] = useState<CauseOption[]>([]);
-  const [causeDisburseMsg, setCauseDisburseMsg] = useState<string | null>(null);
-  const [beneficiaryDisburseMsg, setBeneficiaryDisburseMsg] = useState<string | null>(null);
-  const [busyCause, setBusyCause] = useState(false);
-  const [busyBeneficiary, setBusyBeneficiary] = useState(false);
   const [history, setHistory] = useState<MeHistoryResponse | null>(null);
   const [historyErr, setHistoryErr] = useState<string | null>(null);
   const [badges, setBadges] = useState<
@@ -310,80 +282,6 @@ export function AccountPage() {
       cancelled = true;
     };
   }, [user]);
-
-  useEffect(() => {
-    if (user?.role !== 'admin') return;
-    apiJson<UserRow[]>('/users')
-      .then((rows) => setBeneficiaries(rows.filter((r) => r.role === 'beneficiary')))
-      .catch(() => setBeneficiaries([]));
-    apiJson<CauseOption[]>('/causes')
-      .then((rows) => {
-        setCauses(rows);
-        const preselect = disburseCauseParam ?? (rows.length > 0 ? String(rows[0].id) : '');
-        if (preselect && rows.some((c) => String(c.id) === preselect)) {
-          setCauseId(preselect);
-        } else if (rows.length > 0) {
-          setCauseId(String(rows[0].id));
-        }
-      })
-      .catch(() => setCauses([]));
-  }, [user?.role, disburseCauseParam]);
-
-  useEffect(() => {
-    scrolledToDisburseRef.current = false;
-  }, [disburseCauseParam]);
-
-  useEffect(() => {
-    if (user?.role !== 'admin' || !disburseCauseParam || scrolledToDisburseRef.current) return;
-    if (causeId !== disburseCauseParam) return;
-    const el = document.getElementById('disburse-cause');
-    if (!el) return;
-    scrolledToDisburseRef.current = true;
-    window.requestAnimationFrame(() => {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
-  }, [user?.role, disburseCauseParam, causeId]);
-
-  async function disburseForCause(e: React.FormEvent) {
-    e.preventDefault();
-    if (!causeId) return;
-    setCauseDisburseMsg(null);
-    setBusyCause(true);
-    try {
-      const r = await apiJson<{ txHash: string }>(`/causes/${causeId}/disburse`, {
-        method: 'POST',
-        body: JSON.stringify({ amountEth: causeDisburseAmount, message: causeDisburseMessage }),
-      });
-      setCauseDisburseMsg(`Disbursed to cause · ${r.txHash.slice(0, 16)}…`);
-      refreshHistory();
-    } catch (err: unknown) {
-      setCauseDisburseMsg(err instanceof Error ? err.message : 'Failed');
-    } finally {
-      setBusyCause(false);
-    }
-  }
-
-  async function disburseToBeneficiary(e: React.FormEvent) {
-    e.preventDefault();
-    setBeneficiaryDisburseMsg(null);
-    setBusyBeneficiary(true);
-    try {
-      const r = await apiJson<{ txHash: string }>('/disburse', {
-        method: 'POST',
-        body: JSON.stringify({
-          beneficiaryUserId: parseInt(beneficiaryId, 10),
-          amountEth: beneficiaryDisburseAmount,
-          message: beneficiaryDisburseMessage,
-        }),
-      });
-      setBeneficiaryDisburseMsg(`Disbursed to beneficiary · ${r.txHash.slice(0, 16)}…`);
-      refreshHistory();
-    } catch (err: unknown) {
-      setBeneficiaryDisburseMsg(err instanceof Error ? err.message : 'Failed');
-    } finally {
-      setBusyBeneficiary(false);
-    }
-  }
 
   if (loading) {
     return <div className="p-12 text-center text-[var(--text-muted-1)]">Loading…</div>;
@@ -558,96 +456,6 @@ export function AccountPage() {
           </section>
         </>
       ) : null}
-
-      {user.role === 'admin' && (
-        <>
-        <form
-          id="disburse-cause"
-          onSubmit={(e) => void disburseForCause(e)}
-          className="mt-8 scroll-mt-24 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-6"
-        >
-          <h2 className="text-lg font-semibold text-amber-200">Disburse for cause</h2>
-          <p className="mt-1 text-xs text-[var(--text-muted-1)]">
-            Sends ETH from the Vaultex vault directly to the selected cause treasury wallet.
-          </p>
-          <div className="mt-4 space-y-3">
-            <select
-              value={causeId}
-              onChange={(e) => setCauseId(e.target.value)}
-              required
-              className="vtx-input w-full px-4 py-3"
-            >
-              <option value="">Select cause</option>
-              {causes.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.title}
-                </option>
-              ))}
-            </select>
-            <input
-              type="text"
-              value={causeDisburseAmount}
-              onChange={(e) => setCauseDisburseAmount(e.target.value)}
-              placeholder="ETH amount"
-              className="vtx-input w-full px-4 py-3 font-mono"
-            />
-            <input
-              type="text"
-              value={causeDisburseMessage}
-              onChange={(e) => setCauseDisburseMessage(e.target.value.slice(0, 40))}
-              maxLength={40}
-              placeholder="Message (optional, max 40 chars)"
-              className="vtx-input w-full px-4 py-3"
-            />
-          </div>
-          <PrimaryButton type="submit" disabled={busyCause || !causeId} className="mt-4 px-6 py-2">
-            {busyCause ? 'Sending…' : 'Disburse to cause'}
-          </PrimaryButton>
-          {causeDisburseMsg && <p className="mt-3 text-sm text-amber-200">{causeDisburseMsg}</p>}
-        </form>
-
-        <form onSubmit={(e) => void disburseToBeneficiary(e)} className="mt-6 rounded-2xl border border-white/10 bg-white/[0.02] p-6">
-          <h2 className="text-lg font-semibold text-[var(--text-high-3)]">Disburse to beneficiary</h2>
-          <p className="mt-1 text-xs text-[var(--text-muted-1)]">
-            Pays a beneficiary organization directly from the vault (separate from cause treasury).
-          </p>
-          <div className="mt-4 space-y-3">
-            <select
-              value={beneficiaryId}
-              onChange={(e) => setBeneficiaryId(e.target.value)}
-              required
-              className="vtx-input w-full px-4 py-3"
-            >
-              <option value="">Select beneficiary</option>
-              {beneficiaries.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.name}
-                </option>
-              ))}
-            </select>
-            <input
-              type="text"
-              value={beneficiaryDisburseAmount}
-              onChange={(e) => setBeneficiaryDisburseAmount(e.target.value)}
-              placeholder="ETH amount"
-              className="vtx-input w-full px-4 py-3 font-mono"
-            />
-            <input
-              type="text"
-              value={beneficiaryDisburseMessage}
-              onChange={(e) => setBeneficiaryDisburseMessage(e.target.value.slice(0, 40))}
-              maxLength={40}
-              placeholder="Message (optional, max 40 chars)"
-              className="vtx-input w-full px-4 py-3"
-            />
-          </div>
-          {beneficiaryDisburseMsg && <p className="mt-3 text-sm text-amber-200">{beneficiaryDisburseMsg}</p>}
-          <PrimaryButton type="submit" disabled={busyBeneficiary || !beneficiaryId} className="mt-4 px-6 py-2">
-            {busyBeneficiary ? 'Sending…' : 'Send to beneficiary'}
-          </PrimaryButton>
-        </form>
-        </>
-      )}
     </div>
   );
 }
