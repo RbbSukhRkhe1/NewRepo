@@ -24,7 +24,7 @@ Updated to match the monolith in `frontend/` + `backend/server/` (May 2026).
 | Chain watcher | WebSocket ingest → `chain_sync` when Anvil up |
 | Seeding | Demo users + marketing causes |
 | Redis pub/sub | `donation.created` / `disbursement.created` (disable with `REDIS_DISABLED=1`) |
-| WebSocket | **`/api/ws`** — Redis events bridged to clients (see `server/constants.ts`) |
+| WebSocket | **`/api/ws`** — Redis pub/sub + in-process events (no polling on ledger; see `server/constants.ts`) |
 
 ## Shipped — frontend (React Router)
 
@@ -35,7 +35,7 @@ Updated to match the monolith in `frontend/` + `backend/server/` (May 2026).
 | `/causes`, `/causes/completed`, `/causes/:id` | Browse / completed / detail |
 | `/causes/new`, `/admin/*` | Admin cause & user management |
 | `/donate` | Donation flow |
-| `/ledger` | Ledger v2 UI (search, modal, polling; WS at `/api/ws`) |
+| `/ledger` | Ledger v2 UI (search, modal, live WS at `/api/ws`) |
 | `/account` | Wallet, history, badges, admin disburse |
 | `/lifecycle/:txHash` | Donation lifecycle (auth) |
 
@@ -49,7 +49,7 @@ Updated to match the monolith in `frontend/` + `backend/server/` (May 2026).
 | Live API smoke | `node scripts/integration-smoke.mjs` (API must be running) |
 | Foundry | `forge test` (repo root) |
 
-CI runs workspace `test` scripts when present (see `.github/workflows/ci.yml`).
+CI runs lint, tests, frontend build, backend typecheck, and a **Docker Compose** build/smoke job (SPA, API, WebSocket) — see `.github/workflows/ci.yml`. Production deploy (`deploy.yml`) runs the same stack on the server via `scripts/deploy.sh`.
 
 ## Data model (SQLite)
 

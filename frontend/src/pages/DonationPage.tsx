@@ -317,7 +317,7 @@ export function DonationPage() {
                         ? 'No causes loaded yet.'
                         : activeCauseId == null
                           ? 'Loading…'
-                          : 'Only one cause is available — it is shown in the impact panel above.'}
+                          : 'Only one cause is available. It is shown in the impact panel above.'}
                     </p>
                   ) : (
                     inactiveCauses.map((cause) => {
@@ -364,7 +364,7 @@ export function DonationPage() {
               <h3 className="text-lg font-semibold text-[var(--text-high-3)]">Donation Form</h3>
               <p className="mt-1 text-sm text-[var(--text-muted-1)]">
                 {activeCause
-                  ? `${activeCause.title} — ${activeCause.description}`
+                  ? `${activeCause.title}: ${activeCause.description}`
                   : 'Select a cause to begin your donation.'}
               </p>
 
@@ -503,7 +503,7 @@ export function DonationPage() {
 
             <div className="mt-2.5 rounded-xl border border-white/10 bg-black/10 px-3 py-2 text-sm backdrop-blur-sm">
               <p className="text-[var(--text-muted-1)]">
-                Cause: <span className="font-semibold text-[var(--text-high-3)]">{activeCause?.title ?? '—'}</span>
+                Cause: <span className="font-semibold text-[var(--text-high-3)]">{activeCause?.title ?? 'N/A'}</span>
               </p>
               <p className="mt-1 text-[var(--text-muted-1)]">
                 Amount:{' '}

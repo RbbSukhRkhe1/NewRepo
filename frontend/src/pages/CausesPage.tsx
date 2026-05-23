@@ -380,7 +380,7 @@ export function CausesPage() {
                 : 'border-white/20 bg-black/25 text-[var(--text-muted-1)]'
             }`}
           >
-            <p>No active campaigns right now — every listed cause has reached its funding goal.</p>
+            <p>No active campaigns right now. Every listed cause has reached its funding goal.</p>
             <Link
               to="/causes/completed"
               className="mt-4 inline-flex min-h-10 items-center rounded-full border border-emerald-300/70 bg-[linear-gradient(180deg,#3dffc4,#23d78f)] px-4 py-2 text-xs font-semibold text-[#032316] shadow-[0_0_22px_rgba(51,255,178,0.28)]"

@@ -14,6 +14,29 @@ function redisDisabled(): boolean {
 let publisher: Redis | null = null;
 let subscriber: Redis | null = null;
 
+/** Wire format for pub/sub messages on {@link EVENTS_CHANNEL}. */
+export type VaultexEventEnvelope<T = unknown> = {
+  v: 1;
+  type: string;
+  data: T;
+  ts: string;
+};
+
+export type EventHandler<T = unknown> = (envelope: VaultexEventEnvelope<T>) => void | Promise<void>;
+
+/** In-process subscribers (always notified; enables WS without Redis in local dev). */
+const localHandlers = new Set<EventHandler>();
+
+function dispatchLocal<T>(envelope: VaultexEventEnvelope<T>): void {
+  for (const handler of localHandlers) {
+    try {
+      void handler(envelope);
+    } catch (e) {
+      console.warn('[events] local handler error:', e instanceof Error ? e.message : e);
+    }
+  }
+}
+
 /**
  * Dedicated connection for PUBLISH. Do not use for SUBSCRIBE (use {@link getSubscriber}).
  */
@@ -48,27 +71,20 @@ export function getSubscriber(): Redis | null {
   return subscriber;
 }
 
-/** Wire format for pub/sub messages on {@link EVENTS_CHANNEL}. */
-export type VaultexEventEnvelope<T = unknown> = {
-  v: 1;
-  type: string;
-  data: T;
-  ts: string;
-};
-
 /**
  * Publish a domain event. Payload is wrapped as `{ v, type, data, ts }` JSON.
- * Example: `publishEvent('donation.created', { txHash, amountEth, causeId })`
+ * Always notifies in-process subscribers; also publishes to Redis when available.
  */
 export async function publishEvent<T = unknown>(eventName: string, data: T): Promise<void> {
-  const pub = getPublisher();
-  if (!pub) return;
   const envelope: VaultexEventEnvelope<T> = {
     v: 1,
     type: eventName,
     data,
     ts: new Date().toISOString(),
   };
+  dispatchLocal(envelope);
+  const pub = getPublisher();
+  if (!pub) return;
   try {
     await pub.publish(EVENTS_CHANNEL, JSON.stringify(envelope));
   } catch (e) {
@@ -76,13 +92,11 @@ export async function publishEvent<T = unknown>(eventName: string, data: T): Pro
   }
 }
 
-export type EventHandler<T = unknown> = (envelope: VaultexEventEnvelope<T>) => void | Promise<void>;
-
 /**
  * Subscribe to Vaultex events on the shared channel. Parses JSON envelopes; invalid messages are skipped.
- * Call from a long-running worker process (not the main HTTP thread unless you isolate I/O).
  */
 export async function subscribeToEvents(handler: EventHandler): Promise<void> {
+  localHandlers.add(handler);
   const sub = getSubscriber();
   if (!sub) return;
   sub.on('message', (_channel, message) => {
@@ -103,6 +117,7 @@ export function eventsChannel(): typeof EVENTS_CHANNEL {
 
 /** Close pub/sub connections (e.g. on process shutdown). */
 export async function closeRedis(): Promise<void> {
+  localHandlers.clear();
   const tasks: Promise<unknown>[] = [];
   if (publisher) {
     tasks.push(publisher.quit().catch(() => publisher!.disconnect()));

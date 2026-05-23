@@ -1,11 +1,10 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { loadLedgerV2, loadLedgerV2Detail, loadLedgerV2Tags, type LedgerV2Entry, type LedgerV2Kind } from '../lib/ledgerV2';
+import { useVaultexEvents, isLedgerEvent } from '../lib/useVaultexEvents';
 import { EyebrowLabel, SectionHeader, SurfaceCard } from '../components/ui';
 import { TransactionModal } from '../components/TransactionModal';
 import { LedgerAccountabilityGrid } from '../components/LedgerAccountabilityGrid';
 import { LedgerTransactionsGrid } from '../components/LedgerTransactionsGrid';
-
-const POLL_MS = 4000;
 
 function timeAgo(iso: string): string {
   const diffMs = Math.max(0, Date.now() - new Date(iso).getTime());
@@ -51,8 +50,6 @@ export function LedgerPage() {
 
   useEffect(() => {
     queueMicrotask(() => refresh());
-    const t = setInterval(() => queueMicrotask(() => refresh()), POLL_MS);
-    return () => clearInterval(t);
   }, [refresh]);
 
   useEffect(() => {
@@ -67,6 +64,21 @@ export function LedgerPage() {
     observer.observe(root, { attributes: true, attributeFilter: ['data-theme'] });
     return () => observer.disconnect();
   }, []);
+
+  useVaultexEvents(
+    () => {
+      setLiveNotice('Ledger updated');
+      if (liveNoticeTimerRef.current != null) {
+        window.clearTimeout(liveNoticeTimerRef.current);
+      }
+      liveNoticeTimerRef.current = window.setTimeout(() => {
+        setLiveNotice(null);
+        liveNoticeTimerRef.current = null;
+      }, 3500);
+      refresh();
+    },
+    { filter: isLedgerEvent },
+  );
 
   const totals = useMemo(() => {
     let inEth = 0;
@@ -112,41 +124,12 @@ export function LedgerPage() {
   }, [entries]);
 
   useEffect(() => {
-    // WebSocket realtime: refetch on domain events; polling remains the fallback.
-    try {
-      const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
-      const ws = new WebSocket(`${proto}://${window.location.host}/api/ws`);
-      ws.onmessage = (ev) => {
-        try {
-          const msg = JSON.parse(String(ev.data)) as {
-            type?: string;
-            envelope?: { type?: string };
-          };
-          if (msg.type === 'event' && msg.envelope?.type) {
-            setLiveNotice('New ledger activity');
-            if (liveNoticeTimerRef.current != null) {
-              window.clearTimeout(liveNoticeTimerRef.current);
-            }
-            liveNoticeTimerRef.current = window.setTimeout(() => {
-              setLiveNotice(null);
-              liveNoticeTimerRef.current = null;
-            }, 4000);
-          }
-        } catch {
-          /* ignore malformed frames */
-        }
-        refresh();
-      };
-      return () => {
-        if (liveNoticeTimerRef.current != null) {
-          window.clearTimeout(liveNoticeTimerRef.current);
-        }
-        ws.close();
-      };
-    } catch {
-      return;
-    }
-  }, [refresh]);
+    return () => {
+      if (liveNoticeTimerRef.current != null) {
+        window.clearTimeout(liveNoticeTimerRef.current);
+      }
+    };
+  }, []);
 
   const openDetail = (id: number) => {
     setModalOpen(true);
@@ -160,7 +143,7 @@ export function LedgerPage() {
     <div className="vtx-page max-w-6xl text-left">
       <EyebrowLabel>Donor transparency</EyebrowLabel>
       <SectionHeader
-        title="Ledger — Full Accountability Grid"
+        title="Ledger: full accountability"
         body="Transparency grid per cause (inflow vs outflow), plus a searchable transaction grid with PDF export."
       />
 
@@ -169,7 +152,7 @@ export function LedgerPage() {
           className="mt-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2.5 text-sm font-medium text-emerald-200"
           role="status"
         >
-          {liveNotice} — list refreshed
+          {liveNotice}
         </div>
       ) : null}
 
@@ -217,7 +200,7 @@ export function LedgerPage() {
       </div>
 
       <div className="mt-5 grid gap-4 lg:grid-cols-[1.35fr_1fr]">
-        <SurfaceCard className="rounded-2xl p-0 overflow-hidden">
+        <SurfaceCard className="overflow-hidden rounded-2xl p-0">
           <div className="border-b border-[var(--glass-border)] px-4 py-3 sm:px-5">
             <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-[var(--text-muted-2)]">Cause allocation</h2>
           </div>
@@ -235,9 +218,15 @@ export function LedgerPage() {
                         <span className="text-xs text-[var(--text-muted-2)]">{c.events} events</span>
                       </div>
                       <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs">
-                        <span className="text-[var(--text-muted-1)]">Donated: <span className="font-mono">{c.donated.toFixed(4)} ETH</span></span>
-                        <span className="text-[var(--text-muted-1)]">Disbursed: <span className="font-mono">{c.disbursed.toFixed(4)} ETH</span></span>
-                        <span className="text-[var(--text-muted-1)]">Reserved: <span className="font-mono">{c.reserved.toFixed(4)} ETH</span></span>
+                        <span className="text-[var(--text-muted-1)]">
+                          Donated: <span className="font-mono">{c.donated.toFixed(4)} ETH</span>
+                        </span>
+                        <span className="text-[var(--text-muted-1)]">
+                          Disbursed: <span className="font-mono">{c.disbursed.toFixed(4)} ETH</span>
+                        </span>
+                        <span className="text-[var(--text-muted-1)]">
+                          Reserved: <span className="font-mono">{c.reserved.toFixed(4)} ETH</span>
+                        </span>
                       </div>
                       <div className="mt-2 h-1.5 rounded-full bg-[var(--bg-depth-1)] ring-1 ring-[var(--glass-border)]">
                         <div
@@ -258,9 +247,12 @@ export function LedgerPage() {
             <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-[var(--text-muted-2)]">Proof & traceability</h2>
             <ul className="mt-3 space-y-2 text-sm text-[var(--text-muted-1)]">
               <li>Explorer-ready tx hashes with copy action</li>
-              <li>Wallet source/destination per movement</li>
-              <li>Live activity refresh every {Math.round(POLL_MS / 1000)}s</li>
-              <li>Available pool: <span className="font-mono text-[var(--text-high-3)]">{availableEth.toFixed(4)} ETH</span></li>
+              <li>Wallet source and destination per movement</li>
+              <li>Live updates over a secure WebSocket feed</li>
+              <li>
+                Available pool:{' '}
+                <span className="font-mono text-[var(--text-high-3)]">{availableEth.toFixed(4)} ETH</span>
+              </li>
             </ul>
           </SurfaceCard>
           <SurfaceCard className="rounded-2xl p-4">
@@ -274,15 +266,15 @@ export function LedgerPage() {
                   </p>
                 </li>
               ))}
-              {disbursementEntries.length === 0 ? <li className="text-sm text-[var(--text-muted-1)]">No disbursement impact events yet.</li> : null}
+              {disbursementEntries.length === 0 ? (
+                <li className="text-sm text-[var(--text-muted-1)]">No disbursement impact events yet.</li>
+              ) : null}
             </ul>
           </SurfaceCard>
         </div>
       </div>
 
-      <p className="mt-4 text-center text-xs text-[var(--text-muted-2)]">
-        Live · auto-refresh every {Math.round(POLL_MS / 1000)}s
-      </p>
+      <p className="mt-4 text-center text-xs text-[var(--text-muted-2)]">Live ledger · updates stream in real time</p>
     </div>
   );
 }

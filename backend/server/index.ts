@@ -76,8 +76,9 @@ async function main() {
   ]);
   try {
     await subscribeWithTimeout;
+    console.log('[ws] Realtime bridge active (Redis pub/sub + in-process events)');
   } catch (e) {
-    console.warn('[ws] Redis subscribe unavailable — realtime bridge disabled:', e);
+    console.warn('[ws] Redis subscribe unavailable; using in-process events only:', e);
   }
 
   // Start watcher after HTTP is up so deploy healthchecks and systemd don't time out.

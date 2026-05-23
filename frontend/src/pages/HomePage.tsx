@@ -29,7 +29,7 @@ const heroSlides: HeroSlide[] = [
     storyHook:
       'When we left with one bag each, I could not picture what came next.',
     storyHeart:
-      'Hot meals, a safe roof, and supplies for the children arrived because strangers decided we still mattered—and my kids finally slept without flinching at every sound.',
+      'Hot meals, a safe roof, and supplies for the children arrived because strangers decided we still mattered, and my kids finally slept without flinching at every sound.',
     firstName: 'Amir',
     roleLabel: 'Displaced survivor',
     accent: '#5ef6de',
@@ -43,7 +43,7 @@ const heroSlides: HeroSlide[] = [
     categoryLabel: 'MEDICAL SUPPORT',
     storyHook: 'Treatment weeks were a blur of appointments and quiet worry.',
     storyHeart:
-      'Rides to the clinic and help covering pharmacy gaps meant I could focus on healing—not on choosing between rent and medicine. I am here partly because people I will never meet said yes, quietly and steadily.',
+      'Rides to the clinic and help covering pharmacy gaps meant I could focus on healing, not on choosing between rent and medicine. I am here partly because people I will never meet said yes, quietly and steadily.',
     firstName: 'Lucia',
     roleLabel: 'Cancer recovery patient',
     accent: '#ca90ff',
@@ -57,7 +57,7 @@ const heroSlides: HeroSlide[] = [
     categoryLabel: 'EDUCATION ACCESS',
     storyHook: 'After the storm took our books and laptop, I thought school was over for me.',
     storyHeart:
-      'Donors sent supplies and a safe place to study. I walked back into class with my head up—and I kept going.',
+      'Donors sent supplies and a safe place to study. I walked back into class with my head up, and I kept going.',
     firstName: 'Diego',
     roleLabel: 'Student beneficiary',
     accent: '#7dd3fc',
@@ -71,7 +71,7 @@ const heroSlides: HeroSlide[] = [
     categoryLabel: 'LGBTQ+ SAFE SPACE',
     storyHook: 'I never thought our hometown could feel like somewhere we could just breathe.',
     storyHeart:
-      'Then a counseling circle and a quiet drop-in meant we were not questioned for showing up as ourselves. Transparent funding helped me trust the doors would stay open—even after headlines moved on.',
+      'Then a counseling circle and a quiet drop-in meant we were not questioned for showing up as ourselves. Transparent funding helped me trust the doors would stay open, even after headlines moved on.',
     firstName: 'Riley',
     roleLabel: 'Community member',
     accent: '#f9a8d4',
@@ -184,7 +184,7 @@ const HOW_IT_WORKS_TRUST_POINTS: {
   },
   {
     title: "You're in Control",
-    body: 'Your wallet—donate when ready.',
+    body: 'Your wallet. Donate when you are ready.',
     tone: 'violet',
     iconD:
       'M17 8V7a5 5 0 10-10 0v1H5v13h14V8h-2zm-8 0V7a3 3 0 016 0v1H9zm3 8.8a2.2 2.2 0 112.2-2.2A2.2 2.2 0 0112 16.8z',
@@ -205,9 +205,9 @@ const HOW_IT_WORKS_STEPS: {
   to: string;
   tone: BenefitTone;
   iconD: string;
-  demoPill: string;
-  demoMain: string;
-  demoSub: string;
+  cardPill: string;
+  cardMain: string;
+  cardSub: string;
 }[] = [
   {
     id: 'browse',
@@ -217,9 +217,9 @@ const HOW_IT_WORKS_STEPS: {
     to: '/causes',
     tone: 'teal',
     iconD: 'M11 4a7 7 0 105.15 11.85l3 3 1.4-1.4-3-3A7 7 0 0011 4zm0 2a5 5 0 110 10 5 5 0 010-10z',
-    demoPill: 'Cause preview',
-    demoMain: 'Community shelter · 75%',
-    demoSub: 'Live progress',
+    cardPill: 'Cause preview',
+    cardMain: 'Community shelter · 75%',
+    cardSub: 'Live progress',
   },
   {
     id: 'donate',
@@ -230,9 +230,9 @@ const HOW_IT_WORKS_STEPS: {
     tone: 'violet',
     iconD:
       'M17 8V7a5 5 0 10-10 0v1H5v13h14V8h-2zm-8 0V7a3 3 0 016 0v1H9zm3 8.8a2.2 2.2 0 112.2-2.2A2.2 2.2 0 0112 16.8z',
-    demoPill: 'You sent',
-    demoMain: '1.25 ETH',
-    demoSub: '0xf37a…7e2c',
+    cardPill: 'Secure transfer',
+    cardMain: 'ETH on-chain',
+    cardSub: 'Receipt in ledger',
   },
   {
     id: 'track',
@@ -242,9 +242,9 @@ const HOW_IT_WORKS_STEPS: {
     to: '/ledger',
     tone: 'lime',
     iconD: 'M4 7h16v2H4zm0 5h16v2H4zm0 5h16v2H4z',
-    demoPill: 'Live ledger',
-    demoMain: 'Impact: active',
-    demoSub: 'Live updates',
+    cardPill: 'Live ledger',
+    cardMain: 'Impact: active',
+    cardSub: 'Live updates',
   },
 ];
 
@@ -308,7 +308,7 @@ export function HomePage() {
   const goPrev = () => setActiveSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length);
 
   return (
-    <div className="relative h-full min-h-0 w-full snap-y snap-mandatory overflow-y-scroll overflow-x-hidden bg-[var(--bg-base)] scroll-smooth overscroll-y-contain">
+    <div className="relative min-h-screen w-full overflow-x-hidden bg-[var(--bg-base)]">
       <div className="absolute inset-0 z-0 min-h-full bg-[var(--bg-base)]" />
       <div className="pointer-events-none absolute inset-0 z-0 bg-[linear-gradient(rgba(126,149,182,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(126,149,182,0.08)_1px,transparent_1px)] bg-[size:68px_68px] [mask-image:radial-gradient(ellipse_at_center,black_26%,transparent_78%)] opacity-35" />
       <div className="pointer-events-none absolute -left-24 top-8 z-0 h-72 w-72 motion-safe:animate-[pulse_9s_ease-in-out_infinite] rounded-full bg-teal-400/10 blur-3xl motion-reduce:animate-none" />
@@ -320,7 +320,7 @@ export function HomePage() {
 
         <section
           id="hero"
-          className={`home-snap-section relative mx-auto min-h-full snap-start snap-always max-w-4xl overflow-hidden rounded-[30px] px-5 pb-7 pt-5 backdrop-blur-xl sm:px-8 sm:pb-8 sm:pt-6 md:px-10 md:pb-8 md:pt-6 ${
+          className={`home-section relative mx-auto max-w-4xl overflow-hidden rounded-[30px] px-5 pb-7 pt-5 backdrop-blur-xl sm:px-8 sm:pb-8 sm:pt-6 md:px-10 md:pb-8 md:pt-6 ${
             isLightMode
               ? 'border border-[rgba(165,185,211,0.38)] bg-[linear-gradient(155deg,rgba(236,244,252,0.94),rgba(224,236,250,0.88))] shadow-[0_18px_34px_rgba(76,103,136,0.14)]'
               : 'border border-white/[0.07] bg-[linear-gradient(155deg,rgba(8,14,24,0.88),rgba(4,8,16,0.82))] shadow-[0_18px_42px_rgba(0,0,0,0.42),0_0_36px_rgba(45,245,173,0.08)]'
@@ -354,9 +354,31 @@ export function HomePage() {
                 isLightMode ? 'text-[#1e293b]' : 'text-white/90'
               }`}
             >
-              Choose a cause you care about. Donate ETH and follow your gift in a live ledger — clear from your wallet to the
+              Choose a cause you care about. Donate ETH and follow your gift in a live ledger, clear from your wallet to the
               vault and beyond.
             </p>
+            <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <Link
+                to="/causes"
+                className={`inline-flex min-h-11 items-center justify-center rounded-full px-8 py-3 text-sm font-bold tracking-wide motion-safe:transition-transform hover:scale-[1.02] ${
+                  isLightMode
+                    ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/25'
+                    : 'bg-[linear-gradient(180deg,#4dffd0_0%,#18c97a_100%)] text-[#021a10] shadow-[0_0_32px_rgba(45,245,173,0.35)]'
+                }`}
+              >
+                Browse causes
+              </Link>
+              <Link
+                to="/ledger"
+                className={`inline-flex min-h-11 items-center justify-center rounded-full border px-8 py-3 text-sm font-semibold motion-safe:transition-colors ${
+                  isLightMode
+                    ? 'border-slate-300 bg-white/90 text-slate-800 hover:bg-white'
+                    : 'border-white/25 bg-white/5 text-white hover:border-cyan-400/40'
+                }`}
+              >
+                View ledger
+              </Link>
+            </div>
           </div>
 
           <div
@@ -365,7 +387,7 @@ export function HomePage() {
             onMouseLeave={() => setIsCarouselPaused(false)}
           >
             <p className="sr-only" aria-live="polite" aria-atomic="true">
-              Story {activeSlide + 1} of {heroSlides.length}: {heroSlides[activeSlide]?.categoryLabel} —{' '}
+              Story {activeSlide + 1} of {heroSlides.length}: {heroSlides[activeSlide]?.categoryLabel}.{' '}
               {heroSlides[activeSlide]?.firstName}. {heroSlides[activeSlide]?.storyHook}{' '}
               {heroSlides[activeSlide]?.storyHeart}
             </p>
@@ -613,7 +635,7 @@ export function HomePage() {
 
         <section
           id="how-it-works"
-          className="home-snap-section relative mx-auto min-h-full snap-start snap-always max-w-5xl px-0 pt-10 sm:px-1 sm:pt-12 md:pt-8"
+          className="home-section relative mx-auto max-w-5xl px-0 pt-10 sm:px-1 sm:pt-12 md:pt-8"
           aria-labelledby="how-it-works-heading"
         >
           <div
@@ -647,7 +669,7 @@ export function HomePage() {
                     isLightMode ? 'text-slate-600' : 'text-slate-300/90'
                   }`}
                 >
-                  Simple, transparent giving—from cause to ledger.
+                  Simple, transparent giving from cause to ledger.
                 </p>
                 <ul className="mt-8 space-y-5">
                   {HOW_IT_WORKS_TRUST_POINTS.map((point, idx) => {
@@ -743,9 +765,9 @@ export function HomePage() {
                           }`}
                         >
                           <p className={`text-[10px] font-semibold uppercase tracking-[0.09em] ${isLightMode ? 'text-slate-500' : 'text-slate-400'}`}>
-                            {step.demoPill}
+                            {step.cardPill}
                           </p>
-                          <p className={`mt-1 text-sm font-semibold ${isLightMode ? 'text-slate-800' : 'text-white/95'}`}>{step.demoMain}</p>
+                          <p className={`mt-1 text-sm font-semibold ${isLightMode ? 'text-slate-800' : 'text-white/95'}`}>{step.cardMain}</p>
                           <div className={`mt-2 h-1.5 rounded-full ${isLightMode ? 'bg-slate-200' : 'bg-white/[0.1]'}`} aria-hidden>
                             <div
                               className="h-full rounded-full"
@@ -755,7 +777,7 @@ export function HomePage() {
                               }}
                             />
                           </div>
-                          <p className={`mt-2 text-[11px] ${isLightMode ? 'text-slate-500' : 'text-slate-400'}`}>{step.demoSub}</p>
+                          <p className={`mt-2 text-[11px] ${isLightMode ? 'text-slate-500' : 'text-slate-400'}`}>{step.cardSub}</p>
                         </div>
                       </Link>
                     );
@@ -800,7 +822,7 @@ export function HomePage() {
 
         <section
           id="join-the-vault"
-          className="home-snap-section relative mx-auto min-h-full snap-start snap-always max-w-5xl px-0 pt-8 sm:px-1 sm:pt-10 md:pt-8"
+          className="home-section relative mx-auto max-w-5xl px-0 pt-8 sm:px-1 sm:pt-10 md:pt-8"
           aria-labelledby="join-vault-heading"
         >
           <div

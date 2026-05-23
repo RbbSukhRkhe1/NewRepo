@@ -13,7 +13,8 @@
     "lint": "npm run lint -w frontend",
     "preview": "npm run preview -w frontend",
     "test": "npm run test -w backend && npm run test -w frontend",
-    "regression": "node scripts/regression.mjs"
+    "regression": "node scripts/regression.mjs",
+    "simulate:donations": "node scripts/simulate-live-donations.mjs"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"

@@ -418,7 +418,7 @@ export function CauseDetailPage() {
                 <p
                   className={`mt-1 max-w-2xl ${isLightMode ? 'text-[11px] leading-snug text-[var(--text-muted-1)] sm:text-[12px]' : 'text-[10px] leading-snug text-cyan-50/58 sm:text-[11px]'}`}
                 >
-                  How this goal is earmarked across programs—pie and cards highlight together when you hover or keyboard-focus.
+                  How this goal is earmarked across programs. Pie and cards highlight together when you hover or focus.
                 </p>
               </div>
               <span
@@ -925,7 +925,7 @@ export function CauseDetailPage() {
                   </div>
                   <div className={`rounded-xl border px-3 py-2.5 ${isLightMode ? 'border-amber-300/50 bg-amber-50/60' : 'border-white/10 bg-black/20'}`}>
                     <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted-2)]">Recipient</p>
-                    <p className="mt-0.5 text-sm font-semibold text-[var(--text-high-3)]">{cause.beneficiary_name ?? '—'}</p>
+                    <p className="mt-0.5 text-sm font-semibold text-[var(--text-high-3)]">{cause.beneficiary_name ?? 'N/A'}</p>
                   </div>
                 </div>
                 <div className="mt-3.5 space-y-2.5">

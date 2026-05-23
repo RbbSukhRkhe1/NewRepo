@@ -42,9 +42,9 @@ export function CompletedCausesPage() {
       <div className="flex items-end justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--text-muted-1)]">Transparency</p>
-          <h1 className="mt-2 text-3xl font-bold text-[var(--text-high-3)]">Completed Campaigns</h1>
+          <h1 className="mt-2 text-3xl font-bold text-[var(--text-high-3)]">Impact</h1>
           <p className="mt-2 text-sm text-[var(--text-muted-1)]">
-            Campaigns that reached 100% of their funding goal are listed here automatically.
+            Campaigns that reached their funding goal, with totals verified on the public ledger.
           </p>
         </div>
         <Link
@@ -61,7 +61,7 @@ export function CompletedCausesPage() {
 
       <div className="mt-8 grid gap-5 md:grid-cols-2">
         {loading ? (
-          <p className="text-sm text-[var(--text-muted-1)]">Loading completed campaigns...</p>
+          <p className="text-sm text-[var(--text-muted-1)]">Loading impact campaigns…</p>
         ) : rows.length === 0 ? (
           <div
             className={`rounded-2xl border p-6 text-sm ${
@@ -70,7 +70,7 @@ export function CompletedCausesPage() {
                 : 'border-white/20 bg-black/25 text-[var(--text-muted-1)]'
             }`}
           >
-            No completed campaigns yet.
+            No fulfilled campaigns yet. Active causes are still accepting donations.
           </div>
         ) : (
           [...rows]
@@ -90,7 +90,7 @@ export function CompletedCausesPage() {
                 <div className="relative h-44 w-full overflow-hidden">
                   <img src={hero} alt="" className="h-full w-full object-cover" />
                   <span className="absolute left-3 top-3 rounded-full border border-emerald-300/60 bg-emerald-500/85 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#052016]">
-                    Completed
+                    Fulfilled
                   </span>
                 </div>
                 <div className="p-4">

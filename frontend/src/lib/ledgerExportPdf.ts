@@ -20,7 +20,7 @@ export function exportLedgerPdf(rows: LedgerV2Entry[], title = 'Vaultex Ledger E
       donorLabel(e),
       receiverLabel(e),
       amountDisplay(e),
-      e.cause_name?.trim() || '—',
+      e.cause_name?.trim() || 'N/A',
       formatLedgerTime(e.recorded_at),
     ]),
     styles: { fontSize: 8, cellPadding: 4 },

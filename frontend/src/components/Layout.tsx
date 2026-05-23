@@ -58,7 +58,7 @@ export function Layout() {
           <nav className="flex flex-wrap items-center gap-2" aria-label="Primary navigation">
             <NavPill to="/" label="Home" active={loc.pathname === '/'} />
             <NavPill to="/causes" label="Causes" active={loc.pathname === '/causes'} />
-            <NavPill to="/causes/completed" label="Completed" active={loc.pathname === '/causes/completed'} />
+            <NavPill to="/causes/completed" label="Impact" active={loc.pathname === '/causes/completed'} />
             <NavPill to="/ledger" label="Ledger" active={loc.pathname === '/ledger'} />
             {user ? (
               <details className="group relative">
@@ -83,9 +83,7 @@ export function Layout() {
                   </SecondaryButton>
                 </div>
               </details>
-            ) : (
-              <NavPill to="/account" label="Account" active={loc.pathname === '/account'} />
-            )}
+            ) : null}
             {user?.role === 'admin' && (
               <details className="group relative">
                 <summary
@@ -109,8 +107,9 @@ export function Layout() {
                 </div>
               </details>
             )}
-            {!user && <NavPill to="/register" label="Register" active={loc.pathname === '/register'} />}
-            {!user && <NavPill to="/login" label="Sign in" active={loc.pathname === '/login'} />}
+            {!user ? (
+              <NavPill to="/login" label="Sign in" active={loc.pathname === '/login'} />
+            ) : null}
             <SecondaryButton
               type="button"
               onClick={() => setThemeMode((prev) => (prev === 'dark' ? 'light' : 'dark'))}
@@ -131,7 +130,7 @@ export function Layout() {
         </div>
       </header>
       <main
-        className={`flex min-h-0 flex-1 flex-col ${loc.pathname === '/' || loc.pathname === '/donate' ? 'overflow-hidden' : ''}`}
+        className={`flex min-h-0 flex-1 flex-col ${loc.pathname === '/donate' ? 'overflow-hidden' : ''}`}
       >
         <Outlet />
       </main>
@@ -139,17 +138,17 @@ export function Layout() {
         <footer className="border-t border-[var(--glass-border)] bg-[var(--glass-bg-fallback)] py-6 text-center text-xs text-[var(--text-muted-2)]">
           Trusted donation platform · Secure giving with on-chain transparency · Verified causes and impact
           tracking ·{' '}
-          <a href="#" className="text-[var(--text-high-1)]">
-            Contract
-          </a>{' '}
+          <Link to="/ledger" className="text-[var(--text-high-1)] hover:underline">
+            Ledger
+          </Link>{' '}
           ·{' '}
-          <a href="#" className="text-[var(--text-high-1)]">
-            Explorer
-          </a>{' '}
+          <Link to="/causes" className="text-[var(--text-high-1)] hover:underline">
+            Causes
+          </Link>{' '}
           ·{' '}
-          <a href="#" className="text-[var(--text-high-1)]">
-            Audit
-          </a>
+          <Link to="/causes/completed" className="text-[var(--text-high-1)] hover:underline">
+            Impact
+          </Link>
         </footer>
       ) : null}
     </div>

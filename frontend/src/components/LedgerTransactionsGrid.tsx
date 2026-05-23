@@ -100,8 +100,8 @@ export function LedgerTransactionsGrid({
     if (toExport.length === 0) return;
     const label =
       causeFilter !== '__all__'
-        ? `Vaultex Ledger — ${causeFilter}`
-        : 'Vaultex Ledger — All transactions';
+        ? `Vaultex Ledger: ${causeFilter}`
+        : 'Vaultex Ledger: all transactions';
     exportLedgerPdf(toExport, label);
   };
 
@@ -311,7 +311,7 @@ export function LedgerTransactionsGrid({
                       {amountDisplay(e)}
                     </td>
                     <td className="px-3 py-3 align-middle text-[var(--text-high-2)]">
-                      {e.cause_name?.trim() || '—'}
+                      {e.cause_name?.trim() || 'N/A'}
                     </td>
                     <td className="px-3 py-3 align-middle text-xs text-[var(--text-muted-1)] whitespace-nowrap">
                       {formatLedgerTime(e.recorded_at)}

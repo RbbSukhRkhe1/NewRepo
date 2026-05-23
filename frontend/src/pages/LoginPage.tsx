@@ -6,8 +6,8 @@ import { PrimaryButton, SectionHeader } from '../components/ui';
 export function LoginPage() {
   const { login } = useAuth();
   const nav = useNavigate();
-  const [email, setEmail] = useState('admin@vaultex.local');
-  const [password, setPassword] = useState('demo123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -27,15 +27,7 @@ export function LoginPage() {
 
   return (
     <div className="vtx-page max-w-md py-16">
-      <SectionHeader title="Sign in" />
-      <p className="mt-2 text-sm text-[var(--text-muted-1)]">
-        Admin:{' '}
-        <span className="text-[var(--text-muted-2)]">admin@vaultex.local</span> — Donors:{' '}
-        <span className="text-[var(--text-muted-2)]">haha@</span>,{' '}
-        <span className="text-[var(--text-muted-2)]">sukhan@</span>,{' '}
-        <span className="text-[var(--text-muted-2)]">tasin@</span>
-        vaultex.local — password <code className="auth-accent-text">demo123</code>
-      </p>
+      <SectionHeader title="Sign in" body="Access your account to donate and track your impact on the ledger." />
       <form onSubmit={(e) => void onSubmit(e)} className="mt-8 space-y-4">
         <div>
           <label className="block text-xs font-medium uppercase tracking-wider text-[var(--text-muted-1)]">
@@ -47,6 +39,7 @@ export function LoginPage() {
             onChange={(e) => setEmail(e.target.value)}
             className="vtx-input mt-1 w-full px-4 py-3 outline-none"
             autoComplete="username"
+            required
           />
         </div>
         <div>
@@ -59,21 +52,22 @@ export function LoginPage() {
             onChange={(e) => setPassword(e.target.value)}
             className="vtx-input mt-1 w-full px-4 py-3 outline-none"
             autoComplete="current-password"
+            required
           />
         </div>
-        {err && <p className="text-sm text-rose-400">{err}</p>}
+        {err ? <p className="text-sm text-rose-400">{err}</p> : null}
         <PrimaryButton type="submit" disabled={busy} className="w-full">
           {busy ? 'Signing in…' : 'Sign in'}
         </PrimaryButton>
       </form>
       <p className="mt-6 text-center text-sm text-[var(--text-muted-1)]">
-        Don&apos;t have an account?{' '}
-        <Link to="/register" className="auth-accent-text">
-          Register
+        New to Vaultex?{' '}
+        <Link to="/register" className="auth-accent-text font-medium hover:underline">
+          Create an account
         </Link>
       </p>
       <p className="mt-3 text-center text-sm text-[var(--text-muted-1)]">
-        <Link to="/" className="auth-accent-text">
+        <Link to="/" className="auth-accent-text hover:underline">
           Back home
         </Link>
       </p>

@@ -71,9 +71,59 @@ docker_cmd compose up -d --build --remove-orphans
 echo "==> Service status"
 docker_cmd compose ps
 
+PORT="$(grep -E '^WEB_HOST_PORT=' .env 2>/dev/null | cut -d= -f2- | tr -d '\r' || true)"
+PORT="${PORT:-8080}"
+API_PORT="$(grep -E '^API_HOST_PORT=' .env 2>/dev/null | cut -d= -f2- | tr -d '\r' || true)"
+API_PORT="${API_PORT:-3847}"
+
+echo "==> Post-deploy smoke (SPA, API, WebSocket via nginx)…"
+for i in $(seq 1 40); do
+  if curl -sf "http://127.0.0.1:${PORT}/" >/dev/null 2>&1 && \
+     curl -sf "http://127.0.0.1:${PORT}/api/config" >/dev/null 2>&1; then
+  echo "  HTTP ready after ${i} attempt(s)"
+    break
+  fi
+  if [[ "$i" -eq 40 ]]; then
+    echo "Smoke: HTTP not ready — dumping logs" >&2
+    docker_cmd compose logs --tail=80
+    exit 1
+  fi
+  sleep 3
+done
+
+smoke_ok=false
+if command -v node >/dev/null 2>&1 && [[ -d "$APP_DIR/node_modules/ws" || -d "$APP_DIR/node_modules" ]]; then
+  if (cd "$APP_DIR" && BASE_URL="http://127.0.0.1:${PORT}" API_DIRECT_URL="http://127.0.0.1:${API_PORT}" \
+    node scripts/docker-ci-smoke.mjs); then
+    smoke_ok=true
+  fi
+fi
+
+if [[ "$smoke_ok" != "true" ]]; then
+  echo "  Running WebSocket check inside backend container…"
+  docker_cmd compose exec -T backend node --input-type=module -e "
+import { WebSocket } from 'ws';
+await new Promise((resolve, reject) => {
+  const w = new WebSocket('ws://127.0.0.1:3847/api/ws');
+  const t = setTimeout(() => reject(new Error('ws timeout')), 20000);
+  w.onmessage = (ev) => {
+    clearTimeout(t);
+    const m = JSON.parse(String(ev.data));
+    if (m.type === 'hello') resolve();
+    else reject(new Error('unexpected ws frame'));
+    w.close();
+  };
+  w.onerror = () => { clearTimeout(t); reject(new Error('ws error')); };
+});
+console.log('✓ WebSocket /api/ws');
+" || {
+    echo "Post-deploy smoke failed" >&2
+    docker_cmd compose logs backend --tail=60
+    exit 1
+  }
+fi
+
 echo "==> Pruning dangling images (optional cleanup)…"
 docker_cmd image prune -f >/dev/null 2>&1 || true
 
-PORT="$(grep -E '^WEB_HOST_PORT=' .env 2>/dev/null | cut -d= -f2- | tr -d '\r' || true)"
-PORT="${PORT:-8080}"
 echo "Deploy finished. App: http://$(hostname -I | awk '{print $1}'):${PORT}"

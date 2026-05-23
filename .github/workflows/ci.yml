@@ -1,6 +1,5 @@
 # Vaultex — continuous integration
-# Validates installs, lint, optional tests, TypeScript, and frontend production build.
-# Production deploy is native (nginx + Node + Anvil on the server) — no Docker image build in CI.
+# Validates install, lint, tests, TypeScript, frontend build, and full Docker Compose stack (prod parity).
 
 name: CI
 
@@ -48,11 +47,11 @@ jobs:
           {
             echo "## Quality — lint"
             echo ""
-            echo "Node **${{ matrix.node-version }}** · workspace install with **npm ci** · **ESLint** on \`frontend/\` passed."
+            echo "Node **${{ matrix.node-version }}** · **npm ci** · **ESLint** passed."
           } >> "$GITHUB_STEP_SUMMARY"
 
   test:
-    name: "Quality — workspace tests (when defined)"
+    name: "Quality — workspace tests"
     runs-on: ubuntu-latest
     needs: [lint]
     strategy:
@@ -73,32 +72,17 @@ jobs:
       - name: Install (npm ci)
         run: npm ci
 
-      - name: Run workspace tests (if \`test\` script exists)
-        shell: bash
+      - name: Run workspace tests
+        run: npm run test
+
+      - name: Summary — tests
+        if: success()
         run: |
-          set -euo pipefail
-          ran_any=false
-          for dir in frontend backend; do
-            if node -e "const p=require('./${dir}/package.json'); process.exit(p.scripts&&p.scripts.test?0:1)"; then
-              echo "Running npm run test -w ${dir}"
-              npm run test -w "${dir}"
-              ran_any=true
-            fi
-          done
-          if [[ "$ran_any" == "false" ]]; then
-            echo "::notice title=Tests::No workspace test script yet — skipped (add test to frontend or backend package.json when ready)."
-            {
-              echo "## Quality — tests"
-              echo ""
-              echo "_Skipped:_ no \`scripts.test\` in \`frontend/\` or \`backend/\` yet."
-            } >> "$GITHUB_STEP_SUMMARY"
-          else
-            {
-              echo "## Quality — tests"
-              echo ""
-              echo "All configured workspace test scripts completed successfully."
-            } >> "$GITHUB_STEP_SUMMARY"
-          fi
+          {
+            echo "## Quality — tests"
+            echo ""
+            echo "Backend and frontend unit tests passed."
+          } >> "$GITHUB_STEP_SUMMARY"
 
   build:
     name: "Build — frontend bundle & backend typecheck"
@@ -137,11 +121,11 @@ jobs:
             echo "| Artifact | Command |"
             echo "|----------|---------|"
             echo "| Frontend | \`npm run build\` → \`frontend/dist\` |"
-            echo "| Backend | \`npx tsc -p backend/tsconfig.json\` (typecheck) |"
+            echo "| Backend | \`npx tsc -p backend/tsconfig.json\` |"
           } >> "$GITHUB_STEP_SUMMARY"
 
   deploy-scripts:
-    name: "Deploy — scripts & nginx config"
+    name: "Deploy — scripts, nginx & compose"
     runs-on: ubuntu-latest
     needs: [lint]
     steps:
@@ -156,12 +140,84 @@ jobs:
             echo "OK $f"
           done
 
-      - name: Validate nginx deploy config
+      - name: Validate nginx & Docker prod config
         run: |
           set -euo pipefail
           grep -q 'frontend/dist' deploy/nginx-vaultex.conf
           grep -q 'location /api' deploy/nginx-vaultex.conf
+          grep -q 'proxy_set_header Upgrade' deploy/nginx-vaultex.conf
+          grep -q 'proxy_set_header Upgrade' frontend/nginx.docker.conf
           grep -q 'proxy_pass http://127.0.0.1:3847;' deploy/nginx-vaultex.conf
           ! grep -q 'proxy_pass http://127.0.0.1:3847/;' deploy/nginx-vaultex.conf || \
-            (echo "nginx must not strip /api prefix (no trailing slash on proxy_pass)" && exit 1)
-          echo "OK deploy/nginx-vaultex.conf"
+            (echo "nginx must not strip /api prefix" && exit 1)
+          grep -q 'redis:' docker-compose.yml
+          grep -q 'REDIS_URL' docker-compose.yml
+          grep -q 'ws: true' frontend/vite.config.ts || grep -q 'ws:' frontend/vite.config.ts
+          test -f scripts/docker-ci-smoke.mjs
+          test -f scripts/simulate-live-donations.mjs
+          echo "OK deploy configs"
+
+  docker:
+    name: "Docker — compose build & prod smoke"
+    runs-on: ubuntu-latest
+    needs: [build]
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          echo "SESSION_SECRET=ci-docker-smoke-$(openssl rand -hex 16)" >> .env
+
+      - name: Build images
+        run: docker compose build
+
+      - name: Start stack
+        run: docker compose up -d --remove-orphans
+
+      - name: Wait for backend healthy
+        run: |
+          set -euo pipefail
+          echo "Waiting for services…"
+          for i in $(seq 1 60); do
+            if docker compose ps --format json 2>/dev/null | grep -q '"Health":"healthy"' && \
+               docker compose exec -T backend node -e "fetch('http://127.0.0.1:3847/ready').then(r=>r.json()).then(j=>process.exit(j.status==='ok'?0:1)).catch(()=>process.exit(1))" 2>/dev/null; then
+              echo "Backend ready after ${i} attempts"
+              exit 0
+            fi
+            docker compose ps || true
+            sleep 5
+          done
+          echo "::group::Logs"
+          docker compose logs --no-color
+          echo "::endgroup::"
+          exit 1
+
+      - name: Install Node modules (WebSocket client on runner)
+        run: npm ci --ignore-scripts
+
+      - name: Smoke test (nginx + API + WebSocket)
+        env:
+          BASE_URL: http://127.0.0.1:8080
+          API_DIRECT_URL: http://127.0.0.1:3847
+        run: node scripts/docker-ci-smoke.mjs
+
+      - name: Summary — Docker
+        if: success()
+        run: |
+          {
+            echo "## Docker (production parity)"
+            echo ""
+            echo "- Built **frontend**, **backend**, **redis**, **anvil** via \`docker compose build\`"
+            echo "- Stack health: **GET /ready**, SPA, **/api/config**, **WebSocket /api/ws**"
+            echo "- Live ledger uses **Redis pub/sub** + in-process events (see \`backend/server/lib/redis.ts\`)"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v --remove-orphans

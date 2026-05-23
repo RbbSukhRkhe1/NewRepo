@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useId, useState } from 'react';
+import { useVaultexEvents, isLedgerEvent } from '../lib/useVaultexEvents';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiJson } from '../lib/api';
@@ -6,7 +7,6 @@ import { loadMeHistory, type MeHistoryResponse, type UserHistoryEntry } from '..
 import { formatLedgerSummary } from '../lib/ledgerCopy';
 import { PrimaryLinkButton, SectionHeader, SurfaceCard } from '../components/ui';
 
-const POLL_MS = 6000;
 
 function shortHash(hash: string): string {
   if (hash.length <= 14) return hash;
@@ -231,11 +231,17 @@ export function AccountPage() {
 
   useEffect(() => {
     queueMicrotask(() => refreshHistory());
-    if (!user) return;
-    if (user.role !== 'admin' && !user.anvilIndex) return;
-    const t = setInterval(refreshHistory, POLL_MS);
-    return () => clearInterval(t);
   }, [refreshHistory, user]);
+
+  useVaultexEvents(
+    () => {
+      refreshHistory();
+    },
+    {
+      enabled: Boolean(user && (user.role === 'admin' || user.anvilIndex != null)),
+      filter: isLedgerEvent,
+    },
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -400,7 +406,7 @@ export function AccountPage() {
                 Earned per cause from your donation totals (Bronze &lt; 1 ETH, Silver ≥ 1 ETH, Gold ≥ 5 ETH).
               </p>
               {badges.length === 0 ? (
-                <p className="mt-4 text-sm text-[var(--text-muted-1)]">No badges yet — donate to a cause to earn your first badge.</p>
+                <p className="mt-4 text-sm text-[var(--text-muted-1)]">No badges yet. Donate to a cause to earn your first badge.</p>
               ) : (
                 <ul className="mt-4 grid gap-3 sm:grid-cols-2">
                   {badges.map((b) => (

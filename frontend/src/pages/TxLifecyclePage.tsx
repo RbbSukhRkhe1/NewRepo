@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useVaultexEvents, isLedgerEvent } from '../lib/useVaultexEvents';
 import { apiJson } from '../lib/api';
 import { useIsLightMode } from '../lib/useIsLightMode';
 import { SectionHeader, SurfaceCard } from '../components/ui';
@@ -33,7 +34,6 @@ type LifecycleResponse = {
   utilization: Util | null;
 };
 
-const POLL_MS = 7000;
 const AUTO_SCROLL_MS = 5200;
 
 function fmtTs(sqlite: string) {
@@ -112,11 +112,9 @@ export function TxLifecyclePage() {
     void load();
   }, [load]);
 
-  useEffect(() => {
-    if (!txHash) return;
-    const t = window.setInterval(() => void load(), POLL_MS);
-    return () => window.clearInterval(t);
-  }, [txHash, load]);
+  useVaultexEvents(() => {
+    void load();
+  }, { enabled: Boolean(txHash), filter: isLedgerEvent });
 
   const steps = useMemo(() => {
     if (!data) return [];
@@ -146,7 +144,7 @@ export function TxLifecyclePage() {
         key: 'audit',
         title: '4) Audit trail',
         body: 'This lifecycle is backed by on-chain transaction hashes and internally linked ledger references.',
-        meta: 'Scroll or wait — the story loops automatically, and new disbursements appear when the ledger updates.',
+        meta: 'Scroll or wait. The story loops automatically, and new disbursements appear when the ledger updates.',
       },
     ];
   }, [data]);

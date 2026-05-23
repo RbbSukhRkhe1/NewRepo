@@ -47,9 +47,9 @@ export function AdminUsersPage() {
                 <td className="px-4 py-3 font-medium text-[var(--text-high-3)]">{r.name}</td>
                 <td className="px-4 py-3">{r.email}</td>
                 <td className="px-4 py-3">{r.role}</td>
-                <td className="px-4 py-3 font-mono">{r.anvilIndex ?? '—'}</td>
+                <td className="px-4 py-3 font-mono">{r.anvilIndex ?? 'N/A'}</td>
                 <td className="px-4 py-3 font-mono text-xs text-[var(--text-muted-2)]">
-                  {r.addressMasked ?? '—'}
+                  {r.addressMasked ?? 'N/A'}
                 </td>
               </tr>
             ))}
