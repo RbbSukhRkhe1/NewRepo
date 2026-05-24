@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ImpactStoryCarousel } from '../components/impact/ImpactStoryCarousel';
+import { BENEFICIARY_STORIES } from '../data/beneficiaryStories';
 import { apiJson } from '../lib/api';
 import { useIsLightMode } from '../lib/useIsLightMode';
 import { resolveCauseHeroUrl } from '../lib/causeHeroImages';
@@ -38,8 +40,8 @@ export function CompletedCausesPage() {
   }, []);
 
   return (
-    <div className="vtx-page max-w-6xl">
-      <div className="flex items-end justify-between gap-3">
+    <div className="vtx-page max-w-6xl pb-16">
+      <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--text-muted-1)]">Transparency</p>
           <h1 className="mt-2 text-3xl font-bold text-[var(--text-high-3)]">Impact</h1>
@@ -119,6 +121,8 @@ export function CompletedCausesPage() {
           })
         )}
       </div>
+
+      <ImpactStoryCarousel stories={BENEFICIARY_STORIES} isLightMode={isLightMode} />
     </div>
   );
 }
