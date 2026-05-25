@@ -1,9 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useVaultexEvents, isLedgerEvent } from '../lib/useVaultexEvents';
 import { apiJson } from '../lib/api';
 import { useIsLightMode } from '../lib/useIsLightMode';
-import { SectionHeader, SurfaceCard } from '../components/ui';
 
 type LedgerRow = {
   id: number;
@@ -15,9 +14,12 @@ type LedgerRow = {
   kind: string;
   cause_id: number | null;
   cause_name: string | null;
+  from_display_name: string | null;
+  to_display_name: string | null;
   reference: string | null;
   narrative: string | null;
   recorded_at: string;
+  memo: string | null;
 };
 
 type Util = {
@@ -34,250 +36,270 @@ type LifecycleResponse = {
   utilization: Util | null;
 };
 
-const AUTO_SCROLL_MS = 5200;
-
 function fmtTs(sqlite: string) {
   return new Date(sqlite + 'Z').toLocaleString();
 }
 
-function TypewriterHeading({
-  text,
-  active,
-  className,
-}: {
-  text: string;
-  active: boolean;
-  className?: string;
-}) {
-  const [shown, setShown] = useState('');
-  const intervalRef = useRef<number | null>(null);
+function shortHash(h: string) {
+  return h.length > 14 ? `${h.slice(0, 10)}…${h.slice(-4)}` : h;
+}
 
-  useEffect(() => {
-    if (!active) return;
-    const startId = window.setTimeout(() => {
-      setShown('');
-      let i = 0;
-      intervalRef.current = window.setInterval(() => {
-        i += 1;
-        setShown(text.slice(0, i));
-        if (i >= text.length && intervalRef.current != null) {
-          window.clearInterval(intervalRef.current);
-          intervalRef.current = null;
-        }
-      }, 16);
-    }, 0);
-    return () => {
-      window.clearTimeout(startId);
-      if (intervalRef.current != null) {
-        window.clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-    };
-  }, [text, active]);
-
-  const display = active ? shown : text;
-
-  return (
-    <h2 className={className}>
-      {display}
-      {active && shown.length < text.length ? (
-        <span className="ml-0.5 inline-block h-[1em] w-0.5 animate-pulse bg-[var(--text-high-3)] align-bottom" />
-      ) : null}
-    </h2>
+function StatusBadge({ disbursed }: { disbursed: boolean }) {
+  return disbursed ? (
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-semibold text-emerald-400">
+      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+      Disbursed
+    </span>
+  ) : (
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 px-3 py-1 text-xs font-semibold text-amber-400">
+      <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+      In vault
+    </span>
   );
 }
 
 export function TxLifecyclePage() {
   const { txHash = '' } = useParams();
-  const isLightMode = useIsLightMode();
+  const light = useIsLightMode();
   const [data, setData] = useState<LifecycleResponse | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [stepIdx, setStepIdx] = useState(0);
-  const [autoOn, setAutoOn] = useState(true);
 
   const load = useCallback(() => {
     if (!txHash) return Promise.resolve();
     return apiJson<LifecycleResponse>(`/ledger/v2/lifecycle/${txHash}`)
-      .then((res) => {
-        setErr(null);
-        setData(res);
-      })
-      .catch((e: unknown) =>
-        setErr(e instanceof Error ? e.message : 'Failed to load lifecycle')
-      );
+      .then((res) => { setErr(null); setData(res); })
+      .catch((e: unknown) => setErr(e instanceof Error ? e.message : 'Failed to load'));
   }, [txHash]);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  useEffect(() => { void load(); }, [load]);
+  useVaultexEvents(() => { void load(); }, { enabled: Boolean(txHash), filter: isLedgerEvent });
 
-  useVaultexEvents(() => {
-    void load();
-  }, { enabled: Boolean(txHash), filter: isLedgerEvent });
+  const d = data?.donation;
+  const disb = data?.linkedDisbursements ?? [];
+  const util = data?.utilization;
+  const hasDisbursements = disb.length > 0;
 
-  const steps = useMemo(() => {
-    if (!data) return [];
-    const disb = data.linkedDisbursements ?? [];
-    return [
-      {
-        key: 'donation',
-        title: '1) Donation created',
-        body: data.donation.narrative ?? `Donation ${data.donation.tx_hash}`,
-        meta: `${data.donation.value_eth} ETH · ${fmtTs(data.donation.recorded_at)}`,
-      },
-      {
-        key: 'vault',
-        title: '2) Held in VAULTEX vault',
-        body: 'Funds are received into the vault wallet for the selected cause, pending verified disbursement.',
-        meta: data.utilization
-          ? `Remaining for cause: ${data.utilization.remainingEth.toFixed(4)} ETH`
-          : 'Cause totals unavailable',
-      },
-      ...disb.map((d, i) => ({
-        key: `disb-${d.id}`,
-        title: `3.${i + 1}) Disbursed`,
-        body: d.narrative ?? `Disbursement ${d.tx_hash}`,
-        meta: `${d.value_eth} ETH · ${fmtTs(d.recorded_at)}`,
-      })),
-      {
-        key: 'audit',
-        title: '4) Audit trail',
-        body: 'This lifecycle is backed by on-chain transaction hashes and internally linked ledger references.',
-        meta: 'Scroll or wait. The story loops automatically, and new disbursements appear when the ledger updates.',
-      },
-    ];
-  }, [data]);
-
-  const lifecycleResetKey = data
-    ? `${data.donation.id}:${data.linkedDisbursements.length}`
-    : '';
-
-  useEffect(() => {
-    if (!lifecycleResetKey) return;
-    const t = window.setTimeout(() => setStepIdx(0), 0);
-    return () => window.clearTimeout(t);
-  }, [lifecycleResetKey]);
-
-  useEffect(() => {
-    if (!autoOn || !data || steps.length === 0) return;
-    const t = window.setInterval(() => {
-      setStepIdx((i) => (i + 1) % steps.length);
-    }, AUTO_SCROLL_MS);
-    return () => window.clearInterval(t);
-  }, [autoOn, data, steps.length]);
-
-  useEffect(() => {
-    if (!scrollRef.current || steps.length === 0) return;
-    const sections = scrollRef.current.querySelectorAll<HTMLElement>('[data-lifecycle-step]');
-    const el = sections[stepIdx];
-    el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, [stepIdx, steps.length]);
+  const card = light
+    ? 'rounded-2xl border border-slate-200 bg-white p-5 shadow-sm'
+    : 'rounded-2xl border border-white/10 bg-white/[0.03] p-5';
+  const label = 'text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted-2)]';
+  const val = 'mt-0.5 font-mono text-sm text-[var(--text-high-3)]';
 
   return (
-    <div className="vtx-page max-w-5xl">
-      <SectionHeader
-        title="Donation lifecycle"
-        body="Animated story: from donation → vault → disbursement(s), with live ledger refresh."
-      />
-
-      <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+    <div className="mx-auto w-full max-w-4xl px-4 py-10">
+      {/* Header */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className={label}>Donation lifecycle</p>
+          <h1 className="mt-1 text-2xl font-bold text-[var(--text-high-3)]">
+            Where your funds went
+          </h1>
+        </div>
         <Link
           to="/account"
-          className={`rounded-full px-3 py-1.5 font-semibold ${
-            isLightMode
-              ? 'border border-slate-300 bg-white/80 text-slate-700 hover:bg-white'
-              : 'border border-white/15 bg-white/[0.03] text-white/80 hover:bg-white/[0.08]'
+          className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
+            light
+              ? 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+              : 'border border-white/15 bg-white/[0.04] text-white/80 hover:bg-white/[0.08]'
           }`}
         >
-          Back to profile
+          ← Back to account
         </Link>
-        <button
-          type="button"
-          onClick={() => setAutoOn((v) => !v)}
-          className={`rounded-full px-3 py-1.5 font-semibold ${
-            isLightMode
-              ? 'border border-slate-300 bg-white/80 text-slate-700 hover:bg-white'
-              : 'border border-white/15 bg-white/[0.03] text-white/80 hover:bg-white/[0.08]'
-          }`}
-        >
-          {autoOn ? 'Pause auto-scroll' : 'Resume auto-scroll'}
-        </button>
-        <span className="font-mono text-[var(--text-muted-1)]">{txHash}</span>
       </div>
 
+      <p className="mt-1 font-mono text-xs text-[var(--text-muted-1)]">{txHash}</p>
+
+      {/* Error */}
       {err ? (
-        <SurfaceCard className="mt-6 rounded-2xl border border-rose-500/20 bg-rose-500/10 p-4 text-rose-200">
+        <div className="mt-6 rounded-xl border border-rose-500/20 bg-rose-500/10 p-4 text-sm text-rose-300">
           {err}
-        </SurfaceCard>
+        </div>
       ) : null}
 
+      {/* Loading */}
       {!data && !err ? (
-        <SurfaceCard className="mt-6 rounded-2xl p-6 text-[var(--text-muted-1)]">Loading…</SurfaceCard>
+        <div className="mt-10 text-center text-[var(--text-muted-1)]">Loading…</div>
       ) : null}
 
-      {data ? (
-        <div
-          ref={scrollRef}
-          className="mt-6 h-[min(72vh,720px)] overflow-y-auto scroll-smooth rounded-3xl border border-[var(--glass-border)] bg-[var(--overlay-surface)]"
-          style={{ scrollSnapType: 'y mandatory' }}
-        >
-          {steps.map((s, i) => (
-            <section
-              key={s.key}
-              data-lifecycle-step
-              className="grid min-h-[min(72vh,720px)] place-items-center px-6 py-10"
-              style={{ scrollSnapAlign: 'start' }}
-            >
-              <div className="w-full max-w-2xl">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--text-muted-2)]">
-                  {s.title}
+      {d ? (
+        <div className="mt-8 space-y-6">
+          {/* ── Flow diagram ─────────────────────────────────────── */}
+          <div className={card}>
+            <p className={label}>Fund flow</p>
+            <div className="mt-4 flex items-center gap-3 overflow-x-auto">
+              {/* FROM */}
+              <div className="flex min-w-0 shrink-0 flex-col items-center gap-1">
+                <div className={`flex h-12 w-12 items-center justify-center rounded-full text-lg ${
+                  light ? 'bg-blue-100 text-blue-600' : 'bg-blue-500/15 text-blue-400'
+                }`}>
+                  ↑
+                </div>
+                <p className="max-w-[100px] truncate text-center text-xs font-semibold text-[var(--text-high-3)]">
+                  {d.from_display_name ?? 'Donor'}
                 </p>
-                <TypewriterHeading
-                  text={s.body}
-                  active={i === stepIdx}
-                  className="mt-2 min-h-[3.5rem] text-2xl font-semibold leading-snug text-[var(--text-high-3)] sm:min-h-[2.75rem]"
-                />
-                <p className="mt-3 text-sm text-[var(--text-muted-1)]">{s.meta}</p>
-
-                {s.key === 'vault' && data.utilization ? (
-                  <div className="mt-5 rounded-2xl border border-[var(--glass-border)] bg-[var(--overlay-surface-soft)] p-4">
-                    <p className="text-xs font-semibold text-[var(--text-high-2)]">Cause utilization</p>
-                    <div className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
-                      <div className="vtx-glass-inset px-3 py-2.5">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted-2)]">
-                          Donated
-                        </p>
-                        <p className="mt-1 font-mono text-[var(--text-high-3)]">
-                          {data.utilization.donatedEth.toFixed(4)} ETH
-                        </p>
-                      </div>
-                      <div className="vtx-glass-inset px-3 py-2.5">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted-2)]">
-                          Disbursed
-                        </p>
-                        <p className="mt-1 font-mono text-[var(--text-high-3)]">
-                          {data.utilization.disbursedEth.toFixed(4)} ETH
-                        </p>
-                      </div>
-                    </div>
-                    <div className="mt-3 h-2 overflow-hidden rounded-full border border-[var(--glass-border)] bg-[var(--overlay-surface-soft)]">
-                      <div
-                        className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 transition-[width] duration-700 ease-out"
-                        style={{
-                          width: `${Math.min(100, Math.max(0, data.utilization.utilizationPct))}%`,
-                        }}
-                      />
-                    </div>
-                    <p className="mt-2 text-xs text-[var(--text-muted-1)]">
-                      {data.utilization.utilizationPct.toFixed(0)}% utilized ·{' '}
-                      {data.utilization.remainingEth.toFixed(4)} ETH remaining
-                    </p>
-                  </div>
-                ) : null}
+                <p className="text-[10px] text-[var(--text-muted-2)]">Donor</p>
               </div>
-            </section>
-          ))}
+
+              {/* Arrow */}
+              <div className="flex flex-1 items-center">
+                <div className={`h-px flex-1 ${light ? 'bg-slate-300' : 'bg-white/15'}`} />
+                <p className="mx-2 whitespace-nowrap text-xs font-bold text-emerald-400">
+                  {d.value_eth} ETH
+                </p>
+                <div className={`h-px flex-1 ${light ? 'bg-slate-300' : 'bg-white/15'}`} />
+              </div>
+
+              {/* VAULT */}
+              <div className="flex min-w-0 shrink-0 flex-col items-center gap-1">
+                <div className={`flex h-12 w-12 items-center justify-center rounded-full text-lg font-bold ${
+                  light ? 'bg-emerald-100 text-emerald-600' : 'bg-emerald-500/15 text-emerald-400'
+                }`}>
+                  V
+                </div>
+                <p className="text-xs font-semibold text-[var(--text-high-3)]">Vaultex</p>
+                <p className="text-[10px] text-[var(--text-muted-2)]">Vault</p>
+              </div>
+
+              {/* Arrow to beneficiary (if disbursed) */}
+              {hasDisbursements ? (
+                <>
+                  <div className="flex flex-1 items-center">
+                    <div className={`h-px flex-1 ${light ? 'bg-slate-300' : 'bg-white/15'}`} />
+                    <p className="mx-2 whitespace-nowrap text-xs font-bold text-cyan-400">
+                      {disb.reduce((s, x) => s + parseFloat(x.value_eth), 0).toFixed(4)} ETH
+                    </p>
+                    <div className={`h-px flex-1 ${light ? 'bg-slate-300' : 'bg-white/15'}`} />
+                  </div>
+
+                  <div className="flex min-w-0 shrink-0 flex-col items-center gap-1">
+                    <div className={`flex h-12 w-12 items-center justify-center rounded-full text-lg ${
+                      light ? 'bg-cyan-100 text-cyan-600' : 'bg-cyan-500/15 text-cyan-400'
+                    }`}>
+                      ↓
+                    </div>
+                    <p className="max-w-[100px] truncate text-center text-xs font-semibold text-[var(--text-high-3)]">
+                      {disb[0]?.to_display_name ?? 'Beneficiary'}
+                    </p>
+                    <p className="text-[10px] text-[var(--text-muted-2)]">Recipient</p>
+                  </div>
+                </>
+              ) : null}
+            </div>
+          </div>
+
+          {/* ── Status + cause utilization ────────────────────────── */}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className={card}>
+              <p className={label}>Status</p>
+              <div className="mt-3">
+                <StatusBadge disbursed={hasDisbursements} />
+              </div>
+              <p className="mt-3 text-sm text-[var(--text-muted-1)]">
+                {hasDisbursements
+                  ? `Funds have been disbursed to ${disb[0]?.to_display_name ?? 'the beneficiary'}.`
+                  : 'Funds are held in the Vaultex vault, pending disbursement to the cause beneficiary.'}
+              </p>
+            </div>
+
+            {util ? (
+              <div className={card}>
+                <p className={label}>Cause utilization</p>
+                <div className="mt-3 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-[var(--text-muted-1)]">Donated</span>
+                    <span className="font-mono text-[var(--text-high-3)]">{util.donatedEth.toFixed(4)} ETH</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-[var(--text-muted-1)]">Disbursed</span>
+                    <span className="font-mono text-[var(--text-high-3)]">{util.disbursedEth.toFixed(4)} ETH</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-[var(--text-muted-1)]">Remaining</span>
+                    <span className="font-mono text-[var(--text-high-3)]">{util.remainingEth.toFixed(4)} ETH</span>
+                  </div>
+                  <div className={`mt-2 h-2 overflow-hidden rounded-full ${light ? 'bg-slate-200' : 'bg-white/10'}`}>
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 transition-[width] duration-500"
+                      style={{ width: `${Math.min(100, Math.max(0, util.utilizationPct))}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-[var(--text-muted-1)]">
+                    {util.utilizationPct.toFixed(0)}% of cause funds utilized
+                  </p>
+                </div>
+              </div>
+            ) : null}
+          </div>
+
+          {/* ── Donation detail ───────────────────────────────────── */}
+          <div className={card}>
+            <p className={label}>Donation</p>
+            <div className="mt-3 grid gap-x-8 gap-y-3 sm:grid-cols-2">
+              <div>
+                <p className={label}>From</p>
+                <p className={val}>{d.from_display_name ?? shortHash(d.from_addr)}</p>
+              </div>
+              <div>
+                <p className={label}>To</p>
+                <p className={val}>{d.to_display_name ?? shortHash(d.to_addr)}</p>
+              </div>
+              <div>
+                <p className={label}>Amount</p>
+                <p className={val}>{d.value_eth} ETH</p>
+              </div>
+              <div>
+                <p className={label}>Cause</p>
+                <p className={val}>{d.cause_name ?? '—'}</p>
+              </div>
+              <div>
+                <p className={label}>Time</p>
+                <p className={val}>{fmtTs(d.recorded_at)}</p>
+              </div>
+              <div>
+                <p className={label}>Block</p>
+                <p className={val}>{d.block_number ?? '—'}</p>
+              </div>
+              <div className="sm:col-span-2">
+                <p className={label}>Tx hash</p>
+                <p className="mt-0.5 break-all font-mono text-xs text-[var(--text-muted-1)]">{d.tx_hash}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Disbursements ─────────────────────────────────────── */}
+          {disb.length > 0 ? (
+            <div className={card}>
+              <p className={label}>Disbursement{disb.length > 1 ? 's' : ''}</p>
+              <div className="mt-3 space-y-4">
+                {disb.map((row) => (
+                  <div key={row.id} className={`rounded-xl p-4 ${light ? 'bg-slate-50' : 'bg-white/[0.02]'}`}>
+                    <div className="grid gap-x-8 gap-y-3 sm:grid-cols-2">
+                      <div>
+                        <p className={label}>To</p>
+                        <p className={val}>{row.to_display_name ?? shortHash(row.to_addr)}</p>
+                      </div>
+                      <div>
+                        <p className={label}>Amount</p>
+                        <p className={val}>{row.value_eth} ETH</p>
+                      </div>
+                      <div>
+                        <p className={label}>Time</p>
+                        <p className={val}>{fmtTs(row.recorded_at)}</p>
+                      </div>
+                      <div>
+                        <p className={label}>Memo</p>
+                        <p className={val}>{row.memo ?? '—'}</p>
+                      </div>
+                      <div className="sm:col-span-2">
+                        <p className={label}>Tx hash</p>
+                        <p className="mt-0.5 break-all font-mono text-xs text-[var(--text-muted-1)]">{row.tx_hash}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
         </div>
       ) : null}
     </div>
