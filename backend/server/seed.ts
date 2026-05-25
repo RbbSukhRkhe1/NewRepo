@@ -32,7 +32,7 @@ type SeedCause = {
 
 const SEEDED_CAUSES: SeedCause[] = [
   {
-    title: 'LGBTQs',
+    title: 'Pride Safe Spaces',
     description:
       'Safe housing, counselling, and mutual aid for queer and trans communities—transparent, verifiable fund flow.',
     goalEth: 25,
@@ -65,8 +65,8 @@ const SEEDED_CAUSES: SeedCause[] = [
     campaignEndDate: '2026-06-24',
   },
   {
-    title: 'War',
-    description: 'Emergency relief, medical supplies, and resettlement support for families affected by conflict.',
+    title: 'End the Iran Conflict',
+    description: 'Emergency relief, medical supplies, and resettlement support for families caught in the US–Iran crisis.',
     goalEth: 50,
     raisedEth: 0,
     imageUrl: '/Photos/War.jpg',
@@ -97,8 +97,8 @@ const SEEDED_CAUSES: SeedCause[] = [
     campaignEndDate: '2026-06-23',
   },
   {
-    title: 'Disaster',
-    description: 'Rapid response shelters, food, and rebuilding after climate and natural disasters.',
+    title: 'Pacific Cyclone Recovery',
+    description: 'Rapid response shelters, food, and rebuilding for communities devastated by Pacific cyclone season.',
     goalEth: 40,
     raisedEth: 0,
     imageUrl: '/Photos/Disaster.jpg',
@@ -129,8 +129,8 @@ const SEEDED_CAUSES: SeedCause[] = [
     campaignEndDate: '2026-06-27',
   },
   {
-    title: 'Hospital',
-    description: 'Medical equipment, staff support, and patient care funds for public hospital networks.',
+    title: 'Save Our ER',
+    description: 'Medical equipment, staff support, and patient care funds for underfunded emergency departments.',
     goalEth: 75,
     raisedEth: 75,
     imageUrl: '/Photos/Hospital.jpg',
@@ -161,8 +161,8 @@ const SEEDED_CAUSES: SeedCause[] = [
     campaignEndDate: '2026-08-01',
   },
   {
-    title: 'Education',
-    description: 'Scholarships, supplies, and digital access for underserved students.',
+    title: 'Books Not Barriers',
+    description: 'Scholarships, supplies, and digital access for underserved students locked out of learning.',
     goalEth: 30,
     raisedEth: 9,
     imageUrl: '/samples/causes/education.jpg',

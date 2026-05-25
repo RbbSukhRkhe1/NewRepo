@@ -121,34 +121,34 @@ ADMIN="admin@vaultex.local"
 
 donors_for() {
   case "$1" in
-    *LGBTQ*|*lgbtq*) echo "0 3 5" ;;
-    *War*|*war*)     echo "1 4 2" ;;
-    *Disaster*)      echo "2 3 4" ;;
-    *Hospital*)      echo "0 1 5" ;;
-    *Education*)     echo "4 5 0" ;;
-    *)               echo "0 1 2" ;;
+    *Pride*|*LGBTQ*|*lgbtq*) echo "0 3 5" ;;
+    *Iran*|*War*|*Conflict*)  echo "1 4 2" ;;
+    *Cyclone*|*Disaster*)     echo "2 3 4" ;;
+    *ER*|*Hospital*|*Save*)   echo "0 1 5" ;;
+    *Books*|*Education*)      echo "4 5 0" ;;
+    *)                        echo "0 1 2" ;;
   esac
 }
 
 disburse_msg() {
   case "$1" in
-    *Hospital*)      echo "Medical equipment batch" ;;
-    *War*)           echo "Frontline medical kits" ;;
-    *Disaster*)      echo "Emergency shelter deploy" ;;
-    *LGBTQ*|*lgbtq*) echo "Safe housing vouchers" ;;
-    *Education*)     echo "School supply bundles" ;;
-    *)               echo "General disbursement" ;;
+    *ER*|*Hospital*|*Save*)     echo "Medical equipment batch" ;;
+    *Iran*|*War*|*Conflict*)    echo "Frontline medical kits" ;;
+    *Cyclone*|*Disaster*)       echo "Emergency shelter deploy" ;;
+    *Pride*|*LGBTQ*|*lgbtq*)   echo "Safe housing vouchers" ;;
+    *Books*|*Education*)        echo "School supply bundles" ;;
+    *)                          echo "General disbursement" ;;
   esac
 }
 
 recipient_for() {
   case "$1" in
-    *Hospital*)      echo "Red Cross Hospital" ;;
-    *War*)           echo "WHO Disaster Relief" ;;
-    *Disaster*)      echo "WHO Disaster Relief" ;;
-    *LGBTQ*|*lgbtq*) echo "WeAreHumans" ;;
-    *Education*)     echo "Red Cross Hospital" ;;
-    *)               echo "Beneficiary" ;;
+    *ER*|*Hospital*|*Save*)     echo "Red Cross Hospital" ;;
+    *Iran*|*War*|*Conflict*)    echo "WHO Disaster Relief" ;;
+    *Cyclone*|*Disaster*)       echo "WHO Disaster Relief" ;;
+    *Pride*|*LGBTQ*|*lgbtq*)   echo "WeAreHumans" ;;
+    *Books*|*Education*)        echo "Red Cross Hospital" ;;
+    *)                          echo "Beneficiary" ;;
   esac
 }
 
@@ -287,7 +287,7 @@ printf "${B}═══ SIMULATION COMPLETE ═══${N}\n"
 echo "  Donations:     $DNUM"
 echo "  Disbursements: $DISBNUM"
 echo
-printf "  ${B}Per-cause (donated = disbursed):${N}\n"
+printf "  ${B}Per cause (donated = disbursed):${N}\n"
 for i in "${!CAUSE_IDS[@]}"; do
   cid="${CAUSE_IDS[$i]}"
   ct="${CAUSE_TITLES[$i]}"
