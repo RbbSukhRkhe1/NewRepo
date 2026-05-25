@@ -1,44 +1,121 @@
 #!/usr/bin/env bash
 # ─────────────────────────────────────────────────────────────────────────────
-# Vaultex — full simulation: donations + disbursements
+# Vaultex — simulate donations + disbursements from outside Docker
 #
-# Run on the server (or local) once the API + Anvil are up:
-#   bash scripts/simulate-server.sh
+# Dependencies: curl, jq  (install jq: sudo apt install -y jq)
 #
-# Env overrides:
-#   API_BASE        (default http://127.0.0.1:3847/api)
-#   PASSWORD        (default demo123)
-#   DONATION_ROUNDS (default 2 — each round sends one donation per donor×cause)
-#   DELAY           (default 1.5 seconds between actions)
+# Usage:
+#   bash simulate-server.sh                       # defaults to localhost:8080
+#   API=https://vaultex.club bash simulate-server.sh
+#   ROUNDS=3 DELAY=2 bash simulate-server.sh
 # ─────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 
-API="${API_BASE:-http://127.0.0.1:3847/api}"
+API="${API:-http://localhost:8080/api}"
 PW="${PASSWORD:-demo123}"
-ROUNDS="${DONATION_ROUNDS:-2}"
+ROUNDS="${ROUNDS:-2}"
 DELAY="${DELAY:-1.5}"
 
-# ── Colours ──────────────────────────────────────────────────────────────────
-GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'
-RED='\033[0;31m'; BOLD='\033[1m'; NC='\033[0m'
+# ── Preflight ────────────────────────────────────────────────────────────────
+for cmd in curl jq; do
+  if ! command -v "$cmd" &>/dev/null; then
+    echo "ERROR: '$cmd' not found. Install it:  sudo apt install -y $cmd"
+    exit 1
+  fi
+done
 
-ok()   { printf "${GREEN}✓${NC} %s\n" "$*"; }
-info() { printf "${CYAN}→${NC} %s\n" "$*"; }
-warn() { printf "${YELLOW}⚠${NC} %s\n" "$*"; }
-err()  { printf "${RED}✗${NC} %s\n" "$*"; }
+G='\033[0;32m'; Y='\033[1;33m'; C='\033[0;36m'
+R='\033[0;31m'; B='\033[1m'; N='\033[0m'
+ok()   { printf "${G}✓${N} %s\n" "$*"; }
+info() { printf "${C}→${N} %s\n" "$*"; }
+warn() { printf "${Y}⚠${N} %s\n" "$*"; }
+err()  { printf "${R}✗${N} %s\n" "$*"; }
 
 # ── Health check ─────────────────────────────────────────────────────────────
-HEALTH_URL="${API%/api}/health"
-info "Checking API at ${HEALTH_URL} ..."
-if ! curl -sf "$HEALTH_URL" >/dev/null 2>&1; then
-  err "Backend not reachable at ${HEALTH_URL}"
-  echo "  Start with:  npm run dev   (or ensure the server is running on the target host)"
-  exit 1
+HEALTH="${API%/api}/health"
+if [ "$API" != "${API%/api}" ]; then
+  HEALTH="${API%/api}/health"
+else
+  HEALTH="${API}/health"
 fi
-ok "API is up"
+# If API is like https://vaultex.club/api, health is https://vaultex.club/health
+# If API is like http://localhost:8080/api, health is http://localhost:8080/health
+
+info "Checking API at $HEALTH ..."
+if ! curl -sf --max-time 5 "$HEALTH" >/dev/null 2>&1; then
+  # Try the /api prefix in case health is behind /api
+  if ! curl -sf --max-time 5 "$API/config" >/dev/null 2>&1; then
+    err "Backend not reachable at $API"
+    echo "  Is docker compose running?  docker compose ps"
+    exit 1
+  fi
+fi
+ok "API is up at $API"
 echo
 
-# ── Donors (team + simulation wallets on Anvil indices 1–6) ─────────────────
+# ── Cookie jar (temp dir, cleaned up on exit) ────────────────────────────────
+CDIR=$(mktemp -d)
+trap 'rm -rf "$CDIR"' EXIT
+
+# ── login(email) → sets COOKIE_FILE ─────────────────────────────────────────
+login() {
+  local email="$1"
+  COOKIE_FILE="$CDIR/$(echo "$email" | tr '@.' '_').txt"
+  local resp
+  resp=$(curl -s -w '\n%{http_code}' \
+    -X POST "$API/auth/login" \
+    -H 'Content-Type: application/json' \
+    -c "$COOKIE_FILE" -b "$COOKIE_FILE" \
+    -d "{\"email\":\"$email\",\"password\":\"$PW\"}")
+  local code
+  code=$(echo "$resp" | tail -1)
+  if [ "$code" != "200" ]; then
+    warn "Login failed for $email (HTTP $code)"
+    return 1
+  fi
+  return 0
+}
+
+# ── api_post(path, json_body) → prints response body, sets HTTP_CODE ────────
+api_post() {
+  local path="$1" body="$2"
+  local resp
+  resp=$(curl -s -w '\n%{http_code}' \
+    -X POST "$API$path" \
+    -H 'Content-Type: application/json' \
+    -c "$COOKIE_FILE" -b "$COOKIE_FILE" \
+    -d "$body")
+  HTTP_CODE=$(echo "$resp" | tail -1)
+  echo "$resp" | sed '$d'
+}
+
+# ── Random ETH amount (0.05 – 0.35, no python needed) ───────────────────────
+random_eth() {
+  local r=$(( RANDOM % 3000 + 500 ))
+  printf "0.%04d" "$r"
+}
+
+# ── Fetch active causes ─────────────────────────────────────────────────────
+info "Fetching active causes ..."
+CAUSES_RAW=$(curl -s "$API/causes?status=active")
+CAUSE_COUNT=$(echo "$CAUSES_RAW" | jq 'length')
+
+if [ "$CAUSE_COUNT" -eq 0 ] || [ "$CAUSE_COUNT" = "null" ]; then
+  err "No active causes found. Is the database seeded?"
+  exit 1
+fi
+
+# Build parallel arrays of IDs and titles
+readarray -t CAUSE_IDS    < <(echo "$CAUSES_RAW" | jq -r '.[].id')
+readarray -t CAUSE_TITLES < <(echo "$CAUSES_RAW" | jq -r '.[].title')
+
+ok "Found $CAUSE_COUNT active causes:"
+for i in "${!CAUSE_IDS[@]}"; do
+  echo "    [${CAUSE_IDS[$i]}] ${CAUSE_TITLES[$i]}"
+done
+echo
+
+# ── All 6 seeded donors ─────────────────────────────────────────────────────
 DONORS=(
   "haha@vaultex.local"
   "sukhan@vaultex.local"
@@ -48,221 +125,127 @@ DONORS=(
   "lena@vaultex.local"
 )
 
-ADMIN_EMAIL="admin@vaultex.local"
-
-# ── Cookie jar helper ────────────────────────────────────────────────────────
-COOKIE_DIR=$(mktemp -d)
-trap 'rm -rf "$COOKIE_DIR"' EXIT
-
-cookie_for() { echo "$COOKIE_DIR/$1.txt"; }
-
-do_login() {
-  local email="$1"
-  local jar
-  jar=$(cookie_for "$email")
-  local body
-  body=$(curl -s -w '\n%{http_code}' \
-    -X POST "$API/auth/login" \
-    -H 'Content-Type: application/json' \
-    -c "$jar" -b "$jar" \
-    -d "{\"email\":\"$email\",\"password\":\"$PW\"}")
-  local code
-  code=$(echo "$body" | tail -1)
-  if [ "$code" != "200" ]; then
-    err "Login failed for $email (HTTP $code)"
-    return 1
-  fi
-  return 0
-}
-
-# ── Fetch active causes ─────────────────────────────────────────────────────
-info "Fetching active causes ..."
-CAUSES_JSON=$(curl -s "$API/causes?status=active")
-CAUSE_COUNT=$(echo "$CAUSES_JSON" | python3 -c "import sys,json; print(len(json.load(sys.stdin)))" 2>/dev/null || echo 0)
-
-if [ "$CAUSE_COUNT" -eq 0 ]; then
-  err "No active causes found. Seed the database first."
-  exit 1
-fi
-
-# Parse cause IDs and titles into arrays
-readarray -t CAUSE_IDS < <(echo "$CAUSES_JSON" | python3 -c "
-import sys, json
-for c in json.load(sys.stdin):
-    print(c['id'])
-")
-readarray -t CAUSE_TITLES < <(echo "$CAUSES_JSON" | python3 -c "
-import sys, json
-for c in json.load(sys.stdin):
-    print(c['title'])
-")
-
-ok "Found $CAUSE_COUNT active causes:"
-for i in "${!CAUSE_IDS[@]}"; do
-  echo "    [${CAUSE_IDS[$i]}] ${CAUSE_TITLES[$i]}"
-done
-echo
-
-# ── Cause → preferred donors mapping ────────────────────────────────────────
-# Spread donors across causes so each cause gets traffic from different wallets.
-# Index into DONORS array:
-#   0=Haha 1=Sukhan 2=Tasin 3=Sam 4=Priya 5=Lena
-#
-# Cause titles (from seed): LGBTQs, War, Disaster, Hospital, Education
-# We map by title keyword so the script is resilient to ID changes.
-donor_indices_for_cause() {
-  local title="$1"
-  case "$title" in
+# ── Cause → preferred donor indices (spread across wallets) ─────────────────
+donors_for() {
+  case "$1" in
     *LGBTQ*|*lgbtq*) echo "0 3 5" ;;   # Haha, Sam, Lena
     *War*|*war*)     echo "1 4 2" ;;   # Sukhan, Priya, Tasin
     *Disaster*)      echo "2 3 4" ;;   # Tasin, Sam, Priya
     *Hospital*)      echo "0 1 5" ;;   # Haha, Sukhan, Lena
     *Education*)     echo "4 5 0" ;;   # Priya, Lena, Haha
-    *)               echo "0 1 2" ;;   # fallback
+    *)               echo "0 1 2" ;;
   esac
 }
 
-random_eth() {
-  python3 -c "import random; print(f'{random.uniform(0.05, 0.35):.4f}')"
-}
-
 # ═════════════════════════════════════════════════════════════════════════════
-# PHASE 1 — DONATIONS
+#  PHASE 1 — DONATIONS
 # ═════════════════════════════════════════════════════════════════════════════
-printf "\n${BOLD}═══ PHASE 1: DONATIONS (${ROUNDS} rounds) ═══${NC}\n\n"
-
-DONATION_NUM=0
+printf "\n${B}═══ PHASE 1: DONATIONS ($ROUNDS rounds × $CAUSE_COUNT causes) ═══${N}\n\n"
+DNUM=0
 
 for (( round=1; round<=ROUNDS; round++ )); do
   info "Round $round / $ROUNDS"
   for i in "${!CAUSE_IDS[@]}"; do
     cid="${CAUSE_IDS[$i]}"
-    ctitle="${CAUSE_TITLES[$i]}"
-    read -ra dmap <<< "$(donor_indices_for_cause "$ctitle")"
-
-    # Pick a donor for this round (cycle through the 3 preferred donors)
+    ct="${CAUSE_TITLES[$i]}"
+    read -ra dmap <<< "$(donors_for "$ct")"
     didx="${dmap[$(( (round - 1) % ${#dmap[@]} ))]}"
     donor="${DONORS[$didx]}"
     amt=$(random_eth)
-    DONATION_NUM=$((DONATION_NUM + 1))
+    DNUM=$((DNUM + 1))
 
-    do_login "$donor" || continue
-    jar=$(cookie_for "$donor")
+    login "$donor" || continue
+    body=$(api_post "/donate" "{\"causeId\":$cid,\"amountEth\":\"$amt\"}")
 
-    resp=$(curl -s -w '\n%{http_code}' \
-      -X POST "$API/donate" \
-      -H 'Content-Type: application/json' \
-      -c "$jar" -b "$jar" \
-      -d "{\"causeId\":$cid,\"amountEth\":\"$amt\"}")
-    code=$(echo "$resp" | tail -1)
-    body=$(echo "$resp" | sed '$d')
-
-    if [ "$code" = "200" ]; then
-      tx=$(echo "$body" | python3 -c "import sys,json; print(json.load(sys.stdin).get('txHash','')[:12])" 2>/dev/null || echo "???")
-      ok "[${DONATION_NUM}] ${donor%%@*} → $ctitle: $amt ETH (${tx}…)"
+    if [ "$HTTP_CODE" = "200" ]; then
+      tx=$(echo "$body" | jq -r '.txHash // empty' | head -c 12)
+      ok "[$DNUM] ${donor%%@*} → $ct: $amt ETH (${tx}…)"
     else
-      warn "[${DONATION_NUM}] ${donor%%@*} → $ctitle: FAILED ($code)"
+      warn "[$DNUM] ${donor%%@*} → $ct: FAILED ($HTTP_CODE)"
     fi
-
     sleep "$DELAY"
   done
   echo
 done
-
-printf "${GREEN}${BOLD}Donations complete: $DONATION_NUM sent${NC}\n\n"
+printf "${G}${B}Donations complete: $DNUM sent${N}\n\n"
 
 # ═════════════════════════════════════════════════════════════════════════════
-# PHASE 2 — DISBURSEMENTS  (admin → correct beneficiary per cause)
+#  PHASE 2 — DISBURSEMENTS (admin disburses to the bound beneficiary)
 # ═════════════════════════════════════════════════════════════════════════════
-printf "${BOLD}═══ PHASE 2: DISBURSEMENTS ═══${NC}\n\n"
+printf "${B}═══ PHASE 2: DISBURSEMENTS ═══${N}\n\n"
 
-# Cause → recipient (set in seed.ts):
-#   Hospital   → Red Cross Hospital   (anvil #7)
-#   War        → WHO Disaster Relief  (anvil #8)
-#   Disaster   → WHO Disaster Relief  (anvil #8)
-#   LGBTQs     → WeAreHumans          (anvil #9)
-#   Education  → Red Cross Hospital   (anvil #7)
+#  Cause → Recipient (matches seed.ts):
+#    Hospital   → Red Cross Hospital   (Anvil #7)
+#    War        → WHO Disaster Relief  (Anvil #8)
+#    Disaster   → WHO Disaster Relief  (Anvil #8)
+#    LGBTQs     → WeAreHumans          (Anvil #9)
+#    Education  → Red Cross Hospital   (Anvil #7)
 
-disburse_message_for() {
-  local title="$1"
-  case "$title" in
-    *Hospital*)  echo "Medical equipment batch" ;;
-    *War*)       echo "Frontline medical kits" ;;
-    *Disaster*)  echo "Emergency shelter deploy" ;;
+disburse_msg() {
+  case "$1" in
+    *Hospital*)      echo "Medical equipment batch" ;;
+    *War*)           echo "Frontline medical kits" ;;
+    *Disaster*)      echo "Emergency shelter deploy" ;;
     *LGBTQ*|*lgbtq*) echo "Safe housing vouchers" ;;
-    *Education*) echo "School supply bundles" ;;
-    *)           echo "General disbursement" ;;
+    *Education*)     echo "School supply bundles" ;;
+    *)               echo "General disbursement" ;;
   esac
 }
 
-disburse_recipient_for() {
-  local title="$1"
-  case "$title" in
-    *Hospital*)  echo "Red Cross Hospital" ;;
-    *War*)       echo "WHO Disaster Relief" ;;
-    *Disaster*)  echo "WHO Disaster Relief" ;;
+recipient_for() {
+  case "$1" in
+    *Hospital*)      echo "Red Cross Hospital" ;;
+    *War*)           echo "WHO Disaster Relief" ;;
+    *Disaster*)      echo "WHO Disaster Relief" ;;
     *LGBTQ*|*lgbtq*) echo "WeAreHumans" ;;
-    *Education*) echo "Red Cross Hospital" ;;
-    *)           echo "Unknown" ;;
+    *Education*)     echo "Red Cross Hospital" ;;
+    *)               echo "Beneficiary" ;;
   esac
 }
 
 info "Logging in as admin ..."
-do_login "$ADMIN_EMAIL" || { err "Admin login failed"; exit 1; }
-ok "Admin logged in"
+login "admin@vaultex.local" || { err "Admin login failed"; exit 1; }
+ok "Admin session ready"
 echo
 
-ADMIN_JAR=$(cookie_for "$ADMIN_EMAIL")
-DISBURSE_NUM=0
-
+DISBNUM=0
 for i in "${!CAUSE_IDS[@]}"; do
   cid="${CAUSE_IDS[$i]}"
-  ctitle="${CAUSE_TITLES[$i]}"
-  recipient=$(disburse_recipient_for "$ctitle")
-  msg=$(disburse_message_for "$ctitle")
+  ct="${CAUSE_TITLES[$i]}"
+  recip=$(recipient_for "$ct")
+  msg=$(disburse_msg "$ct")
+  amt=$(random_eth)
+  DISBNUM=$((DISBNUM + 1))
 
-  # Disburse ~30-50% of what was raised (random)
-  amt=$(python3 -c "import random; print(f'{random.uniform(0.08, 0.25):.4f}')")
-  DISBURSE_NUM=$((DISBURSE_NUM + 1))
+  body=$(api_post "/causes/$cid/disburse" "{\"amountEth\":\"$amt\",\"message\":\"$msg\"}")
 
-  resp=$(curl -s -w '\n%{http_code}' \
-    -X POST "$API/causes/$cid/disburse" \
-    -H 'Content-Type: application/json' \
-    -c "$ADMIN_JAR" -b "$ADMIN_JAR" \
-    -d "{\"amountEth\":\"$amt\",\"message\":\"$msg\"}")
-  code=$(echo "$resp" | tail -1)
-  body=$(echo "$resp" | sed '$d')
-
-  if [ "$code" = "200" ]; then
-    tx=$(echo "$body" | python3 -c "import sys,json; print(json.load(sys.stdin).get('txHash','')[:12])" 2>/dev/null || echo "???")
-    ok "[D${DISBURSE_NUM}] $ctitle → $recipient: $amt ETH — \"$msg\" (${tx}…)"
+  if [ "$HTTP_CODE" = "200" ]; then
+    tx=$(echo "$body" | jq -r '.txHash // empty' | head -c 12)
+    ok "[D$DISBNUM] $ct → $recip: $amt ETH — \"$msg\" (${tx}…)"
   else
-    warn "[D${DISBURSE_NUM}] $ctitle → $recipient: FAILED ($code)"
-    echo "    $body" | head -1
+    warn "[D$DISBNUM] $ct → $recip: FAILED ($HTTP_CODE)"
+    echo "    $(echo "$body" | jq -r '.error // empty' | head -c 80)"
   fi
-
   sleep "$DELAY"
 done
 
+# ═════════════════════════════════════════════════════════════════════════════
+#  DONE
+# ═════════════════════════════════════════════════════════════════════════════
 echo
-printf "${GREEN}${BOLD}Disbursements complete: $DISBURSE_NUM sent${NC}\n"
+printf "${B}═══ SIMULATION COMPLETE ═══${N}\n"
+cat <<SUMMARY
+  Donations:     $DNUM
+  Disbursements: $DISBNUM
 
-# ═════════════════════════════════════════════════════════════════════════════
-# SUMMARY
-# ═════════════════════════════════════════════════════════════════════════════
-echo
-printf "${BOLD}═══ SIMULATION COMPLETE ═══${NC}\n"
-echo "  Donations:     $DONATION_NUM"
-echo "  Disbursements: $DISBURSE_NUM"
-echo
-echo "  Open the ledger to see live updates:"
-echo "    Local:  http://localhost:5173/ledger"
-echo "    Prod:   https://vaultex.club/ledger"
-echo
-echo "  Cause → Recipient bindings:"
-echo "    Hospital   → Red Cross Hospital   (Anvil #7)"
-echo "    War        → WHO Disaster Relief  (Anvil #8)"
-echo "    Disaster   → WHO Disaster Relief  (Anvil #8)"
-echo "    LGBTQs     → WeAreHumans          (Anvil #9)"
-echo "    Education  → Red Cross Hospital   (Anvil #7)"
+  Cause → Recipient:
+    Hospital   → Red Cross Hospital   (Anvil #7)
+    War        → WHO Disaster Relief  (Anvil #8)
+    Disaster   → WHO Disaster Relief  (Anvil #8)
+    LGBTQs     → WeAreHumans          (Anvil #9)
+    Education  → Red Cross Hospital   (Anvil #7)
+
+  View results:
+    https://vaultex.club/ledger
+SUMMARY
 echo
