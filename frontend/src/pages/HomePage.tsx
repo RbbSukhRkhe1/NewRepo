@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 type HeroSlide = {
   id: string;
@@ -222,6 +223,7 @@ const HOW_IT_WORKS_STEPS: {
 ];
 
 export function HomePage() {
+  const { user } = useAuth();
   const [activeSlide, setActiveSlide] = useState(0);
   const [isCarouselPaused, setIsCarouselPaused] = useState(false);
   const [isLightMode, setIsLightMode] = useState(
@@ -804,21 +806,23 @@ export function HomePage() {
                 }`}
               >
                 <p className={`text-sm font-semibold ${isLightMode ? 'text-slate-800' : 'text-white/95'}`}>
-                  Start in under a minute
+                  {user ? `Welcome back, ${user.name.split(' ')[0] || 'donor'}` : 'Start in under a minute'}
                 </p>
                 <p className={`mt-1.5 text-xs leading-relaxed ${isLightMode ? 'text-slate-500' : 'text-slate-400'}`}>
-                  No card required. Browse causes first, donate when it feels right.
+                  {user
+                    ? 'Pick a cause and donate from your wallet, or review your impact on your account.'
+                    : 'No card required. Browse causes first, donate when it feels right.'}
                 </p>
 
                 <Link
-                  to="/register"
+                  to={user ? '/causes' : '/register'}
                   className={`mt-6 inline-flex w-full min-h-12 items-center justify-center gap-2 rounded-full px-8 py-3.5 text-sm font-bold tracking-wide motion-safe:transition-transform hover:scale-[1.02] ${
                     isLightMode
                       ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/25'
                       : 'bg-[linear-gradient(180deg,#4dffd0_0%,#18c97a_100%)] text-[#021a10] shadow-[0_0_32px_rgba(45,245,173,0.35)]'
                   }`}
                 >
-                  Join the Vault
+                  {user ? 'Browse causes' : 'Join the Vault'}
                   <svg
                     viewBox="0 0 24 24"
                     className="h-4 w-4"
@@ -832,13 +836,27 @@ export function HomePage() {
                 </Link>
 
                 <p className={`mt-5 text-sm ${isLightMode ? 'text-slate-600' : 'text-slate-400'}`}>
-                  Already have an account?{' '}
-                  <Link
-                    to="/login"
-                    className={`font-semibold underline-offset-2 hover:underline ${isLightMode ? 'text-emerald-700' : 'text-emerald-300'}`}
-                  >
-                    Sign in
-                  </Link>
+                  {user ? (
+                    <>
+                      View your profile on{' '}
+                      <Link
+                        to="/account"
+                        className={`font-semibold underline-offset-2 hover:underline ${isLightMode ? 'text-emerald-700' : 'text-emerald-300'}`}
+                      >
+                        Account
+                      </Link>
+                    </>
+                  ) : (
+                    <>
+                      Already have an account?{' '}
+                      <Link
+                        to="/login"
+                        className={`font-semibold underline-offset-2 hover:underline ${isLightMode ? 'text-emerald-700' : 'text-emerald-300'}`}
+                      >
+                        Sign in
+                      </Link>
+                    </>
+                  )}
                 </p>
               </div>
             </div>

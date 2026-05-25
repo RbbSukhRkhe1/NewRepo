@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useState } from 'react';
 import { Link, Outlet, useLocation, useNavigationType } from 'react-router-dom';
 import { NavPill } from './ui';
+import { SiteFooter } from './SiteFooter';
 import { UserProfileMenu } from './UserProfileMenu';
 import { useAuth } from '../context/AuthContext';
 
@@ -132,23 +133,7 @@ export function Layout() {
       >
         <Outlet />
       </main>
-      {loc.pathname !== '/' && loc.pathname !== '/donate' ? (
-        <footer className="border-t border-[var(--glass-border)] bg-[var(--glass-bg-fallback)] py-6 text-center text-xs text-[var(--text-muted-2)]">
-          Trusted donation platform · Secure giving with on-chain transparency · Verified causes and impact
-          tracking ·{' '}
-          <Link to="/ledger" className="text-[var(--text-high-1)] hover:underline">
-            Ledger
-          </Link>{' '}
-          ·{' '}
-          <Link to="/causes" className="text-[var(--text-high-1)] hover:underline">
-            Causes
-          </Link>{' '}
-          ·{' '}
-          <Link to="/causes/completed" className="text-[var(--text-high-1)] hover:underline">
-            Impact
-          </Link>
-        </footer>
-      ) : null}
+      <SiteFooter themeMode={themeMode} />
     </div>
   );
 }

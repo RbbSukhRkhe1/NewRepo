@@ -5,7 +5,6 @@ import { resolveCauseHeroUrl } from '../lib/causeHeroImages';
 import { useIsLightMode } from '../lib/useIsLightMode';
 import { useAuth } from '../context/AuthContext';
 import { PrimaryButton, SectionHeader, SurfaceCard } from '../components/ui';
-import { CauseFundingDonut } from '../components/CauseFundingDonut';
 
 type FundCoverLine = { label: string; weight: number };
 
@@ -270,7 +269,6 @@ export function CauseDetailPage() {
     );
   }
 
-  const pct = Math.min(100, Math.max(0, cause.utilization_pct ?? 0));
   const heroSrc = resolveCauseHeroUrl(cause.title, cause.image_url);
   const heroFailureKey = `${cause.id}:${heroSrc ?? ''}`;
   const heroFailed = failedHeroKey === heroFailureKey;
@@ -278,17 +276,12 @@ export function CauseDetailPage() {
   const milestones = cause.milestones ?? [];
   const verificationPoints = cause.verification_points ?? [];
   const hasDetailDashboard = fundsCover.length > 0;
-  const remainingEth = Math.max(0, cause.remaining_eth ?? 0);
-  const donatedEth = cause.donated_eth ?? cause.raised_eth ?? 0;
   const parsedAmount = Number.parseFloat(amount || '0');
   const validAmount = Number.isFinite(parsedAmount) && parsedAmount > 0;
   const unitLabel = impactUnitForCause(cause.title);
   const estUnits = Math.max(1, Math.round((validAmount ? parsedAmount : 0.1) * 12));
   const estPeople = Math.max(1, Math.round((validAmount ? parsedAmount : 0.1) * 8));
   const estGas = validAmount ? 0.0012 + parsedAmount * 0.002 : 0.0012;
-  const strokeLength = 283;
-  const progressStroke = (pct / 100) * strokeLength;
-
   const allocationRows = fundsCover.map((item) => ({
     label: item.label,
     pct: item.weight,
@@ -889,12 +882,11 @@ export function CauseDetailPage() {
       ) : null}
 
       <div className="mt-5 sm:mt-6">
-        <div className="relative">
           <SurfaceCard
             className={
               isLightMode
-                ? 'relative isolate overflow-hidden rounded-2xl border-cyan-400/40 bg-[linear-gradient(165deg,#ecfeff_0%,#cffafe_45%,#d1fae5_100%)] shadow-[0_32px_72px_-44px_rgba(8,100,95,0.28),0_0_100px_-38px_rgba(6,182,212,0.32),inset_0_1px_0_rgba(255,255,255,0.45)] ring-1 ring-cyan-500/30 backdrop-blur-[3px] before:pointer-events-none before:absolute before:-left-[15%] before:top-[-40%] before:z-0 before:h-[19rem] before:w-[19rem] before:rounded-full before:bg-cyan-500/30 before:blur-3xl before:content-[\'\'] after:pointer-events-none after:absolute after:-bottom-14 after:right-[-12%] after:z-0 after:h-[17rem] after:w-[18rem] after:rounded-full after:bg-emerald-500/25 after:blur-3xl after:content-[\'\'] p-4 sm:p-5 lg:pr-[20rem]'
-                : 'p-4 sm:p-5 lg:pr-[19rem]'
+                ? 'relative isolate overflow-hidden rounded-2xl border-cyan-400/40 bg-[linear-gradient(165deg,#ecfeff_0%,#cffafe_45%,#d1fae5_100%)] shadow-[0_32px_72px_-44px_rgba(8,100,95,0.28),0_0_100px_-38px_rgba(6,182,212,0.32),inset_0_1px_0_rgba(255,255,255,0.45)] ring-1 ring-cyan-500/30 backdrop-blur-[3px] before:pointer-events-none before:absolute before:-left-[15%] before:top-[-40%] before:z-0 before:h-[19rem] before:w-[19rem] before:rounded-full before:bg-cyan-500/30 before:blur-3xl before:content-[\'\'] after:pointer-events-none after:absolute after:-bottom-14 after:right-[-12%] after:z-0 after:h-[17rem] after:w-[18rem] after:rounded-full after:bg-emerald-500/25 after:blur-3xl after:content-[\'\'] p-4 sm:p-5'
+                : 'p-4 sm:p-5'
             }
           >
             <p
@@ -1078,83 +1070,6 @@ export function CauseDetailPage() {
               </div>
             )}
           </SurfaceCard>
-
-          <SurfaceCard
-            className={`${
-              isLightMode
-                ? 'relative isolate overflow-hidden rounded-2xl border-emerald-400/45 bg-[linear-gradient(165deg,#ecfdf5_0%,#d1fae5_48%,#ccfbf1_100%)] shadow-[0_28px_66px_-40px_rgba(6,78,59,0.32),0_0_80px_-34px_rgba(16,185,129,0.28),inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-emerald-500/35 backdrop-blur-[3px] before:pointer-events-none before:absolute before:-right-16 before:top-[-40%] before:z-0 before:h-[13rem] before:w-[13rem] before:rounded-full before:bg-emerald-500/26 before:blur-3xl before:content-[""]'
-                : 'group relative isolate overflow-hidden rounded-2xl border border-cyan-400/28 bg-[linear-gradient(162deg,rgba(7,22,38,0.96)_0%,rgba(4,14,28,0.98)_48%,rgba(6,24,42,0.95)_100%)] shadow-[0_16px_36px_rgba(2,8,20,0.62),inset_0_1px_0_rgba(255,255,255,0.08),inset_0_0_0_1px_rgba(34,211,238,0.12)] ring-1 ring-cyan-400/22 before:pointer-events-none before:absolute before:-right-10 before:top-[-25%] before:z-0 before:h-[12rem] before:w-[12rem] before:rounded-full before:bg-cyan-400/22 before:blur-3xl before:content-[""] after:pointer-events-none after:absolute after:-left-10 after:bottom-[-30%] after:z-0 after:h-[10rem] after:w-[10rem] after:rounded-full after:bg-emerald-400/18 after:blur-3xl after:content-[""]'
-            } mt-3 p-4 sm:p-4.5 lg:absolute lg:right-4 lg:top-4 lg:mt-0 lg:w-[18rem] transition-transform duration-300 ease-out transform-gpu will-change-transform hover:-translate-x-3 hover:-translate-y-1 hover:scale-[1.02]`}
-          >
-            <p
-              className={`relative z-[1] font-semibold uppercase tracking-[0.18em] ${
-                isLightMode ? 'text-[10px] text-emerald-900/72' : 'text-[10px] text-[var(--text-muted-2)]'
-              }`}
-            >
-              Campaign health
-            </p>
-            <div className="relative z-[1] mt-2.5 flex items-center gap-3">
-              <div className={`shrink-0 ${isLightMode ? 'relative' : 'relative'}`}>
-                {isLightMode ? (
-                  <div
-                    className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-[130%] w-[130%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(5,150,105,0.42)_0%,rgba(20,184,166,0.2)_45%,rgba(255,255,255,0)_68%)] blur-xl"
-                    aria-hidden
-                  />
-                ) : (
-                  <div
-                    className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-[145%] w-[145%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(34,211,238,0.26)_0%,rgba(16,185,129,0.18)_45%,rgba(2,6,23,0)_72%)] blur-xl transition-opacity duration-300 group-hover:opacity-100"
-                    aria-hidden
-                  />
-                )}
-                <svg viewBox="0 0 110 110" className={`relative h-[5.75rem] w-[5.75rem] transition-transform duration-300 ${isLightMode ? '' : 'drop-shadow-[0_0_22px_rgba(34,211,238,0.26)] group-hover:scale-[1.02]'}`} aria-label="Funding progress chart">
-                  <circle cx="55" cy="55" r="45" fill="none" stroke="var(--bg-depth-1)" strokeWidth="10" />
-                  <circle
-                    cx="55"
-                    cy="55"
-                    r="45"
-                    fill="none"
-                    stroke="url(#causeProgress)"
-                    strokeWidth="10"
-                    strokeLinecap="round"
-                    strokeDasharray={`${progressStroke} ${strokeLength}`}
-                    transform="rotate(-90 55 55)"
-                  />
-                  <text x="55" y="52" textAnchor="middle" className="fill-[var(--text-high-3)] text-[0.92rem] font-bold">
-                    {pct.toFixed(0)}%
-                  </text>
-                  <text x="55" y="66" textAnchor="middle" className="fill-[var(--text-muted-1)] text-[0.45rem]">
-                    utilized
-                  </text>
-                </svg>
-              </div>
-              <div className="min-w-0 flex-1 space-y-1.5">
-                <p className={`text-[10px] uppercase tracking-[0.1em] ${isLightMode ? 'text-emerald-950/70' : 'text-cyan-200/78'}`}>
-                  Disbursed
-                </p>
-                <p className={`font-mono text-[0.95rem] font-semibold ${isLightMode ? 'text-[var(--text-high-3)]' : 'text-cyan-50'}`}>{cause.disbursed_eth.toFixed(4)} ETH</p>
-                <p className={`pt-0.5 text-[10px] uppercase tracking-[0.1em] ${isLightMode ? 'text-emerald-950/70' : 'text-cyan-200/78'}`}>
-                  Remaining
-                </p>
-                <p className={`font-mono text-[0.95rem] font-semibold ${isLightMode ? 'text-[var(--text-high-3)]' : 'text-cyan-50'}`}>{remainingEth.toFixed(4)} ETH</p>
-              </div>
-            </div>
-            <div className={`relative z-[1] mt-3 h-2 overflow-hidden rounded-full ${isLightMode ? 'bg-emerald-200/55' : 'bg-cyan-950/70 ring-1 ring-cyan-400/20'}`}>
-              <div
-                className={`h-full rounded-full bg-gradient-to-r from-[var(--accent-deep-1)] to-[var(--accent-bright-2)] ${isLightMode ? 'shadow-[0_0_20px_rgba(16,185,129,0.55)]' : 'shadow-[0_0_18px_rgba(34,211,238,0.55)]'}`}
-                style={{ width: `${pct}%` }}
-              />
-            </div>
-            <div className="relative z-[1] mt-4 w-full max-w-[17rem] sm:max-w-none">
-              <p className={`mb-1 text-[10px] font-semibold uppercase tracking-[0.14em] ${isLightMode ? 'text-emerald-950/65' : 'text-cyan-200/72'}`}>
-                Disbursed vs donated
-              </p>
-              <CauseFundingDonut raisedEth={cause.disbursed_eth} goalEth={donatedEth || 1} isLightMode={isLightMode} />
-            </div>
-            <p className={`relative z-[1] mt-2 text-[12px] ${isLightMode ? 'text-[var(--text-muted-1)]' : 'text-[var(--text-muted-1)]'}`}>
-              Goal: {cause.goal_eth.toFixed(4)} ETH
-            </p>
-          </SurfaceCard>
-        </div>
       </div>
       </div>
     </div>

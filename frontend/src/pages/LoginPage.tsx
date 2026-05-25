@@ -1,15 +1,19 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { PrimaryButton, SectionHeader } from '../components/ui';
 
 export function LoginPage() {
-  const { login } = useAuth();
+  const { user, loading, login } = useAuth();
   const nav = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  if (!loading && user) {
+    return <Navigate to="/account" replace />;
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();

@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { apiJson } from '../lib/api';
 import { PrimaryButton, SectionHeader } from '../components/ui';
 
 export function RegisterPage() {
+  const { user, loading } = useAuth();
   const nav = useNavigate();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -11,6 +13,10 @@ export function RegisterPage() {
   const [role, setRole] = useState<'donor' | 'beneficiary'>('donor');
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  if (!loading && user) {
+    return <Navigate to="/causes" replace />;
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
