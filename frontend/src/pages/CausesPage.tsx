@@ -185,17 +185,19 @@ function CauseCard({
           </div>
 
           {hasUtil ? (
-            <div className="mt-4 max-w-[14rem]">
-              <CauseFundingDonut
-                raisedEth={disbursedEth as number}
-                goalEth={Math.max(donatedEth ?? 0, 0.0001)}
-                isLightMode={isLightMode}
-                compact
-              />
+            <div className="mt-4 flex justify-center">
+              <div className="w-full max-w-[14rem]">
+                <CauseFundingDonut
+                  raisedEth={disbursedEth as number}
+                  goalEth={Math.max(donatedEth ?? 0, 0.0001)}
+                  isLightMode={isLightMode}
+                  compact
+                />
+              </div>
             </div>
           ) : null}
 
-          <div className="mt-5 flex flex-wrap items-center gap-3">
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
             <Link
               to={actionHref}
               className="inline-flex min-h-11 items-center rounded-full border border-emerald-300/70 bg-[linear-gradient(180deg,#3dffc4,#23d78f)] px-6 py-2 text-sm font-semibold text-[#032316] shadow-[0_0_22px_rgba(51,255,178,0.28)]"
@@ -214,7 +216,7 @@ function CauseCard({
             </Link>
           </div>
 
-          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-2 text-xs">
             <span
               className={`rounded-full px-2 py-1 ${
                 isLightMode
