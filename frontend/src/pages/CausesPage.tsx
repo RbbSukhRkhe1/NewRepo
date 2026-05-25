@@ -106,12 +106,12 @@ function CauseCard({
       className={`vtx-surface rounded-3xl border p-6 md:p-7 ${tagStyle(cause.accent, 'frame', isLightMode)}`}
     >
       <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] md:items-start">
-        <div className="relative overflow-hidden rounded-2xl border border-[var(--border-chrome-2)] bg-black/20">
+        <div className="relative overflow-hidden rounded-2xl border border-[var(--border-chrome-2)] bg-black/20 md:row-span-2 md:self-stretch">
           <img
             src={displayHero}
             alt=""
             referrerPolicy="no-referrer"
-            className="aspect-[4/3] w-full object-cover"
+            className="aspect-[4/3] h-full min-h-[12rem] w-full object-cover md:aspect-auto md:min-h-full"
             onError={() => setFailedHeroKey(heroFailureKey)}
           />
           <span
@@ -129,7 +129,7 @@ function CauseCard({
           <p className="mt-2 text-sm leading-7 text-[var(--text-muted-1)]">{cause.storyBody}</p>
         </div>
 
-        <div>
+        <div className="min-w-0 md:col-start-2">
           <h2 className="text-3xl font-bold leading-tight tracking-[-0.01em] text-[var(--text-high-3)] md:text-[2.1rem]">{cause.title}</h2>
 
           <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">

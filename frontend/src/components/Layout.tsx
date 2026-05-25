@@ -1,16 +1,11 @@
 import { useEffect, useLayoutEffect, useState } from 'react';
 import { Link, Outlet, useLocation, useNavigationType } from 'react-router-dom';
-import { NavPill, SecondaryButton } from './ui';
+import { NavPill } from './ui';
+import { UserProfileMenu } from './UserProfileMenu';
 import { useAuth } from '../context/AuthContext';
-import type { AuthUser } from '../context/AuthContext';
 
 type ThemeMode = 'dark' | 'light';
 const THEME_STORAGE_KEY = 'vaultex-theme-mode';
-
-function accountChipLabel(user: AuthUser): string {
-  const name = user.name.trim();
-  return name || user.email.split('@')[0] || 'Account';
-}
 
 function readStoredTheme(): ThemeMode {
   if (typeof window === 'undefined') return 'dark';
@@ -61,28 +56,7 @@ export function Layout() {
             <NavPill to="/causes/completed" label="Impact" active={loc.pathname === '/causes/completed'} />
             <NavPill to="/ledger" label="Ledger" active={loc.pathname === '/ledger'} />
             {user ? (
-              <details className="group relative">
-                <summary
-                  className={`inline-flex min-h-11 cursor-pointer list-none items-center rounded-xl border px-3 py-2 text-sm font-medium transition-colors ${
-                    loc.pathname === '/account'
-                      ? 'border-[var(--border-accent-soft)] bg-[var(--accent-core)] text-[#03130b]'
-                      : 'border-transparent text-[var(--text-muted-1)] hover:border-[var(--border-chrome-2)] hover:text-[var(--text-high-1)]'
-                  }`}
-                  aria-label={`${accountChipLabel(user)} account menu`}
-                >
-                  {accountChipLabel(user)}
-                </summary>
-                <div className="vtx-glass-popover absolute right-0 top-[calc(100%+8px)] z-20 min-w-44 p-2">
-                  <NavPill to="/account" label="Account" active={loc.pathname === '/account'} />
-                  <SecondaryButton
-                    type="button"
-                    onClick={() => void logout()}
-                    className="mt-1 w-full justify-center px-3"
-                  >
-                    Sign out
-                  </SecondaryButton>
-                </div>
-              </details>
+              <UserProfileMenu user={user} themeMode={themeMode} onSignOut={() => logout()} />
             ) : null}
             {user?.role === 'admin' && (
               <details className="group relative">
@@ -110,22 +84,46 @@ export function Layout() {
             {!user ? (
               <NavPill to="/login" label="Sign in" active={loc.pathname === '/login'} />
             ) : null}
-            <SecondaryButton
+            <button
               type="button"
               onClick={() => setThemeMode((prev) => (prev === 'dark' ? 'light' : 'dark'))}
-              className="ml-1 gap-2 px-3"
+              className={`ml-1 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-colors ${
+                themeMode === 'light'
+                  ? 'border-slate-200/90 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+                  : 'border-white/15 bg-white/[0.04] text-slate-200 hover:border-white/25 hover:bg-white/[0.08]'
+              }`}
+              aria-label={themeMode === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+              title={themeMode === 'dark' ? 'Light mode' : 'Dark mode'}
             >
               {themeMode === 'dark' ? (
-                <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4 fill-current">
-                  <path d="M12 17.5A5.5 5.5 0 1117.5 12 5.51 5.51 0 0112 17.5zm0-15a1 1 0 011 1v1.4a1 1 0 11-2 0V3.5a1 1 0 011-1zm0 17a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zm8.5-8.5a1 1 0 010 2h-1.4a1 1 0 110-2h1.4zm-16.1 0a1 1 0 010 2H3a1 1 0 110-2h1.4zm11.66-6.96a1 1 0 011.42 0l1 1a1 1 0 11-1.42 1.42l-1-1a1 1 0 010-1.42zM6.94 16.06a1 1 0 011.42 0l1 1A1 1 0 117.94 18.5l-1-1a1 1 0 010-1.42zm11.54 1.42a1 1 0 01-1.42 0l-1-1a1 1 0 011.42-1.42l1 1a1 1 0 010 1.42zM7.94 5.5A1 1 0 016.52 6.9l-1-1A1 1 0 116.94 4.5l1 1z" />
+                <svg
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                  className="h-5 w-5 shrink-0"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="12" cy="12" r="4" />
+                  <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
                 </svg>
               ) : (
-                <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4 fill-current">
-                  <path d="M20.7 14.2A8.5 8.5 0 1110.2 3.7a1 1 0 01.84 1.72A6.5 6.5 0 1018.6 13a1 1 0 011.74 1.2 8.27 8.27 0 01-.64 0z" />
+                <svg
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                  className="h-5 w-5 shrink-0"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
                 </svg>
               )}
-              {themeMode === 'dark' ? 'Light' : 'Dark'}
-            </SecondaryButton>
+            </button>
           </nav>
         </div>
       </header>

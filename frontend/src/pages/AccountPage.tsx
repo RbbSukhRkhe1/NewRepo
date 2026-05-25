@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useId, useState } from 'react';
 import { useVaultexEvents, isLedgerEvent } from '../lib/useVaultexEvents';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiJson } from '../lib/api';
 import { loadMeHistory, type MeHistoryResponse, type UserHistoryEntry } from '../lib/userHistory';
@@ -186,6 +186,7 @@ function HistoryRow({ e }: { e: UserHistoryEntry }) {
 
 export function AccountPage() {
   const { user, loading } = useAuth();
+  const location = useLocation();
   const [eth, setEth] = useState<string | null>(null);
   const [history, setHistory] = useState<MeHistoryResponse | null>(null);
   const [historyErr, setHistoryErr] = useState<string | null>(null);
@@ -289,6 +290,17 @@ export function AccountPage() {
     };
   }, [user]);
 
+  useEffect(() => {
+    const hash = location.hash.replace(/^#/, '');
+    if (!hash) return;
+    const el = document.getElementById(hash);
+    if (!el) return;
+    const t = window.setTimeout(() => {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
+    return () => window.clearTimeout(t);
+  }, [location.pathname, location.hash, loading, impact]);
+
   if (loading) {
     return <div className="p-12 text-center text-[var(--text-muted-1)]">Loading…</div>;
   }
@@ -344,7 +356,7 @@ export function AccountPage() {
 
           {user.role === 'donor' && impact ? (
             <section
-              className="mt-8 rounded-2xl border border-white/10 bg-white/[0.02] p-5 sm:p-6"
+              className="mt-8 scroll-mt-28 rounded-2xl border border-white/10 bg-white/[0.02] p-5 sm:p-6"
               aria-labelledby="acct-impact"
             >
               <h2 id="acct-impact" className="text-lg font-semibold text-[var(--text-high-3)]">
@@ -395,7 +407,20 @@ export function AccountPage() {
                 </ul>
               ) : null}
             </section>
-          ) : null}
+          ) : (
+            <section
+              id="acct-impact"
+              className="mt-8 scroll-mt-28 rounded-2xl border border-white/10 bg-white/[0.02] p-5 sm:p-6"
+              aria-labelledby="acct-impact-empty"
+            >
+              <h2 className="text-lg font-semibold text-[var(--text-high-3)]">My impact</h2>
+              <p id="acct-impact-empty" className="mt-2 text-sm text-[var(--text-muted-1)]">
+                {user.role === 'donor'
+                  ? 'No donations recorded yet — give to a cause to see your impact here.'
+                  : 'Donation impact totals are shown for donor accounts.'}
+              </p>
+            </section>
+          )}
 
           {user.role === 'donor' ? (
             <section className="mt-8 rounded-2xl border border-white/10 bg-white/[0.02] p-5 sm:p-6" aria-labelledby="acct-badges">
