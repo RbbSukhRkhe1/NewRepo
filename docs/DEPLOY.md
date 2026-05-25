@@ -1,6 +1,8 @@
 # Deploy Vaultex to Oracle Cloud (Ubuntu)
 
-**Production default (CI/CD):** **[DEPLOY-NATIVE.md](./DEPLOY-NATIVE.md)** — nginx + Node + Anvil via systemd (no Docker, fits Always Free).
+**Last updated:** May 2026.
+
+**Production (public site):** **https://vaultex.club** — typically **[DEPLOY-NATIVE.md](./DEPLOY-NATIVE.md)** (nginx + Node + Anvil via systemd, TLS on 443).
 
 This guide covers the **Docker Compose** path (optional). Set GitHub secret `DEPLOY_DOCKER=true` to use it instead of native deploy.
 
@@ -63,7 +65,9 @@ cd /opt/vaultex
 ./scripts/deploy.sh
 ```
 
-Open `http://YOUR_PUBLIC_IP:8080` — demo login password: `demo123` (see root README).
+Open `http://YOUR_PUBLIC_IP:8080` (or your TLS hostname) — demo login password: `demo123` (see root README).
+
+**Presentation demo:** prefer **https://vaultex.club** if DNS and TLS are configured; keep `npm run dev` as laptop backup.
 
 ## 3. GitHub Actions secrets
 

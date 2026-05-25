@@ -17,6 +17,9 @@ const DONORS = [
   'haha@vaultex.local',
   'sukhan@vaultex.local',
   'tasin@vaultex.local',
+  'sam@vaultex.local',
+  'priya@vaultex.local',
+  'lena@vaultex.local',
 ];
 const PASSWORD = process.env.VAULTEX_DONOR_PASSWORD ?? 'demo123';
 const COUNT = Math.max(1, parseInt(process.env.DONATION_COUNT ?? '6', 10));

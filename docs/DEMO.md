@@ -1,50 +1,104 @@
-# Vaultex — ~7 minute demo script
+# Vaultex — demo script
+
+**Primary deck:** [PRESENTATION_SLIDES.md](./PRESENTATION_SLIDES.md) (final 10-minute presentation, May 25 2026).  
+**Use this file** for a shorter rehearsal or a marker walkthrough without slides.
 
 **Audience:** marker, sponsor, or classmates.  
-**Prereqs:** `npm install`, `npm run dev`, optional `anvil` on port **8545** for chain watcher (app still runs without it).
-
-## Slide outline (optional 4–5 slides)
-
-1. **Title** — Vaultex: transparent routing for charitable giving (capstone).
-2. **Problem** — Donors want confidence; beneficiaries deserve dignity; spreadsheets are not enough.
-3. **Approach** — Web app + SQLite ledger + local chain (Anvil) for dev realism.
-4. **Live** — Screenshots or live browser (next section).
-5. **Limits & next** — Local chain; masking improvements; beneficiary stories (roadmap).
-
-**Speaker split (suggestion):** Sukhan opens (1–2); Haha drives UI (3–4); Tasin answers API/chain questions (Q&A).
+**Prereqs:** `npm install`, `npm run dev`; optional Anvil on **8545** (host) or **4585** (Docker Compose).  
+**Production:** https://vaultex.club · **Local:** http://localhost:5173
 
 ---
 
-## Minute-by-minute (live)
+## One-line stack
 
-| Time | Action | Screen / notes |
-|------|--------|----------------|
-| 0:00 | “Stack in one sentence: React + Express + SQLite + optional Anvil.” | Terminal shows `npm run dev` already running. |
-| 0:45 | Open **http://localhost:5173** | Homepage. |
-| 1:15 | **Causes** — show list and open one cause | `/causes`, `/causes/:id`. |
-| 2:00 | **Register** or **Login** with seeded account | Use `admin@vaultex.local` / `demo123` (see root README). |
-| 2:45 | **Donate** flow (donor) or explain **Admin** path if demo as admin | `/donate` or admin disburse narrative. |
-| 3:45 | **Ledger** — public activity, masked addresses | `/ledger` — point out `…` masking. |
-| 4:30 | **Account** — balance / history for logged-in user | `/account`. |
-| 5:15 | **Admin users** (if logged in as admin) | `/admin/users` — emphasize role gate. |
-| 6:00 | **Honest limitations** — local Anvil; not production compliance; privacy doc in `docs/PRIVACY.md`. | — |
-| 6:45 | Q&A | Tasin: API routes under `/api`; Sukhan: `docs/ARCHITECTURE.md`. |
+> React + Express + SQLite, optional Anvil for real txs, Redis + WebSocket for live ledger updates.
+
+---
+
+## Speaker split
+
+| Person | Focus |
+|--------|--------|
+| Sukhan | Problem, architecture, close, Q&A backup |
+| Haha | Homepage, carousel, causes, donate, Impact |
+| Tasin | Ledger, API, chain, testing, technical Q&A |
+
+---
+
+## Live demo path (~3 min)
+
+| Step | Route | What to show |
+|------|-------|----------------|
+| 1 | `/` | **“Donate on-chain. Help for real.”** · CTAs · **beneficiary carousel** (4 stories; hover to pause) |
+| 2 | `/` scroll | **How it works** — trust points + Browse / Donate / Track impact |
+| 3 | `/causes` → `/:id` | Active campaign, progress |
+| 4 | `/login` | `admin@vaultex.local` / `demo123` *(capstone demo only)* |
+| 5 | `/donate` or cause donate | Donation + receipt |
+| 6 | `/ledger` | Search, open row, **live update** (see below) |
+| 7 | `/causes/completed` | **Impact** — fulfilled campaigns (not the homepage carousel) |
+
+**Live ledger tip:** With API running, in another terminal:
+
+```bash
+npm run simulate:donations
+```
+
+(requires seeded donors and Anvil — see root README)
+
+---
+
+## Extended run (~7 min)
+
+| Time | Action |
+|------|--------|
+| 0:00 | State stack in one sentence |
+| 0:45 | Open site (prod or localhost) |
+| 1:15 | Homepage carousel + How it works |
+| 1:45 | Causes → one cause detail |
+| 2:15 | Login (seeded account) |
+| 2:45 | Donate or explain admin disburse |
+| 3:45 | Ledger — masking, narratives, WebSocket refresh |
+| 4:30 | Account — history / badges |
+| 5:00 | Impact page |
+| 5:30 | Optional: `/admin/users` if admin |
+| 6:00 | Limitations — local chain, curated carousel copy, `docs/PRIVACY.md` |
+| 6:45 | Q&A |
 
 ---
 
 ## Backup if chain is offline
 
-- Still demo: causes, login, ledger (from DB), account page.
-- Say: “Watcher connects when Anvil is on **8545**; today we’re showing app-led flows.”
+- Still demo: causes, login, ledger (from DB), account, Impact.
+- Say: “Watcher connects when Anvil RPC is up; today we are showing app-led accountability.”
 
 ---
 
 ## Seeded credentials (capstone only)
 
-Password for all seeded users: **`demo123`**. Emails in root **README.md**.
+**Password:** `demo123` for all seeded users.
+
+| Role | Email |
+|------|--------|
+| Admin | `admin@vaultex.local` |
+| Donors | `haha@vaultex.local`, `sukhan@vaultex.local`, `tasin@vaultex.local` |
+
+Full table: root [README.md](../README.md#demo--seeded-accounts).
 
 ---
 
-## After demo
+## Honest limitations (say aloud)
 
-- Note one **follow-up** you would ship first (e.g. tx journey page, stricter masking on public JSON).
+- Anvil / demo chain — not Ethereum mainnet production
+- Homepage stories are **curated UX copy**, not CMS-driven from API
+- `VaultexVault.sol` exists; API still uses EOA vault on Anvil
+- Register is via **Join the Vault** / `/register`, not in top nav
+
+---
+
+## Related docs
+
+| Doc | Use |
+|-----|-----|
+| [PRESENTATION_SLIDES.md](./PRESENTATION_SLIDES.md) | Full slide copy + course week map |
+| [FEATURES.md](./FEATURES.md) | Route list |
+| [ARCHITECTURE.md](./ARCHITECTURE.md) | Diagrams for Q&A |

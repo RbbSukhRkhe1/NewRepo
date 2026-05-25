@@ -17,3 +17,4 @@
 
 - ADR-0001 strangler ordering affects **when** auth is extracted.
 - Privacy: [../PRIVACY.md](../PRIVACY.md)
+- WebSocket (same-origin cookie): [../REDIS_EVENTS.md](../REDIS_EVENTS.md) — `/api/ws` today

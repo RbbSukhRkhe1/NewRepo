@@ -1,6 +1,10 @@
 # Anvil — repeatable demo state
 
+**Last updated:** May 2026.
+
 Local **Anvil** data is ephemeral unless you save it. Use this for **consistent addresses** and **pre-funded** demo accounts across restarts.
+
+**Presentation:** combine with [DEMO.md](./DEMO.md) or [PRESENTATION_SLIDES.md](./PRESENTATION_SLIDES.md); optional `npm run simulate:donations` while Anvil is up.
 
 ## Check your Foundry / Anvil version
 

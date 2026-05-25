@@ -1,6 +1,10 @@
 # Architecture Decision Records (ADR)
 
+**Last updated:** May 2026.
+
 Records significant architectural choices for Vaultex. Newest decisions may extend or supersede older ones.
+
+**Current implementation context:** [ARCHITECTURE.md](../ARCHITECTURE.md), [FEATURES.md](../FEATURES.md).
 
 | ADR | Title |
 |-----|--------|

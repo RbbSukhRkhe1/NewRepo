@@ -240,15 +240,18 @@ Create **`backend/.env`** if you need overrides (loaded via `dotenv` from `backe
 | Doc | Description |
 |-----|---------------|
 | [docs/README.md](docs/README.md) | Index of all docs |
+| [docs/PRESENTATION_SLIDES.md](docs/PRESENTATION_SLIDES.md) | **Final** ITEC631 presentation deck (10 min, May 25) |
+| [docs/DEMO.md](docs/DEMO.md) | Live demo script (links to presentation doc) |
+| [docs/FEATURES.md](docs/FEATURES.md) | Shipped features vs backlog |
 | [blockchain/README.md](blockchain/README.md) | Solidity / Foundry layout inside `blockchain/` |
-| [docs/FEATURES.md](docs/FEATURES.md) | Shipped features vs backlog (audit) |
-| [docs/DEMO.md](docs/DEMO.md) | ~7 min demo script + slide outline |
 | [docs/PRIVACY.md](docs/PRIVACY.md) | Masking, roles, data handling |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Context + Mermaid sequences |
 | [docs/COMPARATIVE.md](docs/COMPARATIVE.md) | Positioning vs other approaches |
-| [docs/USER_TESTING.md](docs/USER_TESTING.md) | Usability session template + results table |
+| [docs/USER_TESTING.md](docs/USER_TESTING.md) | Usability session template |
 | [docs/ANVIL_STATE.md](docs/ANVIL_STATE.md) | Saving / restoring local Anvil state |
-| [docs/REDIS_EVENTS.md](docs/REDIS_EVENTS.md) | Redis pub/sub envelope schema and dev commands |
+| [docs/REDIS_EVENTS.md](docs/REDIS_EVENTS.md) | Redis pub/sub + WebSocket live updates |
+| [docs/DEPLOY-NATIVE.md](docs/DEPLOY-NATIVE.md) | Production deploy (vaultex.club) |
+| [docs/DEPLOY.md](docs/DEPLOY.md) | Optional Docker Compose deploy |
 
 ---
 
@@ -259,6 +262,7 @@ Create **`backend/.env`** if you need overrides (loaded via `dotenv` from `backe
 | `npm run build` | Production build → `frontend/dist` |
 | `npm run preview` | Serve the production build |
 | `npm run lint` | ESLint in `frontend/` |
+| `npm run simulate:donations` | Live donation loop for ledger/WebSocket demos (API + Anvil up) |
 
 ---
 

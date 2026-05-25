@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import { db } from './db.js';
 import {
   SEEDED_DONOR_INDICES,
+  SIM_DONOR_INDICES,
   BENEFICIARY_INDICES,
   SUPER_RICH_INDEX,
   anvilAddress,
@@ -37,7 +38,7 @@ const SEEDED_CAUSES: SeedCause[] = [
     goalEth: 25,
     raisedEth: 0,
     imageUrl: '/samples/causes/lgbtqs.jpg',
-    beneficiaryEmail: 'childrens@hospital.local',
+    beneficiaryEmail: 'wearehumans@initiative.local',
     impactStoryTitle: 'Community first',
     impactStoryBody:
       'Local partners provide safe shelter and trauma-informed counseling while every disbursement stays visible on-chain for community oversight.',
@@ -69,7 +70,7 @@ const SEEDED_CAUSES: SeedCause[] = [
     goalEth: 50,
     raisedEth: 0,
     imageUrl: '/Photos/War.jpg',
-    beneficiaryEmail: 'regional@hospital.local',
+    beneficiaryEmail: 'who@relief.local',
     impactStoryTitle: 'Relief corridors',
     impactStoryBody:
       'Donations route to vetted frontline responders delivering medical kits, evacuation transport, and essential family support in active conflict zones.',
@@ -101,7 +102,7 @@ const SEEDED_CAUSES: SeedCause[] = [
     goalEth: 40,
     raisedEth: 0,
     imageUrl: '/Photos/Disaster.jpg',
-    beneficiaryEmail: 'regional@hospital.local',
+    beneficiaryEmail: 'who@relief.local',
     impactStoryTitle: 'Rapid response',
     impactStoryBody:
       'Emergency wallets release rapid aid for shelter, food, and clean water after floods and storms, with proof-backed spending published in real time.',
@@ -133,7 +134,7 @@ const SEEDED_CAUSES: SeedCause[] = [
     goalEth: 75,
     raisedEth: 75,
     imageUrl: '/Photos/Hospital.jpg',
-    beneficiaryEmail: 'citygeneral@hospital.local',
+    beneficiaryEmail: 'redcross@hospital.local',
     impactStoryTitle: 'Care capacity',
     impactStoryBody:
       'Funds equip wards with monitors, pumps, and calibration cycles so clinicians can treat more patients with verifiable disbursement trails.',
@@ -165,7 +166,7 @@ const SEEDED_CAUSES: SeedCause[] = [
     goalEth: 30,
     raisedEth: 9,
     imageUrl: '/samples/causes/education.jpg',
-    beneficiaryEmail: 'childrens@hospital.local',
+    beneficiaryEmail: 'redcross@hospital.local',
     impactStoryTitle: 'Every learner',
     impactStoryBody:
       'Funds cover tuition gaps, learning kits, and connected devices so students in underserved regions can stay in class and finish terms.',
@@ -209,10 +210,17 @@ function seedUsersIfEmpty(): boolean {
   ];
   for (const d of donors) ins.run(d.name, d.email, hash, 'donor', d.idx);
 
+  const simDonors = [
+    { name: 'Sam', email: 'sam@vaultex.local', idx: SIM_DONOR_INDICES[0] },
+    { name: 'Priya', email: 'priya@vaultex.local', idx: SIM_DONOR_INDICES[1] },
+    { name: 'Lena', email: 'lena@vaultex.local', idx: SIM_DONOR_INDICES[2] },
+  ];
+  for (const d of simDonors) ins.run(d.name, d.email, hash, 'donor', d.idx);
+
   const beneficiaries = [
-    { name: 'City General Hospital', email: 'citygeneral@hospital.local', idx: BENEFICIARY_INDICES[0] },
-    { name: 'Childrens Care Hospital', email: 'childrens@hospital.local', idx: BENEFICIARY_INDICES[1] },
-    { name: 'Regional Medical Center', email: 'regional@hospital.local', idx: BENEFICIARY_INDICES[2] },
+    { name: 'Red Cross Hospital', email: 'redcross@hospital.local', idx: BENEFICIARY_INDICES[0] },
+    { name: 'WHO Disaster Relief', email: 'who@relief.local', idx: BENEFICIARY_INDICES[1] },
+    { name: 'WeAreHumans', email: 'wearehumans@initiative.local', idx: BENEFICIARY_INDICES[2] },
   ];
   for (const b of beneficiaries) ins.run(b.name, b.email, hash, 'beneficiary', b.idx);
 
@@ -323,7 +331,7 @@ export function seedCausesUpsert(): void {
   const orphans = db
     .prepare(`SELECT id, title, description FROM causes WHERE beneficiary_user_id IS NULL ORDER BY id ASC`)
     .all() as { id: number; title: string; description: string }[];
-  const fallbackBeneficiary = beneficiaryIdByEmail('regional@hospital.local');
+  const fallbackBeneficiary = beneficiaryIdByEmail('who@relief.local');
   const backfill = db.prepare(
     `UPDATE causes SET beneficiary_user_id = ?, impact_story_title = COALESCE(impact_story_title, ?), impact_story_body = COALESCE(impact_story_body, ?) WHERE id = ?`,
   );

@@ -1,5 +1,7 @@
 # Vaultex — privacy and transparency model
 
+**Last updated:** May 2026.
+
 This document describes how the **current** Vaultex codebase treats identity and data. It is not legal advice; align with your course or institution if you need a formal privacy policy.
 
 ## Roles
@@ -28,13 +30,16 @@ Ledger API responses include **both** `fromMasked` / `toMasked` and human-readab
 - With **Anvil** (local), “on-chain” activity is visible to anyone with RPC access to that node. That is **not** public internet privacy; it is **local dev transparency**.
 - Do not claim “anonymous on Ethereum” unless you have a specific design (mixers, L2 privacy, etc.)—Vaultex does not provide that today.
 
-## Beneficiary dignity (future “stories” feature)
+## Homepage beneficiary stories (carousel)
 
-If you add public beneficiary stories or proof uploads:
+The **home page** (`/`) shows a rotating carousel with beneficiary quotes and impact stats (War relief, Medical support, Education, LGBTQ+ safe space). Today this content is **curated in frontend code**, not loaded per-user from the API.
 
-- Obtain **clear consent** for anything shown beyond operational need.
+If you extend or productionize stories:
+
+- Obtain **clear consent** for anything shown publicly.
 - Avoid sensationalizing harm; prefer agency-focused language.
 - Separate **internal ops** data from **public marketing** content.
+- Do not imply live ledger rows are tied 1:1 to carousel text unless the backend enforces that link.
 
 ## Retention
 

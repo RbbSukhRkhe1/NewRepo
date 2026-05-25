@@ -17,4 +17,6 @@
 ## Links
 
 - Diagram: [../ARCHITECTURE.md](../ARCHITECTURE.md)
+- Live UI + routes: [../FEATURES.md](../FEATURES.md)
+- Capstone demo: [../PRESENTATION_SLIDES.md](../PRESENTATION_SLIDES.md)
 - Tasks: `M-001` … `M-007` in `CAPSTONE_TASK_TRACKER.csv`

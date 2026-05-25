@@ -14,7 +14,8 @@
     "preview": "npm run preview -w frontend",
     "test": "npm run test -w backend && npm run test -w frontend",
     "regression": "node scripts/regression.mjs",
-    "simulate:donations": "node scripts/simulate-live-donations.mjs"
+    "simulate:donations": "node scripts/simulate-live-donations.mjs",
+    "simulate:full": "bash scripts/simulate-server.sh"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"

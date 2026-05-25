@@ -1,6 +1,8 @@
 # Vaultex — architecture
 
-This document describes **what runs today** (monolith + optional infra) and the **target decomposition** from the capstone roadmap. See [ADR/](ADR/) for decisions and [openapi/](openapi/) for API sketches.
+**Last updated:** May 2026.
+
+This document describes **what runs today** (monolith + optional infra) and the **target decomposition** from the capstone roadmap. See [ADR/](ADR/) for decisions, [FEATURES.md](FEATURES.md) for UI routes, and [PRESENTATION_SLIDES.md](PRESENTATION_SLIDES.md) for the capstone demo narrative.
 
 ---
 
@@ -120,15 +122,49 @@ flowchart LR
   subgraph LocalDev["Local dev optional"]
     ANV[Anvil RPC + WS]
   end
-  FE -->|HTTP /api| API
+  FE -->|HTTP /api + WS /api/ws| API
   API --> DB
   API -->|publishEvent| RED
   API -->|ethers| ANV
   API -->|watcher| ANV
 ```
 
-- **Frontend** (`frontend/`): `fetch('/api/...')`; Vite proxies to **3847** in dev.
+- **Frontend** (`frontend/`): `fetch('/api/...')`; Vite proxies to **3847** in dev; **`/api/ws`** for live updates on ledger-related pages.
 - **Backend** (`backend/server/`): one HTTP server; cookie sessions; optional Redis; optional chain watcher.
+
+---
+
+## Frontend surface (current)
+
+| Area | Routes / notes |
+|------|----------------|
+| Marketing home | `/` — hero, beneficiary carousel, How it works, Join the Vault |
+| Causes | `/causes`, `/causes/:id`, `/causes/completed` (**Impact**) |
+| Giving | `/donate` |
+| Transparency | `/ledger`, `/lifecycle/:txHash` |
+| Account / admin | `/account`, `/admin/users`, `/causes/new` |
+
+Full route table: [FEATURES.md](FEATURES.md).
+
+---
+
+## Live updates (ledger UI)
+
+```mermaid
+sequenceDiagram
+  participant SPA as React SPA
+  participant API as Express
+  participant R as Redis
+
+  SPA->>API: WebSocket /api/ws
+  API-->>SPA: connected
+  Note over API: donate/disburse handler
+  API->>R: publish donation.created (optional)
+  API-->>SPA: event JSON
+  SPA->>SPA: refresh ledger query
+```
+
+If Redis is disabled, the same API process can still emit to local WebSocket subscribers via the in-process bus in `lib/redis.ts`.
 
 ---
 
@@ -221,7 +257,10 @@ When RPC/WS to Anvil is up, `watcher.ts` ingests blocks and writes `chain_sync` 
 | Readiness (`GET /ready`) | `backend/server/health.ts` |
 | Redis | `backend/server/lib/redis.ts` |
 | SPA routes | `frontend/src/App.tsx` |
+| Home page | `frontend/src/pages/HomePage.tsx` |
+| Impact page | `frontend/src/pages/CompletedCausesPage.tsx` |
 | API client | `frontend/src/lib/api.ts` |
+| Live events hook | `frontend/src/lib/useVaultexEvents.ts` |
 | Foundry | `foundry.toml`, `remappings.txt`, `blockchain/src/` |
 
 ---
@@ -230,7 +269,10 @@ When RPC/WS to Anvil is up, `watcher.ts` ingests blocks and writes `chain_sync` 
 
 | Doc | Topic |
 |-----|--------|
+| [FEATURES.md](FEATURES.md) | Shipped routes and scripts |
+| [PRESENTATION_SLIDES.md](PRESENTATION_SLIDES.md) | Capstone presentation |
+| [DEMO.md](DEMO.md) | Live demo script |
 | [ADR/0001-microservices-strangler-fig.md](ADR/0001-microservices-strangler-fig.md) | Strangler evolution |
 | [ADR/0002-session-strategy.md](ADR/0002-session-strategy.md) | Cookie vs JWT at gateway |
 | [openapi/](openapi/) | Stub OpenAPI specs |
-| [REDIS_EVENTS.md](REDIS_EVENTS.md) | Event envelope |
+| [REDIS_EVENTS.md](REDIS_EVENTS.md) | Event envelope + WebSocket |

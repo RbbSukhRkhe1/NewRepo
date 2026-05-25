@@ -1,5 +1,7 @@
 # Native deploy (nginx + Node + Anvil, no Docker)
 
+**Last updated:** May 2026 · powers **https://vaultex.club** for capstone demos.
+
 For **Oracle Always Free** (~1 GB RAM), a full **Docker Compose** stack is heavy. This path runs:
 
 | Service | How | Typical RAM |

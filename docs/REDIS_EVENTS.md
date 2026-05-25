@@ -2,6 +2,8 @@
 
 Vaultex uses **Redis pub/sub** as a thin event bus for future microservices. The API process can **publish**; separate workers (or other services) can **subscribe**.
 
+The **browser** does not subscribe to Redis directly. The SPA opens a **WebSocket** at **`/api/ws`**; the API forwards in-process and Redis-backed events to connected clients (see `frontend/src/lib/useVaultexEvents.ts`). Ledger and related pages refresh when `donation.created` / `disbursement.created` fire—**no polling interval** on those screens.
+
 ## Configuration
 
 | Env | Default | Purpose |
@@ -56,7 +58,13 @@ Every message on `vaultex:events` (or `REDIS_EVENTS_CHANNEL`) is JSON:
 
 ## Code
 
-- **Publisher / subscriber helpers:** `backend/server/lib/redis.ts`
-- **`publishEvent(type, data)`** — use after successful DB/chain side effects (idempotent consumers recommended).
+| Piece | Path |
+|-------|------|
+| Publisher / local bus | `backend/server/lib/redis.ts` |
+| **`publishEvent(type, data)`** | After successful DB/chain side effects |
+| WebSocket upgrade | `backend/server` (mounted on `/api/ws`) |
+| Frontend hook | `frontend/src/lib/useVaultexEvents.ts` |
 
-Subscribers should run in **separate processes** from the HTTP server to avoid blocking the Node event loop on slow handlers.
+**`REDIS_DISABLED=1`:** publish is skipped; WebSocket may still receive **in-process** events on the same API instance.
+
+Future microservice subscribers should run in **separate processes** from the HTTP server to avoid blocking the Node event loop on slow handlers.

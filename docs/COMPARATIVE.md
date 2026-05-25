@@ -1,6 +1,8 @@
 # Vaultex — comparative notes (capstone)
 
-Short positioning vs common patterns. **Not exhaustive**; add your own sources for the final report.
+**Last updated:** May 2026.
+
+Short positioning vs common patterns. **Not exhaustive**; add your own sources for the final report and presentation (see [PRESENTATION_SLIDES.md](./PRESENTATION_SLIDES.md)).
 
 ## 1. Traditional charity platforms (web + payment processor)
 
@@ -8,7 +10,8 @@ Short positioning vs common patterns. **Not exhaustive**; add your own sources f
 
 | Dimension | Typical platform | Vaultex (this repo) |
 |-----------|------------------|---------------------|
-| Transparency unit | Annual reports, impact pages | Per-row ledger + optional chain sync in dev |
+| Transparency unit | Annual reports, impact pages | Per-row ledger + narratives + optional chain sync in dev |
+| Storytelling | Marketing pages, annual impact PDFs | Homepage carousel + **Impact** fulfilled campaigns |
 | Privacy | Account-based; internal PII controls | Masked addresses in UI; dev keys are public-by-design on Anvil |
 | Crypto | Rarely core | Local chain for capstone realism |
 

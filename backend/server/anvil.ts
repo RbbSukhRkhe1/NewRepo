@@ -27,6 +27,8 @@ const ANVIL_MNEMONIC =
 export const SUPER_RICH_INDEX = 0;
 /** Seeded donor wallets: Haha, Sukhan, Tasin */
 export const SEEDED_DONOR_INDICES = [2, 3, 4] as const;
+/** Extra simulation donor wallets (Sam, Priya, Lena). */
+export const SIM_DONOR_INDICES = [1, 5, 6] as const;
 export const BENEFICIARY_INDICES = [7, 8, 9] as const;
 /** Dedicated Anvil HD indices for cause treasury wallets (do not overlap users 0–9). */
 export const CAUSE_WALLET_START = 10;
