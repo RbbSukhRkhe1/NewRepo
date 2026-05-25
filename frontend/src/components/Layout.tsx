@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useState } from 'react';
 import { Link, Outlet, useLocation, useNavigationType } from 'react-router-dom';
 import { NavPill } from './ui';
 import { SiteFooter } from './SiteFooter';
+import { PremiumLightAtmosphere } from './PremiumLightAtmosphere';
 import { UserProfileMenu } from './UserProfileMenu';
 import { useAuth } from '../context/AuthContext';
 
@@ -39,8 +40,8 @@ export function Layout() {
     const root = document.documentElement;
     const body = document.body;
     root.setAttribute('data-theme', themeMode);
-    root.style.backgroundColor = themeMode === 'light' ? '#f3f8ff' : '#0A1F1C';
-    body.style.backgroundColor = themeMode === 'light' ? '#f3f8ff' : '#0A1F1C';
+    root.style.backgroundColor = themeMode === 'light' ? '#f6f9fc' : '#0A1F1C';
+    body.style.backgroundColor = themeMode === 'light' ? '#f6f9fc' : '#0A1F1C';
     window.localStorage.setItem(THEME_STORAGE_KEY, themeMode);
   }, [themeMode]);
 
@@ -59,40 +60,13 @@ export function Layout() {
             {user ? (
               <UserProfileMenu user={user} themeMode={themeMode} onSignOut={() => logout()} />
             ) : null}
-            {user?.role === 'admin' && (
-              <details className="group relative">
-                <summary
-                  className="inline-flex min-h-11 cursor-pointer list-none items-center rounded-xl border border-transparent px-3 py-2 text-sm font-medium text-[var(--text-muted-1)] transition-colors hover:border-[var(--border-chrome-2)] hover:text-[var(--text-high-1)]"
-                  aria-label="Admin actions"
-                >
-                  Admin
-                </summary>
-                <div className="vtx-glass-popover absolute right-0 top-[calc(100%+8px)] z-20 min-w-44 p-2">
-                  <NavPill to="/admin/users" label="Users" active={loc.pathname === '/admin/users'} />
-                  <NavPill
-                    to="/admin/causes"
-                    label="Manage causes"
-                    active={loc.pathname === '/admin/causes'}
-                  />
-                  <NavPill
-                    to="/admin/causes/new"
-                    label="New cause"
-                    active={loc.pathname === '/admin/causes/new'}
-                  />
-                </div>
-              </details>
-            )}
             {!user ? (
               <NavPill to="/login" label="Sign in" active={loc.pathname === '/login'} />
             ) : null}
             <button
               type="button"
               onClick={() => setThemeMode((prev) => (prev === 'dark' ? 'light' : 'dark'))}
-              className={`ml-1 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-colors ${
-                themeMode === 'light'
-                  ? 'border-slate-200/90 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
-                  : 'border-white/15 bg-white/[0.04] text-slate-200 hover:border-white/25 hover:bg-white/[0.08]'
-              }`}
+              className="vtx-theme-toggle ml-1 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/15 bg-white/[0.04] text-slate-200 transition-[background-color,border-color,color,box-shadow] duration-300 ease-out hover:border-white/25 hover:bg-white/[0.08]"
               aria-label={themeMode === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
               title={themeMode === 'dark' ? 'Light mode' : 'Dark mode'}
             >
@@ -129,9 +103,12 @@ export function Layout() {
         </div>
       </header>
       <main
-        className={`flex min-h-0 flex-1 flex-col ${loc.pathname === '/donate' ? 'overflow-hidden' : ''}`}
+        className={`relative flex min-h-0 flex-1 flex-col ${loc.pathname === '/donate' ? 'overflow-hidden' : ''}`}
       >
-        <Outlet />
+        {themeMode === 'light' ? <PremiumLightAtmosphere /> : null}
+        <div className="vtx-page-shell relative z-[1] flex min-h-0 flex-1 flex-col">
+          <Outlet />
+        </div>
       </main>
       <SiteFooter themeMode={themeMode} />
     </div>

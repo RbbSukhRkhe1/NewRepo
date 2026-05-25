@@ -42,7 +42,7 @@ export function RegisterPage() {
         Register as a donor to support causes, or as a beneficiary to receive funds.
         Your account is assigned an Anvil wallet funded with 100 ETH.
       </p>
-      <form onSubmit={(e) => void onSubmit(e)} className="mt-8 space-y-4">
+      <form onSubmit={(e) => void onSubmit(e)} className="vtx-auth-form mt-8 space-y-4">
         <div>
           <label className="block text-xs font-medium uppercase tracking-wider text-[var(--text-muted-1)]">
             Display name

@@ -8,6 +8,7 @@ export function CauseFundingDonut({
   isLightMode,
   className,
   compact,
+  mini,
 }: {
   raisedEth: number;
   goalEth: number;
@@ -15,6 +16,8 @@ export function CauseFundingDonut({
   className?: string;
   /** Smaller radii for cards vs detail page */
   compact?: boolean;
+  /** Tightest size for Causes list cards */
+  mini?: boolean;
 }) {
   const goal = Math.max(goalEth, 1e-9);
   const raised = Math.max(0, raisedEth);
@@ -32,9 +35,9 @@ export function CauseFundingDonut({
   const remainFill = isLightMode ? '#cbd5e1' : 'rgba(51, 65, 85, 0.55)';
   const metFill = isLightMode ? '#0d9488' : '#14b8a6';
 
-  const innerR = compact ? 32 : 44;
-  const outerR = compact ? 48 : 62;
-  const h = compact ? 120 : 168;
+  const innerR = mini ? 24 : compact ? 32 : 44;
+  const outerR = mini ? 36 : compact ? 48 : 62;
+  const h = mini ? 84 : compact ? 120 : 168;
 
   return (
     <div className={className} style={{ width: '100%', height: h }}>

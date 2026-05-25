@@ -312,26 +312,6 @@ export function CauseDetailPage() {
 
   return (
     <div className="relative mx-auto w-full max-w-6xl px-4 py-3 sm:px-5 sm:py-4 md:py-5">
-      {isLightMode ? (
-        <>
-          <div
-            className="pointer-events-none absolute -left-[22%] top-[-6rem] z-0 h-[26rem] w-[26rem] rounded-full bg-emerald-600/[0.38] blur-[115px]"
-            aria-hidden
-          />
-          <div
-            className="pointer-events-none absolute -right-[20%] top-[12%] z-0 h-[30rem] w-[30rem] rounded-full bg-cyan-600/[0.32] blur-[115px]"
-            aria-hidden
-          />
-          <div
-            className="pointer-events-none absolute bottom-[-10rem] left-1/2 z-0 h-[22rem] w-[min(100%,44rem)] -translate-x-1/2 rounded-full bg-teal-600/[0.28] blur-[100px]"
-            aria-hidden
-          />
-          <div
-            className="pointer-events-none absolute left-[38%] top-[32%] z-0 h-[18rem] w-[18rem] -translate-x-1/2 rounded-full bg-emerald-500/[0.2] blur-[90px]"
-            aria-hidden
-          />
-        </>
-      ) : null}
       <div className="relative z-[1]">
       <Link
         to="/causes"

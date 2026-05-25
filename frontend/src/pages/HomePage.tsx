@@ -283,7 +283,7 @@ export function HomePage() {
             <span
               className={
                 isLightMode
-                  ? 'bg-gradient-to-r from-emerald-600 via-teal-500 to-cyan-600 bg-clip-text text-transparent drop-shadow-[0_0_28px_rgba(16,185,129,0.35)]'
+                  ? 'vtx-home-accent-text bg-gradient-to-r from-emerald-600 via-teal-500 to-cyan-600 bg-clip-text text-transparent'
                   : 'bg-gradient-to-r from-[#ecfffd] via-[#5ef6de] to-[#34f0a0] bg-clip-text text-transparent drop-shadow-[0_0_14px_rgba(94,246,222,0.95)] drop-shadow-[0_0_36px_rgba(45,245,173,0.75)] drop-shadow-[0_0_64px_rgba(52,240,160,0.45)]'
               }
             >
@@ -302,9 +302,9 @@ export function HomePage() {
             <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Link
                 to="/causes"
-                className={`inline-flex min-h-11 items-center justify-center rounded-full px-8 py-3 text-sm font-bold tracking-wide motion-safe:transition-transform hover:scale-[1.02] ${
+                className={`inline-flex min-h-11 items-center justify-center rounded-full px-8 py-3 text-sm font-bold tracking-wide motion-safe:transition-[transform,box-shadow,filter] duration-300 hover:scale-[1.02] ${
                   isLightMode
-                    ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/25'
+                    ? 'vtx-home-cta-primary text-white'
                     : 'bg-[linear-gradient(180deg,#4dffd0_0%,#18c97a_100%)] text-[#021a10] shadow-[0_0_32px_rgba(45,245,173,0.35)]'
                 }`}
               >
@@ -312,9 +312,9 @@ export function HomePage() {
               </Link>
               <Link
                 to="/ledger"
-                className={`inline-flex min-h-11 items-center justify-center rounded-full border px-8 py-3 text-sm font-semibold motion-safe:transition-colors ${
+                className={`inline-flex min-h-11 items-center justify-center rounded-full border px-8 py-3 text-sm font-semibold motion-safe:transition-[background-color,border-color,box-shadow] duration-300 ${
                   isLightMode
-                    ? 'border-slate-300 bg-white/90 text-slate-800 hover:bg-white'
+                    ? 'vtx-home-cta-secondary'
                     : 'border-white/25 bg-white/5 text-white hover:border-cyan-400/40'
                 }`}
               >
@@ -339,15 +339,15 @@ export function HomePage() {
             }`}
           >
             <div className="mx-auto max-w-2xl text-center">
-              <p
-                className={`inline-flex items-center rounded-full px-3.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.24em] ${
-                  isLightMode
-                    ? 'bg-white text-slate-600 shadow-[0_1px_3px_rgba(15,40,60,0.08)] ring-1 ring-slate-200/80'
-                    : 'bg-white/[0.06] text-slate-300 ring-1 ring-white/[0.1]'
-                }`}
-              >
-                At a glance
-              </p>
+                <p
+                  className={`inline-flex items-center rounded-full px-3.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.24em] ${
+                    isLightMode
+                      ? 'vtx-home-eyebrow'
+                      : 'bg-white/[0.06] text-slate-300 ring-1 ring-white/[0.1]'
+                  }`}
+                >
+                  At a glance
+                </p>
               <h2
                 id="how-it-works-heading"
                 className={`mt-4 text-balance text-4xl font-extrabold tracking-[-0.03em] sm:text-[2.65rem] ${
@@ -739,7 +739,7 @@ export function HomePage() {
                 <p
                   className={`inline-flex items-center rounded-full px-3.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.24em] ${
                     isLightMode
-                      ? 'bg-white text-slate-600 shadow-[0_1px_3px_rgba(15,40,60,0.08)] ring-1 ring-slate-200/80'
+                      ? 'vtx-home-eyebrow'
                       : 'bg-white/[0.06] text-slate-300 ring-1 ring-white/[0.1]'
                   }`}
                 >
@@ -755,7 +755,7 @@ export function HomePage() {
                   <span
                     className={
                       isLightMode
-                        ? 'bg-gradient-to-r from-emerald-600 via-teal-500 to-cyan-600 bg-clip-text text-transparent'
+                        ? 'vtx-home-accent-text bg-gradient-to-r from-emerald-600 via-teal-500 to-cyan-600 bg-clip-text text-transparent'
                         : 'bg-gradient-to-r from-[#ecfffd] via-[#5ef6de] to-[#34f0a0] bg-clip-text text-transparent'
                     }
                   >
@@ -816,9 +816,9 @@ export function HomePage() {
 
                 <Link
                   to={user ? '/causes' : '/register'}
-                  className={`mt-6 inline-flex w-full min-h-12 items-center justify-center gap-2 rounded-full px-8 py-3.5 text-sm font-bold tracking-wide motion-safe:transition-transform hover:scale-[1.02] ${
+                  className={`mt-6 inline-flex w-full min-h-12 items-center justify-center gap-2 rounded-full px-8 py-3.5 text-sm font-bold tracking-wide motion-safe:transition-[transform,box-shadow,filter] duration-300 hover:scale-[1.02] ${
                     isLightMode
-                      ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/25'
+                      ? 'vtx-home-cta-primary text-white'
                       : 'bg-[linear-gradient(180deg,#4dffd0_0%,#18c97a_100%)] text-[#021a10] shadow-[0_0_32px_rgba(45,245,173,0.35)]'
                   }`}
                 >

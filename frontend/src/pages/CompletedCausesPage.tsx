@@ -51,7 +51,7 @@ export function CompletedCausesPage() {
           to="/causes"
           className={`rounded-full px-4 py-2 text-sm font-semibold ${
             isLightMode
-              ? 'border border-[rgba(164,184,207,0.45)] bg-white/80 text-[var(--text-high-3)] hover:bg-white'
+              ? 'vtx-chip text-[var(--text-high-3)] transition-colors'
               : 'border border-white/20 bg-black/25 text-[var(--text-high-3)] hover:bg-black/35'
           }`}
         >
@@ -66,7 +66,7 @@ export function CompletedCausesPage() {
           <div
             className={`rounded-2xl border p-6 text-sm ${
               isLightMode
-                ? 'border-[rgba(164,184,207,0.45)] bg-white/80 text-[var(--text-muted-1)]'
+                ? 'vtx-empty-panel text-[var(--text-muted-1)]'
                 : 'border-white/20 bg-black/25 text-[var(--text-muted-1)]'
             }`}
           >
@@ -83,7 +83,7 @@ export function CompletedCausesPage() {
                 key={cause.id}
                 className={`overflow-hidden rounded-2xl border ${
                   isLightMode
-                    ? 'border-emerald-500/35 bg-[linear-gradient(170deg,rgba(252,255,253,0.98),rgba(236,252,246,0.88))] shadow-[0_14px_28px_rgba(49,129,104,0.12)]'
+                    ? 'vtx-surface border-emerald-400/45 shadow-[0_36px_80px_-42px_rgba(6,78,59,0.14),0_0_80px_-38px_rgba(16,185,129,0.18)] ring-1 ring-emerald-500/25'
                     : 'border-emerald-400/35 bg-[linear-gradient(160deg,rgba(6,20,18,0.78),rgba(4,12,20,0.75))]'
                 }`}
               >

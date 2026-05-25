@@ -149,7 +149,7 @@ export function LedgerPage() {
 
       {liveNotice ? (
         <div
-          className="mt-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2.5 text-sm font-medium text-emerald-200"
+          className="vtx-live-notice mt-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2.5 text-sm font-medium text-emerald-200"
           role="status"
         >
           {liveNotice}

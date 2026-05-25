@@ -192,6 +192,72 @@ const SEEDED_CAUSES: SeedCause[] = [
     locationTag: 'Remote AU',
     campaignEndDate: '2026-07-03',
   },
+  {
+    title: 'Anti-Terrorism Initiative',
+    description:
+      'Global prevention, education, and rehabilitation programs with transparent, category-tagged on-chain funding.',
+    goalEth: 48,
+    raisedEth: 14.25,
+    imageUrl: '/samples/causes/anti-terrorism.jpg',
+    beneficiaryEmail: 'regional@hospital.local',
+    impactStoryTitle: 'Prevention and recovery',
+    impactStoryBody:
+      'Cross-border partners run school-based prevention curricula, community deradicalization workshops, and trauma-informed rehabilitation for affected families—every payout tagged on the public ledger.',
+    aboutBody:
+      'A coordinated global effort focused on terrorism prevention, public education, and rehabilitation for affected communities. Funds support early-intervention programs, teacher training, survivor counseling, and reintegration pathways—so donors can trace spending from wallet to program, not rhetoric.',
+    fundsCover: [
+      { label: 'School and community prevention education and awareness campaigns', weight: 38 },
+      { label: 'Trauma-informed rehabilitation and family reintegration support', weight: 27 },
+      { label: 'Research, training, and policy outreach for prevention networks', weight: 21 },
+      { label: 'Regional coordination hubs and multilingual resource development', weight: 14 },
+    ],
+    milestones: [
+      'Deliver prevention workshops in 20 schools and community centers',
+      'Fund 250 hours of rehabilitation counseling for affected families',
+      'Publish a quarterly global impact recap with category-level totals',
+    ],
+    verificationPoints: [
+      'Vetted NGO and civic partners with documented program plans',
+      'Ledger-linked disbursements tagged by prevention, education, or rehab',
+      'Redacted proof artifacts where participant privacy requires it',
+    ],
+    categoryTag: 'Security & Prevention',
+    locationTag: 'Global',
+    campaignEndDate: '2026-05-27',
+  },
+  {
+    title: 'Mental Health Support Network',
+    description:
+      'Sydney-based trauma counselling, crisis response, and wellness programs with verifiable on-chain funding.',
+    goalEth: 36,
+    raisedEth: 11.4,
+    imageUrl: '/samples/causes/mental-health.jpg',
+    beneficiaryEmail: 'childrens@hospital.local',
+    impactStoryTitle: 'Healing in Sydney',
+    impactStoryBody:
+      'Local clinicians and peer navigators provide subsidized trauma sessions, after-hours crisis routing, and wellness circles for survivors—tracked openly so donors see counselling vs crisis vs community care.',
+    aboutBody:
+      'The Mental Health Support Network expands trauma-informed and wellness services across Greater Sydney: subsidized counselling, 24/7 crisis triage, peer-support cohorts, and workplace wellbeing outreach. Every budget line is category-tagged on-chain so gifts fund care people can access—not opaque admin pools.',
+    fundsCover: [
+      { label: 'Subsidized trauma counselling and therapy with licensed clinicians', weight: 38 },
+      { label: '24/7 crisis lines, triage, and follow-up care coordination', weight: 27 },
+      { label: 'Peer-support groups and community wellness workshops', weight: 21 },
+      { label: 'Outreach for underserved suburbs and telehealth access', weight: 14 },
+    ],
+    milestones: [
+      'Subsidize 280 trauma-informed sessions for low-income Sydney residents',
+      'Extend after-hours crisis-line capacity with trained responder shifts',
+      'Launch 10 peer-support cohorts with facilitator stipends across metro Sydney',
+    ],
+    verificationPoints: [
+      'Licensed provider roster and session eligibility checks',
+      'Disbursements recorded by program category on the ledger',
+      'Monthly anonymized outcomes summary (sessions, crisis contacts, cohorts)',
+    ],
+    categoryTag: 'Mental Health',
+    locationTag: 'Sydney, AU',
+    campaignEndDate: '2026-05-28',
+  },
 ];
 
 type SeededAccount = { name: string; email: string; role: string; idx: number };
@@ -247,7 +313,7 @@ function beneficiaryIdByEmail(email: string): number | null {
 }
 
 /**
- * Ensure the 5 “marketing” causes exist even when the DB already has users/causes.
+ * Ensure the seeded marketing causes exist even when the DB already has users/causes.
  * Uses title as the stable key: one row per seeded title, preserves admin active/inactive,
  * and merges duplicate rows created by older seed logic.
  */
@@ -338,6 +404,10 @@ export function seedCausesUpsert(): void {
   for (const c of SEEDED_CAUSES) {
     if (c.imageUrl) pushSeedHeroes.run(c.imageUrl, c.title);
   }
+
+  db.prepare(
+    `UPDATE causes SET active = 0 WHERE title IN ('Anti-Terrorism', 'Mental Health')`,
+  ).run();
 
   // Backfill beneficiary + impact story on any active cause missing them (e.g. admin-created before migration).
   const orphans = db

@@ -17,7 +17,7 @@ export function PrimaryButton({
     <button
       className={cn(
         baseInteractive,
-        'bg-gradient-to-r from-[var(--accent-core)] to-[var(--accent-bright-2)] text-[#04120b] shadow-[0_0_0_1px_var(--border-accent-soft)_inset,0_0_24px_var(--fx-glow-accent-low)] hover:shadow-[0_0_0_1px_var(--border-accent-soft)_inset,0_0_30px_var(--fx-glow-accent-low)]',
+        'vtx-btn-primary bg-gradient-to-r from-[var(--accent-core)] to-[var(--accent-bright-2)] text-[#04120b] shadow-[0_0_0_1px_var(--border-accent-soft)_inset,0_0_24px_var(--fx-glow-accent-low)] hover:shadow-[0_0_0_1px_var(--border-accent-soft)_inset,0_0_30px_var(--fx-glow-accent-low)]',
         className,
       )}
       {...props}
@@ -36,7 +36,7 @@ export function SecondaryButton({
     <button
       className={cn(
         baseInteractive,
-        'border border-[var(--border-chrome-3)] bg-[var(--surface-panel-overlay)] text-[var(--text-high-3)] hover:border-[var(--border-chrome-4)] hover:bg-[var(--overlay-surface-soft)]',
+        'vtx-btn-secondary border border-[var(--border-chrome-3)] bg-[var(--surface-panel-overlay)] text-[var(--text-high-3)] hover:border-[var(--border-chrome-4)] hover:bg-[var(--overlay-surface-soft)]',
         className,
       )}
       {...props}
@@ -52,7 +52,7 @@ export function PrimaryLinkButton({ to, children, className }: { to: string; chi
       to={to}
       className={cn(
         baseInteractive,
-        'bg-gradient-to-r from-[var(--accent-core)] to-[var(--accent-bright-2)] text-[#04120b] shadow-[0_0_0_1px_var(--border-accent-soft)_inset,0_0_24px_var(--fx-glow-accent-low)]',
+        'vtx-btn-primary bg-gradient-to-r from-[var(--accent-core)] to-[var(--accent-bright-2)] text-[#04120b] shadow-[0_0_0_1px_var(--border-accent-soft)_inset,0_0_24px_var(--fx-glow-accent-low)]',
         className,
       )}
     >
@@ -67,7 +67,7 @@ export function SecondaryLinkButton({ to, children, className }: { to: string; c
       to={to}
       className={cn(
         baseInteractive,
-        'border border-[var(--border-chrome-3)] bg-[var(--surface-panel-overlay)] text-[var(--text-high-3)] hover:border-[var(--border-chrome-4)] hover:bg-[var(--overlay-surface-soft)]',
+        'vtx-btn-secondary border border-[var(--border-chrome-3)] bg-[var(--surface-panel-overlay)] text-[var(--text-high-3)] hover:border-[var(--border-chrome-4)] hover:bg-[var(--overlay-surface-soft)]',
         className,
       )}
     >
@@ -89,9 +89,9 @@ export function NavPill({
     <Link
       to={to}
       className={cn(
-        'inline-flex min-h-11 items-center rounded-xl border px-3 py-2 text-sm font-medium transition-colors',
+        'vtx-nav-pill inline-flex min-h-11 items-center rounded-xl border px-3 py-2 text-sm font-medium transition-[background-color,border-color,color,box-shadow] duration-300 ease-out',
         active
-          ? 'border-[var(--border-accent-soft)] bg-[var(--accent-core)] text-[#03130b]'
+          ? 'vtx-nav-pill--active border-[var(--border-accent-soft)] bg-[var(--accent-core)] text-[#03130b]'
           : 'border-transparent text-[var(--text-muted-1)] hover:border-[var(--border-chrome-2)] hover:text-[var(--text-high-1)]',
       )}
       aria-current={active ? 'page' : undefined}
@@ -115,7 +115,7 @@ export function SurfaceCard({
 export function EyebrowLabel({ children, className }: { children: ReactNode; className?: string }) {
   return (
     <p
-      className={cn('text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--accent-bright-2)]', className)}
+      className={cn('vtx-eyebrow text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--accent-bright-2)]', className)}
     >
       {children}
     </p>

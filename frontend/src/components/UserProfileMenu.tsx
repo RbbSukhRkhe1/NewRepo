@@ -24,7 +24,7 @@ type MenuItemProps = {
 
 function MenuItem({ to, children, active, destructive, onClick, themeMode }: MenuItemProps) {
   const base =
-    'flex w-full items-center rounded-md px-3 py-2 text-left text-sm transition-colors duration-150';
+    'mx-1 flex w-[calc(100%-0.5rem)] items-center rounded-md px-3 py-2.5 text-left text-sm transition-colors duration-150';
   const normal = themeMode === 'light'
     ? active
       ? 'bg-slate-100 font-medium text-slate-900'
@@ -32,9 +32,10 @@ function MenuItem({ to, children, active, destructive, onClick, themeMode }: Men
     : active
       ? 'bg-white/10 font-medium text-[var(--text-high-3)]'
       : 'text-[var(--text-high-2)] hover:bg-white/[0.08]';
-  const danger = themeMode === 'light'
-    ? 'text-red-600 hover:bg-red-50'
-    : 'text-red-400 hover:bg-red-500/10';
+  const danger =
+    themeMode === 'light'
+      ? 'text-[#ef4444] hover:bg-red-50 hover:text-[#ef4444]'
+      : 'text-[#ef4444] hover:bg-red-500/10 hover:text-[#ef4444]';
   const className = `${base} ${destructive ? danger : normal}`;
 
   if (to) {
@@ -91,13 +92,13 @@ export function UserProfileMenu({
   const triggerClass = triggerActive
     ? 'border-[var(--border-accent-soft)] bg-[var(--accent-core)] text-[#03130b]'
     : themeMode === 'light'
-      ? 'border-slate-200/90 bg-white text-slate-800 hover:border-slate-300 hover:bg-slate-50'
+      ? 'border-emerald-400/35 bg-white/95 text-emerald-950 shadow-[0_8px_24px_-12px_rgba(6,78,59,0.12)] hover:border-emerald-500/45 hover:bg-emerald-50/40'
       : 'border-white/15 bg-white/[0.04] text-[var(--text-high-2)] hover:border-white/25 hover:bg-white/[0.08]';
 
-  const panelClass =
+  const menuPanelClass =
     themeMode === 'light'
-      ? 'border-slate-200/90 bg-white shadow-[0_12px_40px_-12px_rgba(15,23,42,0.18)]'
-      : 'border-white/12 bg-[#0c1815] shadow-[0_16px_48px_-12px_rgba(0,0,0,0.65)]';
+      ? 'border border-slate-200/90 bg-white py-1.5 shadow-[0_8px_24px_rgba(15,23,42,0.12),0_2px_8px_rgba(15,23,42,0.06)]'
+      : 'border border-white/12 bg-[#0f1419] py-1.5 shadow-[0_12px_32px_rgba(0,0,0,0.45)]';
 
   return (
     <div ref={rootRef} className="relative">
@@ -135,7 +136,8 @@ export function UserProfileMenu({
       {open ? (
         <div
           role="menu"
-          className={`absolute right-0 top-[calc(100%+6px)] z-30 min-w-[11.5rem] rounded-lg border py-1 ${panelClass}`}
+          aria-label="Account menu"
+          className={`absolute right-0 top-[calc(100%+8px)] z-30 min-w-[12rem] rounded-lg ${menuPanelClass}`}
         >
           <MenuItem
             to="/account"
@@ -151,10 +153,10 @@ export function UserProfileMenu({
             active={onImpact}
             onClick={close}
           >
-            My Impacts
+            My Impact
           </MenuItem>
           <div
-            className={`my-1 border-t ${themeMode === 'light' ? 'border-slate-200/90' : 'border-white/10'}`}
+            className={`mx-2 my-1.5 border-t ${themeMode === 'light' ? 'border-slate-200' : 'border-white/10'}`}
             role="separator"
           />
           <MenuItem

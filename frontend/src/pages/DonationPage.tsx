@@ -208,18 +208,6 @@ export function DonationPage() {
 
   return (
     <div className="relative mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col overflow-hidden px-4 py-2 text-left sm:px-5 sm:py-2.5">
-      {isLightMode ? (
-        <>
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -left-24 top-0 h-[22rem] w-[22rem] rounded-full bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.16)_0%,transparent_68%)] blur-3xl"
-          />
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -right-16 top-32 h-[18rem] w-[18rem] rounded-full bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.12)_0%,transparent_70%)] blur-3xl"
-          />
-        </>
-      ) : null}
       <div className="relative z-[1] flex min-h-0 flex-1 flex-col">
         <div className="relative shrink-0">
           <button

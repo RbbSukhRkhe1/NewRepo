@@ -22,22 +22,20 @@ type ShowcaseCause = {
   accent: 'orange' | 'green';
 };
 
-function tagStyle(accent: ShowcaseCause['accent'], kind: 'frame' | 'story' | 'progress', isLightMode: boolean) {
+function tagStyle(accent: ShowcaseCause['accent'], kind: 'frame' | 'progress', isLightMode: boolean) {
   if (accent === 'orange') {
     if (kind === 'frame') {
       return isLightMode
-        ? 'border-amber-500/35 shadow-[0_14px_28px_rgba(180,120,40,0.12)]'
+        ? 'border-amber-400/45 shadow-[0_36px_80px_-42px_rgba(146,64,14,0.12),0_0_80px_-38px_rgba(251,191,36,0.16)] ring-1 ring-amber-500/22'
         : 'border-amber-400/45 shadow-[0_0_28px_rgba(251,146,60,0.25)]';
     }
-    if (kind === 'story') return isLightMode ? 'border-amber-500/45 bg-amber-500/10' : 'border-amber-400/70 bg-amber-500/8';
     return 'from-amber-400 to-orange-400';
   }
   if (kind === 'frame') {
     return isLightMode
-      ? 'border-emerald-500/35 shadow-[0_14px_28px_rgba(49,129,104,0.12)]'
+      ? 'border-emerald-400/45 shadow-[0_36px_80px_-42px_rgba(6,78,59,0.14),0_0_80px_-38px_rgba(16,185,129,0.18)] ring-1 ring-emerald-500/25'
       : 'border-emerald-400/45 shadow-[0_0_28px_rgba(16,185,129,0.24)]';
   }
-  if (kind === 'story') return isLightMode ? 'border-emerald-500/45 bg-emerald-500/10' : 'border-emerald-400/70 bg-emerald-500/8';
   return 'from-emerald-400 to-cyan-400';
 }
 
@@ -103,141 +101,113 @@ function CauseCard({
 
   return (
     <article
-      className={`vtx-surface rounded-3xl border p-6 md:p-7 ${tagStyle(cause.accent, 'frame', isLightMode)}`}
+      data-accent={cause.accent}
+      className={`vtx-cause-card vtx-surface rounded-2xl border p-3.5 sm:p-4 ${tagStyle(cause.accent, 'frame', isLightMode)}`}
     >
-      <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] md:items-start">
-        <div className="relative overflow-hidden rounded-2xl border border-[var(--border-chrome-2)] bg-black/20 md:row-span-2 md:self-stretch">
+      <div className="grid gap-2.5 sm:grid-cols-[7.25rem_minmax(0,1fr)] sm:items-start md:grid-cols-[8.75rem_minmax(0,1fr)] md:gap-3">
+        <div className="vtx-cause-hero relative max-h-[8.5rem] overflow-hidden sm:max-h-[9.25rem]">
           <img
             src={displayHero}
             alt=""
             referrerPolicy="no-referrer"
-            className="aspect-[4/3] h-full min-h-[12rem] w-full object-cover md:aspect-auto md:min-h-full"
+            className="aspect-[16/10] h-full max-h-[8.5rem] w-full object-cover sm:aspect-[4/3] sm:max-h-[9.25rem]"
             onError={() => setFailedHeroKey(heroFailureKey)}
           />
           <span
-            className={`absolute left-3 top-3 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] ${
-              isLightMode ? 'bg-white/90 text-emerald-900' : 'bg-black/55 text-emerald-200'
+            className={`absolute left-2 top-2 rounded-full border px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] ${
+              isLightMode
+                ? 'border-[var(--cause-accent-border-soft)] bg-white/95 text-emerald-900 shadow-[inset_0_1px_0_rgba(255,255,255,1)]'
+                : 'border-[var(--cause-accent-border-soft)] bg-black/60 text-emerald-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-sm'
             }`}
           >
             {cause.sectionLabel}
           </span>
         </div>
 
-        <div className={`vtx-glass-inset p-5 ${tagStyle(cause.accent, 'story', isLightMode)}`}>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--text-muted-1)]">Impact story</p>
-          <h3 className="mt-2 text-xl font-semibold leading-tight text-[var(--text-high-3)]">{cause.storyTitle}</h3>
-          <p className="mt-2 text-sm leading-7 text-[var(--text-muted-1)]">{cause.storyBody}</p>
-        </div>
-
-        <div className="min-w-0 md:col-start-2">
-          <h2 className="text-3xl font-bold leading-tight tracking-[-0.01em] text-[var(--text-high-3)] md:text-[2.1rem]">{cause.title}</h2>
-
-          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-            <span
-              className={`rounded-full px-2.5 py-1 ${
-                isLightMode
-                  ? 'border border-[var(--glass-border)] bg-white/60 text-[var(--text-muted-1)]'
-                  : 'border border-[var(--glass-border)] bg-[var(--overlay-surface-soft)] text-[var(--text-muted-2)]'
-              }`}
+        <div className="flex min-w-0 flex-col gap-2.5 sm:col-start-2">
+          <section className="vtx-cause-section vtx-cause-story" aria-labelledby={`cause-story-${detailCauseId ?? cause.title}`}>
+            <p
+              id={`cause-story-${detailCauseId ?? cause.title}`}
+              className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[var(--text-muted-1)]"
             >
-              {cause.donors} donor{cause.donors === 1 ? '' : 's'}
-            </span>
-            {cause.daysLeft != null ? (
-              <span
-                className={`rounded-full px-2.5 py-1 ${
-                  isLightMode
-                    ? 'border border-[var(--glass-border)] bg-white/60 text-[var(--text-muted-1)]'
-                    : 'border border-[var(--glass-border)] bg-[var(--overlay-surface-soft)] text-[var(--text-muted-2)]'
-                }`}
-              >
-                {cause.daysLeft} days left
+              Impact story
+            </p>
+            <h3 className="mt-1 text-base font-semibold leading-snug text-[var(--text-high-3)]">{cause.storyTitle}</h3>
+            <p className="mt-1 line-clamp-3 text-xs leading-relaxed text-[var(--text-muted-1)]">{cause.storyBody}</p>
+          </section>
+
+          <section className="vtx-cause-section vtx-cause-head">
+            <h2 className="text-xl font-bold leading-tight tracking-[-0.02em] text-[var(--text-high-3)] sm:text-[1.35rem]">
+              {cause.title}
+            </h2>
+          </section>
+
+          <section className="vtx-cause-section vtx-cause-stats" aria-label="Campaign stats">
+            <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+              <span className="vtx-cause-chip px-2 py-0.5">
+                {cause.donors} donor{cause.donors === 1 ? '' : 's'}
               </span>
-            ) : null}
-            <span
-              className={`rounded-full px-2.5 py-1 ${
-                isLightMode
-                  ? 'border border-[var(--glass-border)] bg-white/60 text-[var(--text-muted-1)]'
-                  : 'border border-[var(--glass-border)] bg-[var(--overlay-surface-soft)] text-[var(--text-muted-2)]'
-              }`}
-            >
-              {cause.locationTag}
-            </span>
-            <span
-              className={`rounded-full px-2.5 py-1 ${
-                isLightMode
-                  ? 'border border-[var(--glass-border)] bg-white/60 text-[var(--text-muted-1)]'
-                  : 'border border-[var(--glass-border)] bg-[var(--overlay-surface-soft)] text-[var(--text-muted-2)]'
-              }`}
-            >
-              {cause.categoryTag}
-            </span>
-          </div>
-
-          <div className="mt-5 flex items-center justify-between gap-3 text-sm">
-            <p className={`font-semibold ${accentText}`}>{progressLabel}</p>
-            <p className="text-xs uppercase tracking-wider text-[var(--text-muted-2)]">{amountLabel}</p>
-          </div>
-          <div className={`mt-2 h-2 rounded-full ${isLightMode ? 'bg-slate-200' : 'bg-black/40'}`}>
-            <div
-              className={`h-full rounded-full bg-gradient-to-r ${tagStyle(cause.accent, 'progress', isLightMode)}`}
-              style={{ width: `${progressPct}%` }}
-            />
-          </div>
-
-          {hasUtil ? (
-            <div className="mt-4 flex justify-center">
-              <div className="w-full max-w-[14rem]">
-                <CauseFundingDonut
-                  raisedEth={disbursedEth as number}
-                  goalEth={Math.max(donatedEth ?? 0, 0.0001)}
-                  isLightMode={isLightMode}
-                  compact
-                />
-              </div>
+              {cause.daysLeft != null ? (
+                <span className="vtx-cause-chip px-2 py-0.5">{cause.daysLeft} days left</span>
+              ) : null}
+              <span className="vtx-cause-chip px-2 py-0.5">{cause.locationTag}</span>
+              <span className="vtx-cause-chip px-2 py-0.5">{cause.categoryTag}</span>
             </div>
-          ) : null}
+          </section>
 
-          <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
-            <Link
-              to={actionHref}
-              className="inline-flex min-h-11 items-center rounded-full border border-emerald-300/70 bg-[linear-gradient(180deg,#3dffc4,#23d78f)] px-6 py-2 text-sm font-semibold text-[#032316] shadow-[0_0_22px_rgba(51,255,178,0.28)]"
-            >
-              {actionLabel}
-            </Link>
-            <Link
-              to={detailHref}
-              className={`inline-flex min-h-11 items-center rounded-full px-6 py-2 text-sm font-semibold text-[var(--text-high-3)] ${
-                isLightMode
-                  ? 'border border-[rgba(164,184,207,0.5)] bg-white/80 hover:bg-white'
-                  : 'border border-white/20 bg-black/25 hover:bg-black/35'
-              }`}
-            >
-              VIEW DETAILS
-            </Link>
-          </div>
+          <section className="vtx-cause-section vtx-cause-funding" aria-label="Funding progress">
+            <div className="flex items-center justify-between gap-2 text-xs">
+              <p className={`font-semibold ${accentText}`}>{progressLabel}</p>
+              <p className="max-w-[58%] text-right text-[10px] uppercase leading-snug tracking-wide text-[var(--text-muted-2)]">
+                {amountLabel}
+              </p>
+            </div>
+            <div className="vtx-cause-progress-track mt-1.5 h-2 overflow-hidden p-px">
+              <div
+                className={`h-full rounded-full bg-gradient-to-r ${tagStyle(cause.accent, 'progress', isLightMode)}`}
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
 
-          <div className="mt-3 flex flex-wrap items-center justify-center gap-2 text-xs">
-            <span
-              className={`rounded-full px-2 py-1 ${
-                isLightMode
-                  ? 'border border-emerald-600/30 bg-emerald-600/10 text-emerald-700'
-                  : 'border border-emerald-400/30 bg-emerald-500/10 text-emerald-300'
-              }`}
-            >
-              Goal {goalEth?.toFixed(2) ?? '0.00'} ETH
-            </span>
-            {fundsMatched ? (
-              <span
-                className={`rounded-full px-2 py-1 ${
-                  isLightMode
-                    ? 'border border-cyan-600/30 bg-cyan-600/10 text-cyan-800'
-                    : 'border border-cyan-400/30 bg-cyan-500/10 text-cyan-200'
-                }`}
-              >
-                Funds matched on-chain
-              </span>
+            {hasUtil ? (
+              <div className="mt-2 flex justify-center">
+                <div className="w-full max-w-[9.5rem]">
+                  <CauseFundingDonut
+                    raisedEth={disbursedEth as number}
+                    goalEth={Math.max(donatedEth ?? 0, 0.0001)}
+                    isLightMode={isLightMode}
+                    mini
+                  />
+                </div>
+              </div>
             ) : null}
-          </div>
+          </section>
+
+          <section className="vtx-cause-section vtx-cause-actions" aria-label="Campaign actions">
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <Link
+                to={actionHref}
+                className="inline-flex min-h-9 items-center rounded-full border border-emerald-300/70 bg-[linear-gradient(180deg,#3dffc4,#23d78f)] px-4 py-1.5 text-xs font-semibold text-[#032316] shadow-[0_0_18px_rgba(51,255,178,0.22)]"
+              >
+                {actionLabel}
+              </Link>
+              <Link
+                to={detailHref}
+                className="vtx-cause-btn-secondary inline-flex min-h-9 items-center px-4 py-1.5 text-xs font-semibold text-[var(--text-high-3)]"
+              >
+                VIEW DETAILS
+              </Link>
+            </div>
+
+            <div className="mt-2 flex flex-wrap items-center justify-center gap-1.5 text-[11px]">
+              <span className="vtx-cause-chip vtx-cause-chip--goal px-2 py-0.5 font-medium">
+                Goal {goalEth?.toFixed(2) ?? '0.00'} ETH
+              </span>
+              {fundsMatched ? (
+                <span className="vtx-cause-chip vtx-cause-chip--matched px-2 py-0.5 font-medium">Funds matched on-chain</span>
+              ) : null}
+            </div>
+          </section>
         </div>
       </div>
     </article>
@@ -248,22 +218,22 @@ function AddCauseCard({ isLightMode }: { isLightMode: boolean }) {
   return (
     <Link
       to="/causes/new"
-      className={`flex min-h-[18rem] flex-col items-center justify-center rounded-3xl border border-dashed p-8 text-center transition-[border-color,background-color,box-shadow] duration-200 ${
+      className={`flex min-h-[10rem] flex-col items-center justify-center rounded-2xl border border-dashed p-5 text-center transition-[border-color,background-color,box-shadow] duration-200 ${
         isLightMode
-          ? 'border-emerald-500/45 bg-emerald-50/40 hover:border-emerald-600/55 hover:bg-emerald-50/70'
+          ? 'border-emerald-400/45 bg-[linear-gradient(180deg,#ffffff_0%,#ecfdf5_55%,#d1fae5_100%)] shadow-[0_24px_56px_-36px_rgba(6,78,59,0.12)] ring-1 ring-emerald-500/20 hover:border-emerald-500/55 hover:shadow-[0_28px_64px_-34px_rgba(6,78,59,0.16)]'
           : 'border-emerald-400/35 bg-emerald-500/[0.04] hover:border-emerald-400/55 hover:bg-emerald-500/[0.08]'
       }`}
     >
       <span
-        className={`flex h-14 w-14 items-center justify-center rounded-full border-2 text-3xl font-light leading-none ${
+        className={`flex h-11 w-11 items-center justify-center rounded-full border-2 text-2xl font-light leading-none ${
           isLightMode ? 'border-emerald-600/55 text-emerald-900' : 'border-emerald-400/55 text-white'
         }`}
         aria-hidden
       >
         +
       </span>
-      <p className={`mt-5 text-lg font-bold tracking-[-0.02em] ${isLightMode ? 'text-emerald-950' : 'text-white'}`}>Add cause</p>
-      <p className={`mt-2 max-w-[13rem] text-sm leading-snug ${isLightMode ? 'text-emerald-900/72' : 'text-slate-400'}`}>
+      <p className={`mt-3 text-base font-bold tracking-[-0.02em] ${isLightMode ? 'text-emerald-950' : 'text-white'}`}>Add cause</p>
+      <p className={`mt-1.5 max-w-[13rem] text-xs leading-snug ${isLightMode ? 'text-emerald-900/72' : 'text-slate-400'}`}>
         Create a new fundraising cause
       </p>
     </Link>
@@ -352,7 +322,7 @@ export function CausesPage() {
             type="button"
             className={`inline-flex h-10 w-10 items-center justify-center rounded-full text-[var(--text-high-2)] ${
               isLightMode
-                ? 'border border-[rgba(164,184,207,0.45)] bg-white/80 hover:bg-white'
+                ? 'vtx-chip transition-colors'
                 : 'border border-white/15 bg-white/[0.03] hover:bg-white/[0.08]'
             }`}
             aria-label="Previous"
@@ -363,7 +333,7 @@ export function CausesPage() {
             type="button"
             className={`inline-flex h-10 w-10 items-center justify-center rounded-full text-[var(--text-high-2)] ${
               isLightMode
-                ? 'border border-[rgba(164,184,207,0.45)] bg-white/80 hover:bg-white'
+                ? 'vtx-chip transition-colors'
                 : 'border border-white/15 bg-white/[0.03] hover:bg-white/[0.08]'
             }`}
             aria-label="Next"
@@ -373,12 +343,12 @@ export function CausesPage() {
         </div>
       </div>
 
-      <div className="mt-8 space-y-6">
+      <div className="mt-6 space-y-4">
         {activeCauses.length === 0 ? (
           <div
             className={`rounded-2xl border p-6 text-sm ${
               isLightMode
-                ? 'border-[rgba(164,184,207,0.45)] bg-white/80 text-[var(--text-muted-1)]'
+                ? 'vtx-empty-panel text-[var(--text-muted-1)]'
                 : 'border-white/20 bg-black/25 text-[var(--text-muted-1)]'
             }`}
           >

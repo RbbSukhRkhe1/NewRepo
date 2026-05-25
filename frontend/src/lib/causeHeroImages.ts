@@ -8,6 +8,8 @@ export const CAUSE_HERO_BY_TITLE: Record<string, string> = {
   Disaster: '/Photos/Disaster.jpg',
   Hospital: '/Photos/Hospital.jpg',
   Education: '/samples/causes/education.jpg',
+  'Anti-Terrorism Initiative': '/samples/causes/anti-terrorism.jpg',
+  'Mental Health Support Network': '/samples/causes/mental-health.jpg',
 };
 
 /** @deprecated alias for seed / docs */

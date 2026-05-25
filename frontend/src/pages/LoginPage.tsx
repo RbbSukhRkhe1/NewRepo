@@ -32,7 +32,7 @@ export function LoginPage() {
   return (
     <div className="vtx-page max-w-md py-16">
       <SectionHeader title="Sign in" body="Access your account to donate and track your impact on the ledger." />
-      <form onSubmit={(e) => void onSubmit(e)} className="mt-8 space-y-4">
+      <form onSubmit={(e) => void onSubmit(e)} className="vtx-auth-form mt-8 space-y-4">
         <div>
           <label className="block text-xs font-medium uppercase tracking-wider text-[var(--text-muted-1)]">
             Email
