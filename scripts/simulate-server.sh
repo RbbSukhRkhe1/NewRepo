@@ -1,25 +1,25 @@
 #!/usr/bin/env bash
 # ─────────────────────────────────────────────────────────────────────────────
-# Vaultex — simulate donations + disbursements from outside Docker
+# Vaultex — simulate donations (continuous) then disburse exact totals
 #
-# Dependencies: curl, jq  (install jq: sudo apt install -y jq)
+# Donations flow until you press ENTER → admin disburses exact totals.
+# Hits the backend directly on port 3847 to avoid nginx rate limits.
+#
+# Dependencies: curl, jq  (sudo apt install -y jq)
 #
 # Usage:
-#   bash simulate-server.sh                       # defaults to localhost:8080
-#   API=https://vaultex.club bash simulate-server.sh
-#   ROUNDS=3 DELAY=2 bash simulate-server.sh
+#   bash simulate-server.sh
+#   DELAY=2 bash simulate-server.sh
 # ─────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 
-API="${API:-http://localhost:8080/api}"
+API="${API:-http://127.0.0.1:3847/api}"
 PW="${PASSWORD:-demo123}"
-ROUNDS="${ROUNDS:-2}"
-DELAY="${DELAY:-1.5}"
+DELAY="${DELAY:-2}"
 
-# ── Preflight ────────────────────────────────────────────────────────────────
 for cmd in curl jq; do
   if ! command -v "$cmd" &>/dev/null; then
-    echo "ERROR: '$cmd' not found. Install it:  sudo apt install -y $cmd"
+    echo "ERROR: '$cmd' not found.  sudo apt install -y $cmd"
     exit 1
   fi
 done
@@ -31,65 +31,59 @@ info() { printf "${C}→${N} %s\n" "$*"; }
 warn() { printf "${Y}⚠${N} %s\n" "$*"; }
 err()  { printf "${R}✗${N} %s\n" "$*"; }
 
-# ── Health check ─────────────────────────────────────────────────────────────
-HEALTH="${API%/api}/health"
-if [ "$API" != "${API%/api}" ]; then
-  HEALTH="${API%/api}/health"
-else
-  HEALTH="${API}/health"
-fi
-# If API is like https://vaultex.club/api, health is https://vaultex.club/health
-# If API is like http://localhost:8080/api, health is http://localhost:8080/health
+CDIR=$(mktemp -d)
+RESP_FILE="$CDIR/_resp.txt"
+trap 'rm -rf "$CDIR"' EXIT
 
-info "Checking API at $HEALTH ..."
-if ! curl -sf --max-time 5 "$HEALTH" >/dev/null 2>&1; then
-  # Try the /api prefix in case health is behind /api
+LAST_CODE=""
+LAST_BODY=""
+
+# ── Health check (try backend direct, then nginx) ────────────────────────────
+info "Checking API at $API ..."
+if ! curl -sf --max-time 5 "${API%/api}/health" >/dev/null 2>&1; then
   if ! curl -sf --max-time 5 "$API/config" >/dev/null 2>&1; then
     err "Backend not reachable at $API"
-    echo "  Is docker compose running?  docker compose ps"
+    echo "  Try: API=http://127.0.0.1:3847/api bash simulate-server.sh"
     exit 1
   fi
 fi
-ok "API is up at $API"
+ok "API is up"
 echo
 
-# ── Cookie jar (temp dir, cleaned up on exit) ────────────────────────────────
-CDIR=$(mktemp -d)
-trap 'rm -rf "$CDIR"' EXIT
-
-# ── login(email) → sets COOKIE_FILE ─────────────────────────────────────────
-login() {
+# ── login_donor(email) → creates cookie jar, returns 0 on success ───────────
+login_donor() {
   local email="$1"
-  COOKIE_FILE="$CDIR/$(echo "$email" | tr '@.' '_').txt"
-  local resp
-  resp=$(curl -s -w '\n%{http_code}' \
+  local jar="$CDIR/$(echo "$email" | tr '@.' '_').txt"
+  curl -s -w '\n%{http_code}' \
     -X POST "$API/auth/login" \
     -H 'Content-Type: application/json' \
-    -c "$COOKIE_FILE" -b "$COOKIE_FILE" \
-    -d "{\"email\":\"$email\",\"password\":\"$PW\"}")
+    -c "$jar" -b "$jar" \
+    -d "{\"email\":\"$email\",\"password\":\"$PW\"}" \
+    > "$RESP_FILE" 2>/dev/null
   local code
-  code=$(echo "$resp" | tail -1)
+  code=$(tail -1 "$RESP_FILE")
   if [ "$code" != "200" ]; then
     warn "Login failed for $email (HTTP $code)"
     return 1
   fi
+  ok "Logged in: $email"
   return 0
 }
 
-# ── api_post(path, json_body) → prints response body, sets HTTP_CODE ────────
-api_post() {
-  local path="$1" body="$2"
-  local resp
-  resp=$(curl -s -w '\n%{http_code}' \
+# ── post_as(email, path, json_body) → sets LAST_CODE, LAST_BODY ─────────────
+post_as() {
+  local email="$1" path="$2" body="$3"
+  local jar="$CDIR/$(echo "$email" | tr '@.' '_').txt"
+  curl -s -w '\n%{http_code}' \
     -X POST "$API$path" \
     -H 'Content-Type: application/json' \
-    -c "$COOKIE_FILE" -b "$COOKIE_FILE" \
-    -d "$body")
-  HTTP_CODE=$(echo "$resp" | tail -1)
-  echo "$resp" | sed '$d'
+    -c "$jar" -b "$jar" \
+    -d "$body" \
+    > "$RESP_FILE" 2>/dev/null
+  LAST_CODE=$(tail -1 "$RESP_FILE")
+  LAST_BODY=$(sed '$d' "$RESP_FILE")
 }
 
-# ── Random ETH amount (0.05 – 0.35, no python needed) ───────────────────────
 random_eth() {
   local r=$(( RANDOM % 3000 + 500 ))
   printf "0.%04d" "$r"
@@ -101,11 +95,9 @@ CAUSES_RAW=$(curl -s "$API/causes?status=active")
 CAUSE_COUNT=$(echo "$CAUSES_RAW" | jq 'length')
 
 if [ "$CAUSE_COUNT" -eq 0 ] || [ "$CAUSE_COUNT" = "null" ]; then
-  err "No active causes found. Is the database seeded?"
-  exit 1
+  err "No active causes found. Is the database seeded?"; exit 1
 fi
 
-# Build parallel arrays of IDs and titles
 readarray -t CAUSE_IDS    < <(echo "$CAUSES_RAW" | jq -r '.[].id')
 readarray -t CAUSE_TITLES < <(echo "$CAUSES_RAW" | jq -r '.[].title')
 
@@ -115,7 +107,7 @@ for i in "${!CAUSE_IDS[@]}"; do
 done
 echo
 
-# ── All 6 seeded donors ─────────────────────────────────────────────────────
+# ── Donors ───────────────────────────────────────────────────────────────────
 DONORS=(
   "haha@vaultex.local"
   "sukhan@vaultex.local"
@@ -125,61 +117,18 @@ DONORS=(
   "lena@vaultex.local"
 )
 
-# ── Cause → preferred donor indices (spread across wallets) ─────────────────
+ADMIN="admin@vaultex.local"
+
 donors_for() {
   case "$1" in
-    *LGBTQ*|*lgbtq*) echo "0 3 5" ;;   # Haha, Sam, Lena
-    *War*|*war*)     echo "1 4 2" ;;   # Sukhan, Priya, Tasin
-    *Disaster*)      echo "2 3 4" ;;   # Tasin, Sam, Priya
-    *Hospital*)      echo "0 1 5" ;;   # Haha, Sukhan, Lena
-    *Education*)     echo "4 5 0" ;;   # Priya, Lena, Haha
+    *LGBTQ*|*lgbtq*) echo "0 3 5" ;;
+    *War*|*war*)     echo "1 4 2" ;;
+    *Disaster*)      echo "2 3 4" ;;
+    *Hospital*)      echo "0 1 5" ;;
+    *Education*)     echo "4 5 0" ;;
     *)               echo "0 1 2" ;;
   esac
 }
-
-# ═════════════════════════════════════════════════════════════════════════════
-#  PHASE 1 — DONATIONS
-# ═════════════════════════════════════════════════════════════════════════════
-printf "\n${B}═══ PHASE 1: DONATIONS ($ROUNDS rounds × $CAUSE_COUNT causes) ═══${N}\n\n"
-DNUM=0
-
-for (( round=1; round<=ROUNDS; round++ )); do
-  info "Round $round / $ROUNDS"
-  for i in "${!CAUSE_IDS[@]}"; do
-    cid="${CAUSE_IDS[$i]}"
-    ct="${CAUSE_TITLES[$i]}"
-    read -ra dmap <<< "$(donors_for "$ct")"
-    didx="${dmap[$(( (round - 1) % ${#dmap[@]} ))]}"
-    donor="${DONORS[$didx]}"
-    amt=$(random_eth)
-    DNUM=$((DNUM + 1))
-
-    login "$donor" || continue
-    body=$(api_post "/donate" "{\"causeId\":$cid,\"amountEth\":\"$amt\"}")
-
-    if [ "$HTTP_CODE" = "200" ]; then
-      tx=$(echo "$body" | jq -r '.txHash // empty' | head -c 12)
-      ok "[$DNUM] ${donor%%@*} → $ct: $amt ETH (${tx}…)"
-    else
-      warn "[$DNUM] ${donor%%@*} → $ct: FAILED ($HTTP_CODE)"
-    fi
-    sleep "$DELAY"
-  done
-  echo
-done
-printf "${G}${B}Donations complete: $DNUM sent${N}\n\n"
-
-# ═════════════════════════════════════════════════════════════════════════════
-#  PHASE 2 — DISBURSEMENTS (admin disburses to the bound beneficiary)
-# ═════════════════════════════════════════════════════════════════════════════
-printf "${B}═══ PHASE 2: DISBURSEMENTS ═══${N}\n\n"
-
-#  Cause → Recipient (matches seed.ts):
-#    Hospital   → Red Cross Hospital   (Anvil #7)
-#    War        → WHO Disaster Relief  (Anvil #8)
-#    Disaster   → WHO Disaster Relief  (Anvil #8)
-#    LGBTQs     → WeAreHumans          (Anvil #9)
-#    Education  → Red Cross Hospital   (Anvil #7)
 
 disburse_msg() {
   case "$1" in
@@ -203,49 +152,154 @@ recipient_for() {
   esac
 }
 
-info "Logging in as admin ..."
-login "admin@vaultex.local" || { err "Admin login failed"; exit 1; }
-ok "Admin session ready"
+# ═════════════════════════════════════════════════════════════════════════════
+#  LOGIN ALL DONORS + ADMIN UP FRONT (one time only)
+# ═════════════════════════════════════════════════════════════════════════════
+printf "${B}═══ LOGGING IN ALL ACCOUNTS ═══${N}\n\n"
+
+ACTIVE_DONORS=()
+for d in "${DONORS[@]}"; do
+  if login_donor "$d"; then
+    ACTIVE_DONORS+=("$d")
+  fi
+done
+
+login_donor "$ADMIN" || { err "Admin login failed — cannot disburse"; exit 1; }
 echo
+
+if [ ${#ACTIVE_DONORS[@]} -eq 0 ]; then
+  err "No donors could log in. Check that the DB is seeded."
+  exit 1
+fi
+ok "${#ACTIVE_DONORS[@]} donors ready, admin ready"
+echo
+
+# ── Per-cause running totals (integer = hundredths of a cent to avoid floats) ─
+declare -A CAUSE_TOTAL_CENTS
+for i in "${!CAUSE_IDS[@]}"; do
+  CAUSE_TOTAL_CENTS["${CAUSE_IDS[$i]}"]=0
+done
+
+add_to_total() {
+  local cid="$1" eth="$2"
+  local cents
+  cents=$(echo "$eth" | sed 's/^0\.//' | sed 's/^0*//')
+  cents=${cents:-0}
+  CAUSE_TOTAL_CENTS["$cid"]=$(( ${CAUSE_TOTAL_CENTS["$cid"]} + 10#$cents ))
+}
+
+cents_to_eth() {
+  printf "0.%04d" "$1"
+}
+
+# ═════════════════════════════════════════════════════════════════════════════
+#  PHASE 1 — CONTINUOUS DONATIONS (press ENTER to stop)
+# ═════════════════════════════════════════════════════════════════════════════
+printf "${B}═══ PHASE 1: DONATIONS (press ENTER to stop and disburse) ═══${N}\n\n"
+
+DNUM=0
+round=0
+
+while true; do
+  round=$((round + 1))
+  info "Round $round"
+
+  for i in "${!CAUSE_IDS[@]}"; do
+    # Non-blocking check for ENTER
+    if read -t 0 2>/dev/null; then
+      read -r 2>/dev/null || true
+      echo
+      info "ENTER received — moving to disbursements..."
+      # Break out of both loops
+      break 2
+    fi
+
+    cid="${CAUSE_IDS[$i]}"
+    ct="${CAUSE_TITLES[$i]}"
+    read -ra dmap <<< "$(donors_for "$ct")"
+    didx="${dmap[$(( (round - 1) % ${#dmap[@]} ))]}"
+    donor="${ACTIVE_DONORS[$(( didx % ${#ACTIVE_DONORS[@]} ))]}"
+    amt=$(random_eth)
+    DNUM=$((DNUM + 1))
+
+    post_as "$donor" "/donate" "{\"causeId\":$cid,\"amountEth\":\"$amt\"}"
+
+    if [ "$LAST_CODE" = "200" ]; then
+      tx=$(echo "$LAST_BODY" | jq -r '.txHash // ""' | head -c 12)
+      ok "[$DNUM] ${donor%%@*} → $ct: $amt ETH (${tx}…)"
+      add_to_total "$cid" "$amt"
+    else
+      warn "[$DNUM] ${donor%%@*} → $ct: FAILED ($LAST_CODE)"
+    fi
+    sleep "$DELAY"
+  done
+  echo
+done
+
+printf "\n${G}${B}Donations complete: $DNUM sent${N}\n\n"
+
+printf "${B}Totals raised per cause:${N}\n"
+for i in "${!CAUSE_IDS[@]}"; do
+  cid="${CAUSE_IDS[$i]}"
+  ct="${CAUSE_TITLES[$i]}"
+  cents="${CAUSE_TOTAL_CENTS[$cid]}"
+  eth=$(cents_to_eth "$cents")
+  printf "    %-20s %s ETH\n" "$ct" "$eth"
+done
+echo
+
+# ═════════════════════════════════════════════════════════════════════════════
+#  PHASE 2 — DISBURSE EXACT TOTALS
+# ═════════════════════════════════════════════════════════════════════════════
+printf "${B}═══ PHASE 2: DISBURSING EXACT TOTALS ═══${N}\n\n"
 
 DISBNUM=0
 for i in "${!CAUSE_IDS[@]}"; do
   cid="${CAUSE_IDS[$i]}"
   ct="${CAUSE_TITLES[$i]}"
+  cents="${CAUSE_TOTAL_CENTS[$cid]}"
+
+  if [ "$cents" -eq 0 ]; then
+    info "[$ct] Nothing donated — skipping"
+    continue
+  fi
+
+  amt=$(cents_to_eth "$cents")
   recip=$(recipient_for "$ct")
   msg=$(disburse_msg "$ct")
-  amt=$(random_eth)
   DISBNUM=$((DISBNUM + 1))
 
-  body=$(api_post "/causes/$cid/disburse" "{\"amountEth\":\"$amt\",\"message\":\"$msg\"}")
+  post_as "$ADMIN" "/causes/$cid/disburse" "{\"amountEth\":\"$amt\",\"message\":\"$msg\"}"
 
-  if [ "$HTTP_CODE" = "200" ]; then
-    tx=$(echo "$body" | jq -r '.txHash // empty' | head -c 12)
+  if [ "$LAST_CODE" = "200" ]; then
+    tx=$(echo "$LAST_BODY" | jq -r '.txHash // ""' | head -c 12)
     ok "[D$DISBNUM] $ct → $recip: $amt ETH — \"$msg\" (${tx}…)"
   else
-    warn "[D$DISBNUM] $ct → $recip: FAILED ($HTTP_CODE)"
-    echo "    $(echo "$body" | jq -r '.error // empty' | head -c 80)"
+    warn "[D$DISBNUM] $ct → $recip: FAILED ($LAST_CODE)"
+    echo "    $(echo "$LAST_BODY" | jq -r '.error // ""' | head -c 80)"
   fi
   sleep "$DELAY"
 done
 
 # ═════════════════════════════════════════════════════════════════════════════
-#  DONE
-# ═════════════════════════════════════════════════════════════════════════════
 echo
 printf "${B}═══ SIMULATION COMPLETE ═══${N}\n"
-cat <<SUMMARY
-  Donations:     $DNUM
-  Disbursements: $DISBNUM
-
-  Cause → Recipient:
-    Hospital   → Red Cross Hospital   (Anvil #7)
-    War        → WHO Disaster Relief  (Anvil #8)
-    Disaster   → WHO Disaster Relief  (Anvil #8)
-    LGBTQs     → WeAreHumans          (Anvil #9)
-    Education  → Red Cross Hospital   (Anvil #7)
-
-  View results:
-    https://vaultex.club/ledger
-SUMMARY
+echo "  Donations:     $DNUM"
+echo "  Disbursements: $DISBNUM"
+echo
+printf "  ${B}Per-cause (donated = disbursed):${N}\n"
+for i in "${!CAUSE_IDS[@]}"; do
+  cid="${CAUSE_IDS[$i]}"
+  ct="${CAUSE_TITLES[$i]}"
+  recip=$(recipient_for "$ct")
+  cents="${CAUSE_TOTAL_CENTS[$cid]}"
+  eth=$(cents_to_eth "$cents")
+  if [ "$cents" -gt 0 ]; then
+    printf "    %-20s → %-25s %s ETH  ${G}✓ zeroed${N}\n" "$ct" "$recip" "$eth"
+  else
+    printf "    %-20s   (no donations)\n" "$ct"
+  fi
+done
+echo
+echo "  https://vaultex.club/ledger"
 echo

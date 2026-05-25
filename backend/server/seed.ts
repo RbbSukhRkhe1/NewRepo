@@ -194,37 +194,49 @@ const SEEDED_CAUSES: SeedCause[] = [
   },
 ];
 
-function seedUsersIfEmpty(): boolean {
-  const n = db.prepare('SELECT COUNT(*) as c FROM users').get() as { c: number };
-  if (n.c > 0) return false;
+type SeededAccount = { name: string; email: string; role: string; idx: number };
 
+const SEEDED_ACCOUNTS: SeededAccount[] = [
+  { name: 'Vaultex', email: 'admin@vaultex.local', role: 'admin', idx: SUPER_RICH_INDEX },
+  { name: 'Haha', email: 'haha@vaultex.local', role: 'donor', idx: SEEDED_DONOR_INDICES[0] },
+  { name: 'Sukhan', email: 'sukhan@vaultex.local', role: 'donor', idx: SEEDED_DONOR_INDICES[1] },
+  { name: 'Tasin', email: 'tasin@vaultex.local', role: 'donor', idx: SEEDED_DONOR_INDICES[2] },
+  { name: 'Sam', email: 'sam@vaultex.local', role: 'donor', idx: SIM_DONOR_INDICES[0] },
+  { name: 'Priya', email: 'priya@vaultex.local', role: 'donor', idx: SIM_DONOR_INDICES[1] },
+  { name: 'Lena', email: 'lena@vaultex.local', role: 'donor', idx: SIM_DONOR_INDICES[2] },
+  { name: 'Red Cross Hospital', email: 'redcross@hospital.local', role: 'beneficiary', idx: BENEFICIARY_INDICES[0] },
+  { name: 'WHO Disaster Relief', email: 'who@relief.local', role: 'beneficiary', idx: BENEFICIARY_INDICES[1] },
+  { name: 'WeAreHumans', email: 'wearehumans@initiative.local', role: 'beneficiary', idx: BENEFICIARY_INDICES[2] },
+];
+
+/**
+ * Upsert all expected accounts on every startup.
+ * - Missing accounts are created.
+ * - Existing accounts get their name, role, and anvil_index updated to match code.
+ * - Password is only set on INSERT (never overwrites a user-changed password).
+ * Returns true if any rows were inserted (first boot).
+ */
+function ensureSeededAccounts(): boolean {
   const hash = bcrypt.hashSync(DEMO_PASSWORD, 10);
-  const ins = db.prepare(`INSERT INTO users (name, email, password_hash, role, anvil_index) VALUES (?,?,?,?,?)`);
+  const exists = db.prepare(`SELECT id FROM users WHERE email = ?`);
+  const ins = db.prepare(
+    `INSERT INTO users (name, email, password_hash, role, anvil_index) VALUES (?,?,?,?,?)`,
+  );
+  const upd = db.prepare(
+    `UPDATE users SET name = ?, role = ?, anvil_index = ? WHERE email = ?`,
+  );
 
-  ins.run('Vaultex', 'admin@vaultex.local', hash, 'admin', SUPER_RICH_INDEX);
-
-  const donors = [
-    { name: 'Haha', email: 'haha@vaultex.local', idx: SEEDED_DONOR_INDICES[0] },
-    { name: 'Sukhan', email: 'sukhan@vaultex.local', idx: SEEDED_DONOR_INDICES[1] },
-    { name: 'Tasin', email: 'tasin@vaultex.local', idx: SEEDED_DONOR_INDICES[2] },
-  ];
-  for (const d of donors) ins.run(d.name, d.email, hash, 'donor', d.idx);
-
-  const simDonors = [
-    { name: 'Sam', email: 'sam@vaultex.local', idx: SIM_DONOR_INDICES[0] },
-    { name: 'Priya', email: 'priya@vaultex.local', idx: SIM_DONOR_INDICES[1] },
-    { name: 'Lena', email: 'lena@vaultex.local', idx: SIM_DONOR_INDICES[2] },
-  ];
-  for (const d of simDonors) ins.run(d.name, d.email, hash, 'donor', d.idx);
-
-  const beneficiaries = [
-    { name: 'Red Cross Hospital', email: 'redcross@hospital.local', idx: BENEFICIARY_INDICES[0] },
-    { name: 'WHO Disaster Relief', email: 'who@relief.local', idx: BENEFICIARY_INDICES[1] },
-    { name: 'WeAreHumans', email: 'wearehumans@initiative.local', idx: BENEFICIARY_INDICES[2] },
-  ];
-  for (const b of beneficiaries) ins.run(b.name, b.email, hash, 'beneficiary', b.idx);
-
-  return true;
+  let inserted = false;
+  for (const acct of SEEDED_ACCOUNTS) {
+    const row = exists.get(acct.email) as { id: number } | undefined;
+    if (row) {
+      upd.run(acct.name, acct.role, acct.idx, acct.email);
+    } else {
+      ins.run(acct.name, acct.email, hash, acct.role, acct.idx);
+      inserted = true;
+    }
+  }
+  return inserted;
 }
 
 function beneficiaryIdByEmail(email: string): number | null {
@@ -353,13 +365,15 @@ function ensureAdminVaultIndex(): void {
 }
 
 export function seedIfEmpty(): void {
-  const seededUsers = seedUsersIfEmpty();
+  const inserted = ensureSeededAccounts();
   ensureAdminVaultIndex();
   seedCausesUpsert();
 
-  if (seededUsers) {
+  if (inserted) {
     console.log('[seed] Seeded Vaultex admin + donors + beneficiaries + sample causes.');
     console.log('[seed] Admin + vault wallet (Anvil #0):', anvilAddress(SUPER_RICH_INDEX));
     console.log('[seed] Login with any seeded email; password:', DEMO_PASSWORD);
+  } else {
+    console.log('[seed] All seeded accounts verified; causes synced.');
   }
 }
